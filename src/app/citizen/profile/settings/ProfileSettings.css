@@ -1,0 +1,352 @@
+/* Profile Settings Page Styles - Minimal White & Green Theme */
+
+.settings-container {
+    background-color: var(--mint-cream);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.settings-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Header */
+.settings-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.settings-title {
+    font-size: var(--fs-3);
+    font-weight: var(--fw-600);
+    color: var(--rich-black-fogra-29-1);
+    margin-bottom: 0.5rem;
+    font-family: var(--ff-cuprum);
+}
+
+.settings-subtitle {
+    font-size: var(--fs-11);
+    color: var(--granite-gray);
+}
+
+/* Settings Section */
+.settings-section {
+    background-color: var(--white);
+    border-radius: var(--radius-5);
+    box-shadow: var(--shadow-1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: var(--fs-6);
+    font-weight: var(--fw-600);
+    color: var(--rich-black-fogra-29-1);
+    margin-bottom: 1.5rem;
+    font-family: var(--ff-cuprum);
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--cultured);
+}
+
+/* Settings List */
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem;
+    background-color: var(--mint-cream);
+    border-radius: var(--radius-5);
+    border-left: 3px solid var(--go-green);
+    transition: var(--transition-1);
+}
+
+.setting-item.clickable {
+    cursor: pointer;
+}
+
+.setting-item.clickable:hover {
+    background-color: var(--go-green_8);
+    transform: translateX(3px);
+}
+
+.setting-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.setting-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.setting-info h3 {
+    font-size: var(--fs-11);
+    font-weight: var(--fw-600);
+    color: var(--rich-black-fogra-29-1);
+    margin-bottom: 0.25rem;
+}
+
+.setting-info p {
+    font-size: var(--fs-12);
+    color: var(--granite-gray);
+}
+
+.setting-arrow {
+    color: var(--go-green);
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--light-gray);
+    transition: 0.3s;
+    border-radius: 26px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--white);
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked+.toggle-slider {
+    background-color: var(--go-green);
+}
+
+input:checked+.toggle-slider:before {
+    transform: translateX(24px);
+}
+
+/* Danger Zone */
+.danger-zone {
+    border: 2px solid var(--error);
+}
+
+.danger-zone .section-title {
+    color: var(--error);
+    border-bottom-color: var(--error);
+}
+
+.danger-zone .setting-item {
+    border-left-color: var(--error);
+}
+
+.danger-item {
+    background-color: hsla(0, 83%, 54%, 0.05);
+}
+
+.danger-item:hover {
+    background-color: hsla(0, 83%, 54%, 0.1);
+}
+
+.danger-item .setting-info h3 {
+    color: var(--error);
+}
+
+.setting-icon.danger {
+    color: var(--error);
+}
+
+/* Actions */
+.settings-actions {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 0;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-content {
+    background-color: var(--white);
+    border-radius: var(--radius-5);
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--cultured);
+}
+
+.modal-header h2 {
+    font-size: var(--fs-5);
+    font-weight: var(--fw-600);
+    color: var(--rich-black-fogra-29-1);
+    font-family: var(--ff-cuprum);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-body p {
+    font-size: var(--fs-11);
+    color: var(--rich-black-fogra-29-1);
+    margin-bottom: 1rem;
+}
+
+.warning-text {
+    font-weight: var(--fw-600);
+    color: var(--error);
+}
+
+.info-text {
+    font-style: italic;
+    color: var(--granite-gray);
+    font-size: var(--fs-12);
+}
+
+.modal-body ul {
+    list-style: disc;
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.modal-body li {
+    font-size: var(--fs-12);
+    color: var(--granite-gray);
+    margin-bottom: 0.5rem;
+}
+
+.modal-actions {
+    padding: 1rem 2rem 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.btn-danger {
+    background-color: var(--error);
+    color: var(--white);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-5);
+    font-weight: var(--fw-600);
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-1);
+}
+
+.btn-danger:hover {
+    background-color: hsl(0, 83%, 45%);
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .settings-section {
+        padding: 1.5rem;
+    }
+
+    .settings-title {
+        font-size: var(--fs-4);
+    }
+
+    .setting-item {
+        padding: 1rem;
+    }
+
+    .setting-left {
+        gap: 0.75rem;
+    }
+
+    .setting-info h3 {
+        font-size: var(--fs-12);
+    }
+
+    .setting-info p {
+        font-size: var(--fs-14);
+    }
+
+    .modal-content {
+        margin: 1rem;
+    }
+
+    .modal-header,
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+        padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .modal-actions .btn {
+        width: 100%;
+    }
+}

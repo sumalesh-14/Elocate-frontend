@@ -1,0 +1,230 @@
+/* Profile Page Styles - Minimal White & Green Theme */
+
+.profile-container {
+    background-color: var(--mint-cream);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.profile-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Profile Card */
+.profile-card {
+    background-color: var(--white);
+    border-radius: var(--radius-5);
+    box-shadow: var(--shadow-1);
+    padding: 3rem 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Profile Header */
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--cultured);
+}
+
+.avatar-container {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-wrapper {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid var(--go-green);
+    padding: 4px;
+    background: var(--white);
+    box-shadow: var(--shadow-1);
+    position: relative;
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Camera Button */
+.camera-button {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--go-green) 0%, hsl(145, 63%, 35%) 100%);
+    color: var(--white);
+    border: 2px solid var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+.camera-button:hover {
+    background: linear-gradient(135deg, hsl(145, 63%, 35%) 0%, var(--rich-black-fogra-29-1) 100%);
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.camera-button:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.camera-button:focus {
+    outline: 2px solid var(--go-green);
+    outline-offset: 2px;
+}
+
+.user-name {
+    font-size: var(--fs-4);
+    font-weight: var(--fw-600);
+    color: var(--rich-black-fogra-29-1);
+    margin-bottom: 0.5rem;
+    font-family: var(--ff-cuprum);
+}
+
+.user-username {
+    font-size: var(--fs-10);
+    color: var(--granite-gray);
+    margin-bottom: 1.5rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Info Grid */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.2rem;
+    background-color: var(--mint-cream);
+    border-radius: var(--radius-5);
+    border-left: 3px solid var(--go-green);
+    transition: var(--transition-1);
+}
+
+.info-item:hover {
+    background-color: var(--go-green_8);
+    transform: translateX(3px);
+}
+
+.info-icon {
+    font-size: 1.8rem;
+    color: var(--go-green);
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-label {
+    font-size: var(--fs-12);
+    color: var(--granite-gray);
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: var(--fw-500);
+}
+
+.info-value {
+    font-size: var(--fs-10);
+    color: var(--rich-black-fogra-29-1);
+    font-weight: var(--fw-500);
+    word-break: break-word;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .profile-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .avatar-wrapper {
+        width: 100px;
+        height: 100px;
+    }
+
+    .user-name {
+        font-size: var(--fs-5);
+    }
+
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs-header {
+        justify-content: flex-start;
+    }
+
+    .tab-button {
+        flex: none;
+        min-width: 120px;
+    }
+
+    .tab-content {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+    }
+}

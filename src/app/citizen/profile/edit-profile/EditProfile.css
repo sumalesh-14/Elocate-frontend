@@ -1,0 +1,209 @@
+/* Edit Profile Page Styles - Minimal White & Green Theme */
+
+.edit-profile-container {
+    background-color: var(--mint-cream);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.edit-profile-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.edit-profile-card {
+    background-color: var(--white);
+    border-radius: var(--radius-5);
+    box-shadow: var(--shadow-1);
+    padding: 3rem 2rem;
+}
+
+/* Header */
+.edit-profile-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--cultured);
+}
+
+.edit-profile-title {
+    font-size: var(--fs-3);
+    font-weight: var(--fw-600);
+    color: var(--rich-black-fogra-29-1);
+    margin-bottom: 0.5rem;
+    font-family: var(--ff-cuprum);
+}
+
+.edit-profile-subtitle {
+    font-size: var(--fs-11);
+    color: var(--granite-gray);
+}
+
+/* Profile Picture Section */
+.profile-picture-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 3rem;
+}
+
+.profile-picture-wrapper {
+    text-align: center;
+}
+
+.profile-picture-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 1rem;
+}
+
+.profile-picture {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--go-green);
+    box-shadow: var(--shadow-1);
+}
+
+.change-picture-button {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--go-green) 0%, hsl(145, 63%, 35%) 100%);
+    color: var(--white);
+    border: 2px solid var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+.change-picture-button:hover {
+    background: linear-gradient(135deg, hsl(145, 63%, 35%) 0%, var(--rich-black-fogra-29-1) 100%);
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.change-picture-button:active {
+    transform: scale(0.98);
+}
+
+.picture-hint {
+    font-size: var(--fs-12);
+    color: var(--granite-gray);
+}
+
+/* Form */
+.edit-profile-form {
+    width: 100%;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-size: var(--fs-11);
+    font-weight: var(--fw-600);
+    color: var(--rich-black-fogra-29-1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.required {
+    color: var(--error);
+}
+
+.form-input {
+    padding: 1rem;
+    border: 2px solid var(--cultured);
+    border-radius: var(--radius-5);
+    font-size: var(--fs-10);
+    color: var(--rich-black-fogra-29-1);
+    transition: var(--transition-1);
+    font-family: var(--ff-poppins);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--go-green);
+    box-shadow: 0 0 0 3px var(--go-green_5);
+}
+
+.form-input.error {
+    border-color: var(--error);
+}
+
+.form-input.error:focus {
+    box-shadow: 0 0 0 3px hsla(0, 83%, 54%, 0.1);
+}
+
+.error-message {
+    font-size: var(--fs-12);
+    color: var(--error);
+    margin-top: 0.25rem;
+}
+
+/* Action Buttons */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 2rem;
+    border-top: 1px solid var(--cultured);
+}
+
+/* Loading */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    font-size: var(--fs-10);
+    color: var(--granite-gray);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .edit-profile-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .edit-profile-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .edit-profile-title {
+        font-size: var(--fs-4);
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
