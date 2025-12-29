@@ -21,12 +21,14 @@ const Header = () => {
   const [isHeaderActive, setIsHeaderActive] = useState(false);
   const [locations, setLocation] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const handleToggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
   useEffect(() => {
+    setMounted(true);
     document.documentElement.classList.remove('no-js');
 
     if (navigator.geolocation) {
@@ -133,7 +135,7 @@ const Header = () => {
           {locations || 'Loading...'}
         </h1>
 
-        {user ? (
+        {(mounted && user) ? (
           <div className="relative">
             <button
               className="md:mr-8 text-sm md:text-xl font-semibold"
@@ -155,11 +157,11 @@ const Header = () => {
               </div>
             )}
           </div>
-        ) : (
+        ) : mounted ? (
           <>
-            <Link href="/citizen/sign-in" className="btn-md btn-outline md:mr-4">SignIn</Link>
+            <Link href="/sign-in" className="btn-md btn-outline md:mr-4">SignIn</Link>
           </>
-        )}
+        ) : null}
         <button
           className="nav-open-btn"
           aria-label="open menu"

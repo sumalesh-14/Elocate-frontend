@@ -186,7 +186,7 @@ const SignUp: React.FC = () => {
         <div className="text-center text-gray-400">
           Already have an account?
           <Link
-            href="/citizen/sign-in"
+            href="/sign-in"
             className="font-bold text-black hover:text-emerald-300"
           >
             Sign In

@@ -87,10 +87,7 @@ main,
   scroll-margin-top: 100px;
 }
 
-body {
-  /* Add padding to push content below the fixed header */
-  padding-top: 80px;
-}
+/* Global body padding removed to avoid gaps on fullscreen pages like login */
 
 /* Page-specific content adjustments */
 .e-facilities-container,

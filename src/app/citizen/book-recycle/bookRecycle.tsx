@@ -97,14 +97,14 @@ const BookRecycle = () => {
     };
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses[status]}`}>
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm md:text-base font-bold ${statusClasses[status]}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Main Container with Sidebar and Content */}
       <div className="flex flex-1">
         <DashboardSidebar
@@ -114,16 +114,16 @@ const BookRecycle = () => {
         />
 
         {/* Main Content */}
-        <main className="flex-1 h-full flex flex-col overflow-hidden bg-gray-50">
-          <div className="flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6">
+        <main className="flex-1 h-full flex flex-col overflow-hidden bg-white">
+          <div className="flex-1 overflow-y-auto px-4 py-8 md:px-10 md:py-10">
             <div className="w-full flex flex-col gap-8 pb-12">
               {/* Header */}
               <header className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  <h1 className="text-gray-900 text-3xl md:text-4xl font-extrabold leading-tight tracking-tight">
+                  <h1 className="h1">
                     Dashboard
                   </h1>
-                  <p className="text-green-600 text-base font-normal">
+                  <p className="text-green-600 text-xl font-semibold">
                     Welcome back, User! Here is your recycling overview.
                   </p>
                 </div>
@@ -150,8 +150,8 @@ const BookRecycle = () => {
                     </span>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-sm font-medium">Personal Score</p>
-                    <h3 className="text-gray-900 text-3xl font-bold mt-1">{userStats.personalScore}</h3>
+                    <p className="text-gray-600 text-lg font-bold">Personal Score</p>
+                    <h3 className="text-gray-900 text-4xl font-extrabold mt-1">{userStats.personalScore}</h3>
                   </div>
                 </div>
 
@@ -163,8 +163,8 @@ const BookRecycle = () => {
                     </div>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-sm font-medium">Total Requests</p>
-                    <h3 className="text-gray-900 text-3xl font-bold mt-1">{userStats.totalRequests}</h3>
+                    <p className="text-gray-600 text-lg font-bold">Total Requests</p>
+                    <h3 className="text-gray-900 text-4xl font-extrabold mt-1">{userStats.totalRequests}</h3>
                   </div>
                 </div>
 
@@ -176,8 +176,8 @@ const BookRecycle = () => {
                     </div>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-sm font-medium">Items Recycled</p>
-                    <h3 className="text-gray-900 text-3xl font-bold mt-1">{userStats.itemsRecycled}</h3>
+                    <p className="text-gray-600 text-lg font-bold">Items Recycled</p>
+                    <h3 className="text-gray-900 text-4xl font-extrabold mt-1">{userStats.itemsRecycled}</h3>
                   </div>
                 </div>
 
@@ -189,8 +189,8 @@ const BookRecycle = () => {
                     </div>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-sm font-medium">Cancelled</p>
-                    <h3 className="text-gray-900 text-3xl font-bold mt-1">{userStats.cancelled}</h3>
+                    <p className="text-gray-600 text-lg font-bold">Cancelled</p>
+                    <h3 className="text-gray-900 text-4xl font-extrabold mt-1">{userStats.cancelled}</h3>
                   </div>
                 </div>
               </div>
@@ -204,8 +204,8 @@ const BookRecycle = () => {
                     <div className="relative h-48 bg-gradient-to-r from-green-600 to-emerald-500 flex items-center px-8">
                       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
                       <div className="relative z-10 flex flex-col gap-4 max-w-lg">
-                        <h3 className="text-2xl font-bold text-white">Ready to clear some space?</h3>
-                        <p className="text-gray-100 text-sm md:text-base">
+                        <h3 className="text-3xl font-bold text-white">Ready to clear some space?</h3>
+                        <p className="text-gray-100 text-lg md:text-xl">
                           Schedule a pickup for your old electronics and boost your eco score today.
                         </p>
                         <button className="w-fit px-6 py-3 bg-white hover:bg-gray-100 text-green-700 font-bold rounded-lg shadow-lg transition-all flex items-center gap-2">
@@ -219,7 +219,7 @@ const BookRecycle = () => {
                   {/* Recent Requests */}
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                      <h3 className="text-lg font-bold text-gray-900">Recent Requests</h3>
+                      <h3 className="h3">Recent Requests</h3>
                       <Link href="#" className="text-sm font-bold text-green-600 hover:text-green-700">
                         View All
                       </Link>
@@ -235,13 +235,13 @@ const BookRecycle = () => {
                               {request.icon}
                             </div>
                             <div>
-                              <p className="text-sm font-bold text-gray-900">{request.item}</p>
-                              <p className="text-xs text-gray-500">ID: {request.id}</p>
+                              <p className="text-lg font-bold text-gray-900">{request.item}</p>
+                              <p className="text-sm text-gray-500">ID: {request.id}</p>
                             </div>
                           </div>
                           <div className="text-right">
                             {getStatusBadge(request.status)}
-                            <p className="text-xs text-gray-400 mt-1">{request.date}</p>
+                            <p className="text-base md:text-lg text-gray-400 mt-1">{request.date}</p>
                           </div>
                         </div>
                       ))}
@@ -255,8 +255,8 @@ const BookRecycle = () => {
                   <div className="bg-green-50 border border-green-200 p-6 rounded-xl flex items-start gap-4">
                     <MdLightbulb className="text-green-600 text-2xl mt-1 flex-shrink-0" />
                     <div className="flex flex-col gap-2">
-                      <h4 className="text-sm font-bold text-gray-900">Eco Tip of the Day</h4>
-                      <p className="text-sm text-green-700 leading-relaxed">
+                      <h4 className="text-lg md:text-xl font-bold text-gray-900">Eco Tip of the Day</h4>
+                      <p className="text-base md:text-lg text-green-700 leading-relaxed">
                         {ecoTip}
                       </p>
                     </div>
@@ -264,15 +264,15 @@ const BookRecycle = () => {
 
                   {/* Nearest Center */}
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-4">
-                    <h4 className="text-base font-bold text-gray-900">Nearest Center</h4>
+                    <h4 className="text-lg md:text-xl font-bold text-gray-900">Nearest Center</h4>
                     <div className="w-full aspect-video bg-gray-200 rounded-lg relative overflow-hidden">
                       <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center">
-                        <MdLocationOn className="text-red-500 text-5xl drop-shadow-md" />
+                        <MdLocationOn className="text-red-500 text-6xl drop-shadow-md" />
                       </div>
                     </div>
                     <div>
-                      <p className="text-gray-900 font-medium text-sm">{nearestCenter.name}</p>
-                      <p className="text-gray-500 text-sm">
+                      <p className="text-gray-900 font-bold text-lg">{nearestCenter.name}</p>
+                      <p className="text-gray-500 text-base">
                         {nearestCenter.address}<br />
                         {nearestCenter.city}, {nearestCenter.zipCode}
                       </p>

@@ -60,7 +60,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                     <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
                         E
                     </div>
-                    <h1 className="text-lg font-bold text-gray-900">E-Cycle</h1>
+                    <h1 className="text-xl font-bold text-gray-900">E-Cycle</h1>
                 </div>
                 <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -108,9 +108,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                                         {item.icon}
                                     </div>
                                     <p
-                                        className={`text-base ${isActive(item.href)
+                                        className={`text-xl ${isActive(item.href)
                                             ? "text-gray-900 font-bold"
-                                            : "text-gray-700 font-medium"
+                                            : "text-gray-700 font-semibold"
                                             }`}
                                     >
                                         {item.label}
@@ -134,9 +134,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                                         }`}
                                 />
                                 <p
-                                    className={`text-base ${isActive("/book-recycle/settings")
+                                    className={`text-xl ${isActive("/book-recycle/settings")
                                         ? "text-gray-900 font-bold"
-                                        : "text-gray-700 font-medium"
+                                        : "text-gray-700 font-semibold"
                                         }`}
                                 >
                                     Settings

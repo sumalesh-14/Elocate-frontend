@@ -12,9 +12,10 @@ export default function ConditionalLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const isAuthRoute = pathname === '/sign-in' || pathname?.startsWith('/sign-up');
     const isAdminRoute = pathname?.startsWith('/admin');
 
-    if (isAdminRoute) {
+    if (isAdminRoute || isAuthRoute) {
         return <>{children}</>;
     }
 
@@ -22,7 +23,9 @@ export default function ConditionalLayout({
         <>
             <NextTopLoader color="#28af60" showSpinner={false} />
             <Navbar />
-            {children}
+            <main className="pt-[80px]">
+                {children}
+            </main>
             <Footer />
             <Script
                 id="tawk_chatbot"
