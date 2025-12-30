@@ -185,7 +185,7 @@ const Header = () => {
 const NavItem = ({ label }: NavItemProps) => {
   return (
     <li className="navbar-link">
-      <Link href={label === "Home" ? "/" : `/citizen/${label.toLowerCase()}`}>
+      <Link href={label === "Home" ? "/citizen" : `/citizen/${label.toLowerCase()}`}>
         {label}
       </Link>
     </li>

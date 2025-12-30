@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getEmail, getPhoneNumber, getUserName, getfullname, setEmail, setPhoneNumber, setUserName, setfullname } from '../../sign-in/auth';
 import Image from 'next/image';
+import Toast from '../../Components/Toast';
 import './EditProfile.css';
 
 const EditProfile = () => {
@@ -15,16 +16,16 @@ const EditProfile = () => {
     const [formData, setFormData] = useState({
         fullname: '',
         username: '',
-        email: '',
         phone: ''
     });
 
     const [errors, setErrors] = useState({
         fullname: '',
         username: '',
-        email: '',
         phone: ''
     });
+
+    const [showToast, setShowToast] = useState(false);
 
     // Load user data on mount
     useEffect(() => {
@@ -32,7 +33,6 @@ const EditProfile = () => {
         const currentData = {
             fullname: getfullname() || '',
             username: getUserName() || '',
-            email: getEmail() || '',
             phone: getPhoneNumber() || ''
         };
         setFormData(currentData);
@@ -106,13 +106,13 @@ const EditProfile = () => {
             isValid = false;
         }
 
-        if (!formData.email.trim()) {
-            newErrors.email = 'Email is required';
-            isValid = false;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Please enter a valid email';
-            isValid = false;
-        }
+        // if (!formData.email.trim()) {
+        //     newErrors.email = 'Email is required';
+        //     isValid = false;
+        // } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        //     newErrors.email = 'Please enter a valid email';
+        //     isValid = false;
+        // }
 
         if (!formData.phone.trim()) {
             newErrors.phone = 'Phone number is required';
@@ -134,23 +134,25 @@ const EditProfile = () => {
             // Save to localStorage
             setfullname(formData.fullname);
             setUserName(formData.username);
-            setEmail(formData.email);
+            //setEmail(formData.email);
             setPhoneNumber(formData.phone);
 
             // Here you would typically make an API call to update the backend
             console.log('Profile updated:', formData);
 
             // Show success message
-            alert('Profile updated successfully!');
+            setShowToast(true);
 
-            // Navigate back to profile
-            router.push('/profile');
+            // Delay navigation slightly to let the user see the toast
+            setTimeout(() => {
+                router.push('/citizen/profile');
+            }, 2000);
         }
     };
 
     // Handle cancel
     const handleCancel = () => {
-        router.push('/profile');
+        router.push('/citizen/profile');
     };
 
     if (!mounted) {
@@ -253,7 +255,7 @@ const EditProfile = () => {
                             </div>
 
                             {/* Email */}
-                            <div className="form-group">
+                            {/* <div className="form-group">
                                 <label htmlFor="email" className="form-label">
                                     Email Address <span className="required">*</span>
                                 </label>
@@ -267,7 +269,7 @@ const EditProfile = () => {
                                     placeholder="Enter your email"
                                 />
                                 {errors.email && <span className="error-message">{errors.email}</span>}
-                            </div>
+                            </div> */}
 
                             {/* Phone Number */}
                             <div className="form-group">
@@ -306,6 +308,13 @@ const EditProfile = () => {
                     </form>
                 </div>
             </div>
+
+            <Toast
+                isOpen={showToast}
+                onClose={() => setShowToast(false)}
+                title="Profile Updated"
+                message="Your changes have been saved successfully."
+            />
         </div>
     );
 };

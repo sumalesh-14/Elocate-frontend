@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import DashboardSidebar from "../Components/DashboardSidebar";
 import { MdSearch, MdPhoneInTalk, MdArticle, MdSend } from "react-icons/md";
 
 const Support = () => {
@@ -10,9 +9,6 @@ const Support = () => {
         message: "",
     });
 
-    const userStats = {
-        co2Diverted: "124 kg",
-    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,11 +29,6 @@ const Support = () => {
         <div className="min-h-screen flex flex-col bg-gray-50">
             {/* Main Container with Sidebar and Content */}
             <div className="flex flex-1">
-                <DashboardSidebar
-                    isMobileMenuOpen={isMobileMenuOpen}
-                    setIsMobileMenuOpen={setIsMobileMenuOpen}
-                    userStats={userStats}
-                />
 
                 {/* Main Content */}
                 <main className="flex-1 h-full flex flex-col overflow-hidden bg-gray-50">

@@ -127,10 +127,15 @@
     color: var(--rich-black-fogra-29-1);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
 }
 
 .required {
-    color: var(--error);
+  color: #ef4444; /* red */
+  font-size: 14px;
+  line-height: 1;
 }
 
 .form-input {

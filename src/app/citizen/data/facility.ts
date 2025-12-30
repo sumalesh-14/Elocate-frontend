@@ -1,5 +1,59 @@
 export const facility = [
   {
+    name: "101 INNOVATIONS PRIVATE LIMITED",
+    capacity: 100,
+    lon: 77.59008,
+    lat: 12.97679,
+    contact: "ashutosh@lizug.com",
+    time: "9:00 AM - 6:00 PM",
+    verified: true,
+    address: "1st floor, Maruthi Nagar, Madiwala, Bangalore, Karnataka"
+  },
+  {
+    name: "3i Medical Imaging Pvt Ltd",
+    capacity: 80,
+    lon: 80.27019,
+    lat: 13.08369,
+    contact: "vijayan.r@3imedimg.com",
+    time: "9:00 AM - 6:00 PM",
+    verified: true,
+    address: "New No. 1 Thirumalai Nagar, Perungudi, Chennai, Tamil Nadu"
+  },
+  {
+    name: "3M INDIA LIMITED",
+    capacity: 150,
+    lon: 77.59008,
+    lat: 12.97679,
+    contact: "ops@mmm.com",
+    time: "9:00 AM - 6:00 PM",
+    verified: true,
+    address: "PLOT NO 48-51, EPIP, Whitefield, Bangalore, Karnataka"
+  },
+  {
+    name: "3S INDIA RECYCLERS PRIVATE LIMITED",
+    capacity: 90,
+    lon: 76.50741,
+    lat: 10.03839,
+    contact: "MAJEED@MAJEED.COM",
+    time: "9:00 AM - 6:00 PM",
+    verified: true,
+    address: "37/4000 A, Edappally, Ernakulam, Kerala"
+  },
+  {
+    name: "3 STAR ELECTRONICS",
+    capacity: 70,
+    lon: 79.90708,
+    lat: 13.13942,
+    contact: "yuvaraj123@gmail.com",
+    time: "9:00 AM - 6:00 PM",
+    verified: true,
+    address: "NO.5/74, EVN ROAD, Tiruvallur, Tamil Nadu"
+  }
+];
+
+/* Old facility data - Commented out on 2025-12-30
+export const facility = [
+  {
     name: "Green IT Recycling Center Pvt. Ltd.",
     capacity: 100,
     lon: 73.8576905,
@@ -100,3 +154,4 @@ export const facility = [
     address:"Plot No 77&78, Subplot No 3A, next to Rohini Signs, Ramtekdi Industrial Area, Hadapsar, Pune, Maharashtra 411013"
   }
 ];
+*/

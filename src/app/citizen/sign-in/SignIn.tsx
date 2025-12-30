@@ -65,7 +65,7 @@ const Signin: React.FC = () => {
         }
       }
 
-      window.location.href = "/";
+      window.location.href = "/citizen";
     } catch (error) {
       console.error("Login failed:", error);
       toast.error("Login Failed. Please check your credentials.");

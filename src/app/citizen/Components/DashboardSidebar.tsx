@@ -43,11 +43,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             href: "/book-recycle/requests",
             icon: <MdHistory className="text-2xl" />,
         },
-        {
-            label: "Support",
-            href: "/support",
-            icon: <MdSupportAgent className="text-2xl" />,
-        },
+        // {
+        //     label: "Support",
+        //     href: "/support",
+        //     icon: <MdSupportAgent className="text-2xl" />,
+        // },
     ];
 
     const isActive = (href: string) => pathname === href;
@@ -73,7 +73,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             {/* Sidebar */}
             <aside
                 className={`${isMobileMenuOpen ? "block" : "hidden"
-                    } md:flex flex-col w-full md:w-80 bg-white border-r border-gray-200 md:sticky md:top-0 md:h-screen md:max-h-screen overflow-y-auto z-20 shadow-lg md:shadow-none`}
+                    } md:flex flex-col w-full md:w-80 bg-white border-r border-gray-200 md:fixed md:left-0 md:top-30 md:h-[calc(100vh-5rem)] md:max-h-[calc(100vh-5rem)] overflow-y-auto z-20 shadow-lg md:shadow-none`}
             >
                 <div className="p-6 flex flex-col h-full justify-between">
                     <div className="flex flex-col gap-8">
@@ -109,8 +109,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                                     </div>
                                     <p
                                         className={`text-xl ${isActive(item.href)
-                                            ? "text-gray-900 font-bold"
-                                            : "text-gray-700 font-semibold"
+                                            ? "text-gray-900 font-medium"
+                                            : "text-gray-700 font-medium"
                                             }`}
                                     >
                                         {item.label}
@@ -135,8 +135,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                                 />
                                 <p
                                     className={`text-xl ${isActive("/book-recycle/settings")
-                                        ? "text-gray-900 font-bold"
-                                        : "text-gray-700 font-semibold"
+                                        ? "text-gray-900 font-medium"
+                                        : "text-gray-700 font-medium"
                                         }`}
                                 >
                                     Settings
@@ -146,26 +146,17 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                     </div>
 
                     {/* Bottom Section */}
-                    <div className="flex flex-col gap-4 mt-8">
+                    {/* <div className="flex flex-col gap-4 mt-8">
                         {/* Impact Card */}
-                        <div className="bg-gray-900 p-5 rounded-xl relative overflow-hidden">
+                    {/* <div className="bg-gray-900 p-5 rounded-xl relative overflow-hidden">
                             <div className="absolute -right-4 -top-4 w-24 h-24 bg-green-500/20 rounded-full blur-xl"></div>
                             <p className="text-sm text-green-400 font-bold uppercase tracking-wider mb-2">
                                 Your Impact
                             </p>
                             <p className="text-white text-3xl font-bold">{userStats.co2Diverted}</p>
                             <p className="text-gray-400 text-sm">CO₂ diverted this year</p>
-                        </div>
+                        </div> */}
 
-                        {/* Logout */}
-                        <Link
-                            href="#"
-                            className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-gray-600 hover:text-red-600"
-                        >
-                            <MdLogout className="text-2xl" />
-                            <p className="text-base font-medium">Logout</p>
-                        </Link>
-                    </div>
                 </div>
             </aside>
         </>

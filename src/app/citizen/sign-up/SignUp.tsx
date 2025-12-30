@@ -46,7 +46,7 @@ const SignUp: React.FC = () => {
 
       toast.success("Registration Successful!");
 
-      window.location.href = "/sign-in";
+      window.location.href = "/citizen/sign-in";
     } catch (error: any) {
       console.error("Register failed:", error);
       toast.error(`Registration Failed. ${error.response.data.message}`);
@@ -186,7 +186,7 @@ const SignUp: React.FC = () => {
         <div className="text-center text-gray-400">
           Already have an account?
           <Link
-            href="/sign-in"
+            href="/citizen/sign-in"
             className="font-bold text-black hover:text-emerald-300"
           >
             Sign In

@@ -87,7 +87,7 @@ const ProfileSettings = () => {
                     <h2 className="section-title">Account Settings</h2>
 
                     <div className="settings-list">
-                        <div className="setting-item clickable" onClick={() => router.push('/profile/edit-profile')}>
+                        <div className="setting-item clickable" onClick={() => router.push('/citizen/profile/edit-profile')}>
                             <div className="setting-left">
                                 <div className="setting-icon">👤</div>
                                 <div className="setting-info">
@@ -331,7 +331,7 @@ const ProfileSettings = () => {
                 <div className="settings-actions">
                     <button className="btn btn-primary" onClick={() => {
                         alert('Settings saved successfully!');
-                        router.push('/profile');
+                        router.push('/citizen/profile');
                         // Here you would save to backend
                     }}>
                         Save Changes

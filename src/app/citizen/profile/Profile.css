@@ -129,10 +129,12 @@
 
 /* Info Grid */
 .info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 items per row */
+  gap: 50px; /* space between cards */
+  margin-top: 40px;
 }
+
 
 .info-item {
     display: flex;
