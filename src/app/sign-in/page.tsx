@@ -12,7 +12,8 @@ import {
     setUser,
     setUserID,
     setUserName,
-    setfullname
+    setfullname,
+    setRole
 } from "../citizen/sign-in/auth";
 import ClientIonIcon from "../utils/ClientIonIcon";
 import {
@@ -26,6 +27,8 @@ import {
 } from "ionicons/icons";
 import logo from "../../assets/ELocate-s.png";
 import bannerImage from "../../assets/ewaste_login_banner.png";
+import { jwtDecode } from "jwt-decode";
+import { authApi, ROLE_ROUTES, UserRole } from "./routes";
 
 const CommonLogin: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -54,52 +57,51 @@ const CommonLogin: React.FC = () => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulating API call
         const loadingToast = toast.loading("Verifying credentials...");
 
         try {
-            // Simulate network delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Calling Real API
+            const response = await authApi.login(formData);
+            const user = response;
 
-            // DUMMY BYPASS Logic
-            const user = {
-                id: "dummy-user-id-123",
-                email: formData.email || "user@example.com",
-                token: "dummy-jwt-token-for-testing",
-                phoneNumber: "1234567890",
-                fullname: "E-Waste Connector",
-                username: formData.email.split('@')[0] || "ecouser",
-            };
+            if (user && user.jwtToken) {
+                // Decode JWT to get role
+                const decoded: any = jwtDecode(user.jwtToken);
+                const role = (decoded.role || "CITIZEN") as UserRole;
 
-            localStorage.setItem("user", JSON.stringify(user));
-
-            if (user) {
+                // Save to local storage using auth utils
+                setToken(user.jwtToken);
                 setUser(user);
                 setEmail(user.email);
-                setToken(user.token);
-                setPhoneNumber(user.phoneNumber);
-                setfullname(user.fullname);
+                setPhoneNumber(user.mobileNumber);
+                setfullname(user.fullName);
                 setUserID(user.id);
+                setRole(role);
                 if (user.username) {
                     setUserName(user.username);
                 }
+
+                toast.update(loadingToast, {
+                    render: `Login Successful! Welcome back, ${role}.`,
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 2000
+                });
+
+                // Role-based Navigation
+                setTimeout(() => {
+                    const redirectPath = ROLE_ROUTES[role] || ROLE_ROUTES.DEFAULT;
+                    window.location.href = redirectPath;
+                }, 1000);
+            } else {
+                throw new Error("Invalid response from server");
             }
 
-            toast.update(loadingToast, {
-                render: "Login Successful! Welcome back.",
-                type: "success",
-                isLoading: false,
-                autoClose: 2000
-            });
-
-            setTimeout(() => {
-                window.location.href = "/";
-            }, 1000);
-
-        } catch (error) {
+        } catch (error: any) {
             console.error("Login failed:", error);
+            const errorMessage = error.response?.data?.message || "Authentication failed. Please check your credentials.";
             toast.update(loadingToast, {
-                render: "Authentication failed. Please check your credentials.",
+                render: errorMessage,
                 type: "error",
                 isLoading: false,
                 autoClose: 3000
@@ -151,10 +153,10 @@ const CommonLogin: React.FC = () => {
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.5, duration: 0.8 }}
                     >
-                        <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-6">
+                        <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-6" style={{ fontFamily: 'var(--ff-cuprum)' }}>
                             "The greatest threat to our planet is the belief that someone else will save it."
                         </h2>
-                        <p className="text-xl text-emerald-300 font-medium italic">
+                        <p className="text-2xl text-emerald-300 font-medium italic">
                             — Join the movement to recycle 10,000 tons of e-waste this year.
                         </p>
                     </motion.div>
@@ -168,7 +170,7 @@ const CommonLogin: React.FC = () => {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="w-full md:w-1/2 flex items-center justify-center p-8 lg:p-16 bg-white"
             >
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-lg">
                     {/* Logo & Header */}
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
@@ -176,34 +178,34 @@ const CommonLogin: React.FC = () => {
                         transition={{ delay: 0.3, duration: 0.5 }}
                         className="mb-10 text-center md:text-left"
                     >
-                        <div className="flex items-center gap-3 mb-6 justify-center md:justify-start">
-                            <div className="p-2 bg-emerald-100 rounded-xl">
-                                <ClientIonIcon icon={leafOutline} className="text-3xl text-emerald-600" />
+                        <div className="flex items-center gap-4 mb-8 justify-center md:justify-start">
+                            <div className="p-3 bg-emerald-100 rounded-2xl">
+                                <Image src={logo} alt="ELocate" width={60} height={60} />
                             </div>
-                            <span className="text-2xl font-bold text-gray-800 tracking-tight">EcoCycle</span>
+                            <span className="text-3xl font-bold text-emerald-800 tracking-tight" style={{ fontFamily: 'var(--ff-cuprum)' }}>ELocate</span>
                         </div>
-                        <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Welcome back</h1>
-                        <p className="text-gray-500">Enter your credentials to access your dashboard.</p>
+                        <h1 className="text-5xl font-extrabold text-gray-900 mb-4" style={{ fontFamily: 'var(--ff-cuprum)' }}>Welcome back</h1>
+                        <p className="text-xl text-gray-500 font-medium">Enter your credentials to access your dashboard.</p>
                     </motion.div>
 
                     {/* Form */}
-                    <form onSubmit={handleLogin} className="space-y-6">
+                    <form onSubmit={handleLogin} className="space-y-8">
                         <motion.div
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.4 }}
                         >
-                            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Email address</label>
+                            <label className="block text-lg font-bold text-gray-800 mb-3 ml-1">Email address</label>
                             <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-emerald-500 text-gray-400">
-                                    <ClientIonIcon icon={mailOutline} className="text-xl" />
+                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-emerald-500 text-gray-400">
+                                    <ClientIonIcon icon={mailOutline} className="text-2xl" />
                                 </div>
                                 <input
                                     required
                                     type="email"
                                     name="email"
                                     placeholder="name@example.com"
-                                    className="block w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-emerald-50 focus:bg-white focus:border-emerald-500 outline-none transition-all text-gray-700"
+                                    className="block w-full pl-14 pr-6 py-5 bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] focus:ring-4 focus:ring-emerald-50 focus:bg-white focus:border-emerald-500 outline-none transition-all text-xl font-medium text-gray-800"
                                     onChange={handleInputChange}
                                     value={formData.email}
                                 />
@@ -215,31 +217,31 @@ const CommonLogin: React.FC = () => {
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.5 }}
                         >
-                            <div className="flex justify-between mb-2">
-                                <label className="text-sm font-bold text-gray-700 ml-1">Password</label>
-                                <Link href="/forgot-password" title="Forgot password?" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+                            <div className="flex justify-between mb-3">
+                                <label className="text-lg font-bold text-gray-800 ml-1">Password</label>
+                                <Link href="/forgot-password" title="Forgot password?" className="text-lg font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
                                     Forgot password?
                                 </Link>
                             </div>
                             <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-emerald-500 text-gray-400">
-                                    <ClientIonIcon icon={lockClosedOutline} className="text-xl" />
+                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-emerald-500 text-gray-400">
+                                    <ClientIonIcon icon={lockClosedOutline} className="text-2xl" />
                                 </div>
                                 <input
                                     required
                                     type={showPassword ? "text" : "password"}
                                     name="password"
                                     placeholder="••••••••"
-                                    className="block w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-emerald-50 focus:bg-white focus:border-emerald-500 outline-none transition-all text-gray-700"
+                                    className="block w-full pl-14 pr-14 py-5 bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] focus:ring-4 focus:ring-emerald-50 focus:bg-white focus:border-emerald-500 outline-none transition-all text-xl font-medium text-gray-800"
                                     onChange={handleInputChange}
                                     value={formData.password}
                                 />
                                 <button
                                     type="button"
                                     onClick={togglePasswordVisibility}
-                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                    className="absolute inset-y-0 right-0 pr-5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                                 >
-                                    <ClientIonIcon icon={showPassword ? eyeOffOutline : eyeOutline} className="text-xl" />
+                                    <ClientIonIcon icon={showPassword ? eyeOffOutline : eyeOutline} className="text-2xl" />
                                 </button>
                             </div>
                         </motion.div>
@@ -248,13 +250,13 @@ const CommonLogin: React.FC = () => {
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.6 }}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
                         >
                             <button
                                 disabled={isLoading}
                                 type="submit"
-                                className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg border-b-4 border-emerald-800 hover:bg-emerald-500 hover:shadow-emerald-200 transition-all active:border-b-0 active:translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full bg-emerald-600 text-white font-bold py-6 rounded-[1.5rem] shadow-xl shadow-emerald-200 border-b-4 border-emerald-800 hover:bg-emerald-500 transition-all active:border-b-0 active:translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed text-2xl"
                             >
                                 {isLoading ? "Signing In..." : "Sign In"}
                             </button>
@@ -266,21 +268,21 @@ const CommonLogin: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.7 }}
-                        className="mt-10"
+                        className="mt-12"
                     >
-                        <div className="relative flex items-center mb-8">
-                            <div className="flex-grow border-t border-gray-100"></div>
-                            <span className="flex-shrink mx-4 text-xs text-gray-400 uppercase tracking-widest font-semibold">Or continue with</span>
-                            <div className="flex-grow border-t border-gray-100"></div>
+                        <div className="relative flex items-center mb-10">
+                            <div className="flex-grow border-t-2 border-gray-50"></div>
+                            <span className="flex-shrink mx-6 text-sm text-gray-400 uppercase tracking-widest font-bold">Or continue with</span>
+                            <div className="flex-grow border-t-2 border-gray-50"></div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <button className="flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-gray-700">
-                                <ClientIonIcon icon={logoGithub} className="text-xl" />
+                        <div className="grid grid-cols-2 gap-6">
+                            <button className="flex items-center justify-center gap-3 py-4 px-6 bg-white border-2 border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-emerald-200 transition-all font-bold text-xl text-gray-700">
+                                <ClientIonIcon icon={logoGithub} className="text-2xl" />
                                 GitHub
                             </button>
-                            <button className="flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-gray-700">
-                                <ClientIonIcon icon={logoGoogle} className="text-xl" />
+                            <button className="flex items-center justify-center gap-3 py-4 px-6 bg-white border-2 border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-emerald-200 transition-all font-bold text-xl text-gray-700">
+                                <ClientIonIcon icon={logoGoogle} className="text-2xl" />
                                 Google
                             </button>
                         </div>
@@ -291,10 +293,10 @@ const CommonLogin: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.8 }}
-                        className="mt-12 text-center text-gray-500 font-medium"
+                        className="mt-14 text-center text-xl text-gray-500 font-semibold"
                     >
                         Don't have an account?{" "}
-                        <Link href="/sign-up" className="text-emerald-600 font-bold hover:underline underline-offset-4 decoration-2 decoration-emerald-200">
+                        <Link href="/sign-up" className="text-emerald-600 font-bold hover:underline underline-offset-8 decoration-2 decoration-emerald-200">
                             Sign up for free
                         </Link>
                     </motion.p>

@@ -76,18 +76,23 @@ export const getUserName = (): string | null => {
   return null;
 };
 
-export const setfullname = (fullname: string): void => {
+export const setFullName = (fullName: string): void => {
   if (isLocalStorageAvailable) {
-    localStorage.setItem('fullname', fullname);
+    localStorage.setItem('fullName', fullName);
   }
 };
-export const getfullname = (): string | null => {
+
+export const getFullName = (): string | null => {
   if (isLocalStorageAvailable) {
-    const fullname = localStorage.getItem('fullname');
-    return fullname;
+    const fullName = localStorage.getItem('fullName');
+    return fullName;
   }
   return null;
-}
+};
+
+// Aliases for compatibility
+export const setfullname = setFullName;
+export const getfullname = getFullName;
 
 export const setEmail = (email: string): void => {
   if (isLocalStorageAvailable) {
@@ -103,16 +108,33 @@ export const getEmail = () => {
   return null;
 };
 
-export const setPhoneNumber = (phoneNumber: string): void => {
+export const setMobileNumber = (mobileNumber: string): void => {
   if (isLocalStorageAvailable) {
-    localStorage.setItem('phoneNumber', phoneNumber);
+    localStorage.setItem('mobileNumber', mobileNumber);
   }
 };
 
-export const getPhoneNumber = (): string | null => {
+export const getMobileNumber = (): string | null => {
   if (isLocalStorageAvailable) {
-    const phoneNumber = localStorage.getItem('phoneNumber');
-    return phoneNumber;
+    const mobileNumber = localStorage.getItem('mobileNumber');
+    return mobileNumber;
+  }
+  return null;
+};
+
+// Aliases for compatibility
+export const setPhoneNumber = setMobileNumber;
+export const getPhoneNumber = getMobileNumber;
+
+export const setRole = (role: string): void => {
+  if (isLocalStorageAvailable) {
+    localStorage.setItem('role', role);
+  }
+};
+
+export const getRole = (): string | null => {
+  if (isLocalStorageAvailable) {
+    return localStorage.getItem('role');
   }
   return null;
 };
