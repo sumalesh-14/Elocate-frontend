@@ -159,9 +159,10 @@ const Header = () => {
                         )}
                     </div>
                 ) : mounted ? (
-                    <>
-                        <Link href="/sign-in" className="btn-md btn-outline md:mr-4">SignIn</Link>
-                    </>
+                    <div className="flex items-center gap-2 md:mr-8">
+                        <Link href="/sign-in" className="btn-md btn-outline">SignIn</Link>
+                        <Link href="/citizen/sign-up" className="btn-md btn-outline">Register</Link>
+                    </div>
                 ) : null}
                 <button
                     className="nav-open-btn"

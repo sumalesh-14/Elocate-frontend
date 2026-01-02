@@ -60,21 +60,64 @@ const CommonLogin: React.FC = () => {
         const loadingToast = toast.loading("Verifying credentials...");
 
         try {
-            // Calling Real API
+            // --- DUMMY AUTHENTICATION START ---
+            // Comment out this block and uncomment the authApi.login block below to restore real authentication
+
+            let dummyUser: any = null;
+            let role: UserRole = "CITIZEN";
+
+            if (formData.email === "admin@elocate.com") {
+                role = "ADMIN";
+                dummyUser = {
+                    id: "admin-123",
+                    email: "admin@elocate.com",
+                    fullName: "Admin User",
+                    username: "admin_tester",
+                    jwtToken: "dummy-admin-token",
+                    mobileNumber: "9999999999"
+                };
+            } else if (formData.email === "inter@elocate.com") {
+                role = "INTERMEDIARY";
+                dummyUser = {
+                    id: "inter-456",
+                    email: "inter@elocate.com",
+                    fullName: "Intermediary User",
+                    username: "inter_tester",
+                    jwtToken: "dummy-inter-token",
+                    mobileNumber: "8888888888"
+                };
+            } else {
+                // Default to Citizen
+                role = "CITIZEN";
+                dummyUser = {
+                    id: "citizen-789",
+                    email: formData.email || "citizen@elocate.com",
+                    fullName: "Citizen User",
+                    username: "citizen_tester",
+                    jwtToken: "dummy-citizen-token",
+                    mobileNumber: "7777777777"
+                };
+            }
+
+            const user = dummyUser;
+
+            /* REAL API CALL (Commented out for now)
             const response = await authApi.login(formData);
             const user = response;
+            */
+            // --- DUMMY AUTHENTICATION END ---
 
             if (user && user.jwtToken) {
-                // Decode JWT to get role
-                const decoded: any = jwtDecode(user.jwtToken);
-                const role = (decoded.role || "CITIZEN") as UserRole;
+                // Decode JWT to get role (For dummy, we already set it)
+                // const decoded: any = jwtDecode(user.jwtToken);
+                // const role = (decoded.role || "CITIZEN") as UserRole;
 
                 // Save to local storage using auth utils
                 setToken(user.jwtToken);
                 setUser(user);
                 setEmail(user.email);
-                setPhoneNumber(user.mobileNumber);
-                setfullname(user.fullName);
+                setPhoneNumber(user.mobileNumber || user.phoneNumber);
+                setfullname(user.fullName || user.fullname);
                 setUserID(user.id);
                 setRole(role);
                 if (user.username) {

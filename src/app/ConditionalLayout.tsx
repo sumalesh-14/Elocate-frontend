@@ -23,12 +23,13 @@ export default function ConditionalLayout({
 
     const isAuthRoute = pathname === '/sign-in' || pathname?.startsWith('/sign-up');
     const isAdminRoute = pathname?.startsWith('/admin');
+    const isPublicRoute = pathname === '/' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/recycle');
 
     useEffect(() => {
-        if (mounted && !isAuthRoute && !isAuthenticated()) {
+        if (mounted && !isAuthRoute && !isPublicRoute && !isAuthenticated()) {
             router.replace('/sign-in');
         }
-    }, [isAuthRoute, router, mounted]);
+    }, [isAuthRoute, isPublicRoute, router, mounted]);
 
     // During hydration, render common shell to avoid mismatch
     if (!mounted) {
@@ -46,7 +47,7 @@ export default function ConditionalLayout({
     }
 
     // Strict authentication check
-    if (!isAuthenticated()) {
+    if (!isAuthenticated() && !isPublicRoute) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white font-montserrat">
                 <div className="animate-pulse flex flex-col items-center">

@@ -16,7 +16,7 @@ export default function Home() {
     useEffect(() => {
         if (mounted) {
             if (!isAuthenticated()) {
-                router.replace('/sign-in');
+                router.replace('/citizen');
             } else {
                 const role = getRole() as UserRole;
                 const redirectPath = ROLE_ROUTES[role] || ROLE_ROUTES.DEFAULT;
