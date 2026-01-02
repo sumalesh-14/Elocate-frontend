@@ -14,7 +14,7 @@ const Page = () => {
         exit={{ opacity: 0, x: -20 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="my-4 py-8">
+        <div className="">
           <ContactUs />
         </div>
       </motion.div>

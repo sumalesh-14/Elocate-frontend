@@ -18,7 +18,7 @@ const Page = ({ params }: PageProps) => {
         exit={{ opacity: 0, x: -20 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="mt-24 md:mt-20 md:pt-8">
+        <div className="">
           <Blog params={params} />
         </div>
       </motion.div>

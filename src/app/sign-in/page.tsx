@@ -23,7 +23,9 @@ import {
     eyeOffOutline,
     logoGithub,
     logoGoogle,
-    leafOutline
+    leafOutline,
+    personAddOutline,
+    arrowForwardOutline
 } from "ionicons/icons";
 import logo from "../../assets/ELocate-s.png";
 import bannerImage from "../../assets/ewaste_login_banner.png";
@@ -155,12 +157,31 @@ const CommonLogin: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col md:flex-row overflow-hidden font-montserrat">
+        <div className="min-h-screen bg-white flex flex-col md:flex-row overflow-hidden font-montserrat relative">
             <ToastContainer
                 position="top-right"
                 autoClose={3000}
                 theme="light"
             />
+
+            {/* Floating Register Button - Top Right */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="absolute top-8 right-8 z-50 hidden md:block"
+            >
+                <Link href="/citizen/sign-up">
+                    <motion.button
+                        whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(16, 185, 129, 0.3)" }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold rounded-full shadow-lg hover:from-emerald-600 hover:to-emerald-700 transition-all"
+                    >
+                        <ClientIonIcon icon={personAddOutline} className="text-2xl" />
+                        <span className="text-lg">Create Account</span>
+                    </motion.button>
+                </Link>
+            </motion.div>
 
             {/* Left Section - Image & Quote */}
             <motion.div
@@ -320,29 +341,46 @@ const CommonLogin: React.FC = () => {
                         </div>
 
                         <div className="grid grid-cols-2 gap-6">
-                            <button className="flex items-center justify-center gap-3 py-4 px-6 bg-white border-2 border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-emerald-200 transition-all font-bold text-xl text-gray-700">
+                            <motion.button
+                                whileHover={{ scale: 1.02, y: -2 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="flex items-center justify-center gap-3 py-4 px-6 bg-white border-2 border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-emerald-200 transition-all font-bold text-xl text-gray-700"
+                            >
                                 <ClientIonIcon icon={logoGithub} className="text-2xl" />
                                 GitHub
-                            </button>
-                            <button className="flex items-center justify-center gap-3 py-4 px-6 bg-white border-2 border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-emerald-200 transition-all font-bold text-xl text-gray-700">
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.02, y: -2 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="flex items-center justify-center gap-3 py-4 px-6 bg-white border-2 border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-emerald-200 transition-all font-bold text-xl text-gray-700"
+                            >
                                 <ClientIonIcon icon={logoGoogle} className="text-2xl" />
                                 Google
-                            </button>
+                            </motion.button>
                         </div>
                     </motion.div>
 
-                    {/* Footer Link */}
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                    {/* Enhanced Register Section */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.8 }}
-                        className="mt-14 text-center text-xl text-gray-500 font-semibold"
+                        className="mt-14 text-center"
                     >
-                        Don't have an account?{" "}
-                        <Link href="/sign-up" className="text-emerald-600 font-bold hover:underline underline-offset-8 decoration-2 decoration-emerald-200">
-                            Sign up for free
+                        <p className="text-xl text-gray-500 font-semibold mb-6">
+                            Don't have an account?
+                        </p>
+                        <Link href="/citizen/sign-up">
+                            <motion.button
+                                whileHover={{ scale: 1.03, boxShadow: "0 10px 30px rgba(16, 185, 129, 0.2)" }}
+                                whileTap={{ scale: 0.97 }}
+                                className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 font-bold text-xl rounded-2xl border-2 border-emerald-200 hover:from-emerald-100 hover:to-emerald-200 hover:border-emerald-300 transition-all flex items-center justify-center gap-3 mx-auto"
+                            >
+                                <span>Create your free account</span>
+                                <ClientIonIcon icon={arrowForwardOutline} className="text-2xl" />
+                            </motion.button>
                         </Link>
-                    </motion.p>
+                    </motion.div>
                 </div>
             </motion.div>
         </div>

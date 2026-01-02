@@ -1,276 +1,308 @@
+"use client";
 /* eslint-disable react/no-unescaped-entities */
-import React from "react";
+import React, { useState } from "react";
 import { news, notifications, report } from "../data/Notifications";
 import Head from "next/head";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
-type Props = {};
+const Rules = () => {
+  const [openChapters, setOpenChapters] = useState<{ [key: number]: boolean }>({});
 
-const Rules = (props: Props) => {
+  const toggleChapter = (id: number) => {
+    setOpenChapters(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
     <>
-    <Head>
-      <title>ELocate - E-Waste Regulations & Compliance</title>
-      <meta name="description" content="Stay informed about the latest e-waste management regulations in India. Access official notifications, industry news, and compliance requirements." />
-    </Head>
-    <div className="flex flex-col section container rules-container">
-      <div className="w-full mx-auto text-2xl px-4">
-        <h2 className="text-3xl text-emerald-600 font-bold mb-6">
-          Indian E-Waste Management Regulatory Framework
-        </h2>
-        <div className="bg-gray-50 p-6 rounded-lg shadow-sm mb-8">
-          <p className="mb-3 text-gray-700 text-xl">
-            <strong className="text-emerald-700">Official Notification</strong>
-          </p>
-          <p className="mb-2">
-            <strong>Ministry of Environment, Forest and Climate Change</strong>
-          </p>
-          <p className="mb-2">
-            <strong>(EP Division)</strong>
-          </p>
-          <p className="mb-2">
-            <strong>Dated the 16th March, 2022</strong>
-          </p>
-          <p className="mb-2">
-            <strong>S.O. 1047(E)</strong>
-          </p>
-          <p className="mb-2">
-            <strong>Subject: The E-Waste (Management) Rules, 2022</strong>
-          </p>
-        </div>
-        <p className="mb-6 text-gray-700">
-          In exercise of the powers conferred by section 6, 8 and 25 of the
-          Environment (Protection) Act, 1986 (29 of 1986), the Central
-          Government hereby establishes comprehensive guidelines for the responsible management,
-          handling, and disposal of electronic waste across India:
-        </p>
+      <Head>
+        <title>Rules & Regulations | ELocate</title>
+        <meta
+          name="description"
+          content="Stay informed about the latest e-waste management regulations in India. Access official notifications, industry news, and compliance requirements."
+        />
+      </Head>
 
-        <h3 className="text-2xl font-bold mb-3 text-emerald-600 border-b border-emerald-200 pb-2">CHAPTER I: PRELIMINARY PROVISIONS</h3>
+      <div className="min-h-screen bg-white">
+        {/* Hero Section */}
+        <section className="relative py-12 px-4 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full opacity-10">
+            <div className="absolute top-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl" />
+            <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-300 rounded-full blur-3xl opacity-20" />
+          </div>
 
-        <div className="mb-8 pl-4 border-l-4 border-emerald-100">
-          <p className="mb-3">
-            <strong>1. Short title and commencement.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) These rules may be called the E-Waste (Management) Rules, 2022.
-          </p>
-          <p className="mb-2 text-gray-700">
-            (2) They shall come into force on the date of their publication in the
-            Official Gazette.
-          </p>
+          <div className="container mx-auto max-w-6xl relative z-10 text-center">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 font-cuprum tracking-tight">
+              Regulatory Framework
+            </h1>
+            <p className="text-xl md:text-2xl text-emerald-50 max-w-3xl mx-auto leading-relaxed">
+              Navigating India's E-Waste (Management) Rules, 2026. Stay compliant, stay informed, and help us build a greener future.
+            </p>
+          </div>
+        </section>
 
-          <p className="mb-3 mt-5">
-            <strong>2. Definitions.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            In these rules, unless the context otherwise requires:
-          </p>
-          <ul className="list-disc ml-6 mb-4 text-gray-700">
-            <li className="mb-2">
-              <strong className="text-gray-800">
-                (a) "Act" means the Environment (Protection) Act, 1986 (29 of
-                1986);
-              </strong>
-            </li>
-            <li className="mb-2">
-              <strong className="text-gray-800">
-                (b) "Appliance" means any electrical or electronic equipment that
-                is designed for household use;
-              </strong>
-            </li>
-            <li className="mb-2">
-              <strong className="text-gray-800">
-                (c) "Authorized dismantler" means a person or entity authorized by
-                the State Pollution Control Board to dismantle or disassemble
-                e-waste;
-              </strong>
-            </li>
-          </ul>
-        </div>
+        {/* Official Notification Context */}
+        <section className="py-12 px-4 -mt-10">
+          <div className="container mx-auto max-w-5xl">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 md:p-12 mb-16">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 pb-8 border-b border-gray-100 gap-6">
+                <div>
+                  <span className="inline-block px-4 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-sm mb-4">
+                    OFFICIAL NOTIFICATION
+                  </span>
+                  <h2 className="text-3xl font-bold text-gray-900 font-cuprum">
+                    Ministry of Environment, Forest and Climate Change
+                  </h2>
+                  <p className="text-gray-500 mt-1">EP Division | Dated: 16th March, 2026</p>
+                </div>
+                <div className="bg-emerald-50 px-6 py-4 rounded-xl border border-emerald-100">
+                  <p className="text-emerald-800 font-bold text-xl uppercase tracking-wider">S.O. 1047(E)</p>
+                  <p className="text-emerald-600 text-sm font-medium">Notification Ref</p>
+                </div>
+              </div>
 
-        <h3 className="text-2xl font-bold mb-3 text-emerald-600 border-b border-emerald-200 pb-2">CHAPTER II: PRODUCER RESPONSIBILITIES</h3>
+              <div className="text-gray-700 leading-relaxed">
+                <p className="text-lg mb-10">
+                  In exercise of the powers conferred by section 6, 8 and 25 of the Environment (Protection) Act, 1986 (29 of 1986), the Central Government hereby establishes comprehensive guidelines for the responsible management, handling, and disposal of electronic waste across India:
+                </p>
 
-        <div className="mb-8 pl-4 border-l-4 border-emerald-100">
-          <p className="mb-3">
-            <strong>3. Extended producer responsibility.</strong>
-          </p>
-          <p className="mb-4 text-gray-700">
-            (1) Every producer shall be responsible for establishing a system to
-            collect, refurbish, recycle or dispose of e-waste generated from their
-            products in an environmentally sound manner.
-          </p>
+                <div className="space-y-12">
+                  {/* CHAPTER I */}
+                  <div>
+                    <button
+                      onClick={() => toggleChapter(1)}
+                      className="w-full flex items-center justify-between text-left group focus:outline-none"
+                    >
+                      <h3 className="text-2xl font-bold text-emerald-700 flex items-center gap-4">
+                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white text-sm shadow-md">1</span>
+                        CHAPTER I: PRELIMINARY PROVISIONS
+                      </h3>
+                      <motion.div
+                        animate={{ rotate: openChapters[1] ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-emerald-600 group-hover:text-emerald-800"
+                      >
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </motion.div>
+                    </button>
 
-          <p className="mb-3">
-            <strong>4. Collection of E-Waste from Consumers.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) Producers shall establish dedicated collection centers for the return of
-            end-of-life electronic products from consumers.
-          </p>
-          <p className="mb-4 text-gray-700">
-            (2) Producers shall provide comprehensive information to consumers regarding the
-            location of collection centers and the procedures for returning
-            end-of-life electronic products.
-          </p>
+                    <AnimatePresence initial={false}>
+                      {openChapters[1] && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                          className="overflow-hidden"
+                        >
+                          <div className="grid gap-6 pl-12 pt-8">
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 transition-all hover:shadow-lg hover:bg-white">
+                              <p className="font-bold text-gray-900 mb-3 text-lg">1. Short title and commencement.</p>
+                              <div className="space-y-2 text-gray-600">
+                                <p className="flex gap-2">
+                                  <span className="text-emerald-600 font-bold">(1)</span>
+                                  These rules may be called the E-Waste (Management) Rules, 2026.
+                                </p>
+                                <p className="flex gap-2">
+                                  <span className="text-emerald-600 font-bold">(2)</span>
+                                  They shall come into force on the date of their publication in the Official Gazette.
+                                </p>
+                              </div>
+                            </div>
 
-          <p className="mb-3">
-            <strong>5. Recycling Targets.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) Producers shall achieve the specific recycling targets detailed in
-            Schedule II of these rules.
-          </p>
-          <p className="mb-4 text-gray-700">
-            (2) Producers failing to meet the established recycling targets shall be subject to
-            financial penalties as determined by the Central Pollution Control Board.
-          </p>
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 transition-all hover:shadow-lg hover:bg-white">
+                              <p className="font-bold text-gray-900 mb-4 text-lg">2. Definitions.</p>
+                              <p className="text-gray-600 mb-4 italic">In these rules, unless the context otherwise requires:</p>
+                              <ul className="grid md:grid-cols-2 gap-4 list-none p-0 m-0">
+                                <li className="flex gap-4 text-sm bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                  <span className="flex items-center justify-center w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 font-bold text-xs">a</span>
+                                  <span className="text-gray-700"><strong>"Act"</strong> means the Environment (Protection) Act, 1986.</span>
+                                </li>
+                                <li className="flex gap-4 text-sm bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                  <span className="flex items-center justify-center w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 font-bold text-xs">b</span>
+                                  <span className="text-gray-700"><strong>"Appliance"</strong> means household electrical or electronic equipment.</span>
+                                </li>
+                                <li className="flex gap-4 text-sm bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                  <span className="flex items-center justify-center w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 font-bold text-xs">c</span>
+                                  <span className="text-gray-700"><strong>"Authorized dismantler"</strong> means entity authorized by SPCB.</span>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
-          <p className="mb-3">
-            <strong>6. Labeling of Electronic Products.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) All electronic products must be clearly labeled with information regarding
-            environmentally hazardous substances contained within the product and the
-            recommended safe disposal practices.
-          </p>
-          <p className="mb-4 text-gray-700">
-            (2) The Central Pollution Control Board shall establish and enforce the
-            required manner and form of labeling.
-          </p>
+                  {/* CHAPTER II */}
+                  <div>
+                    <button
+                      onClick={() => toggleChapter(2)}
+                      className="w-full flex items-center justify-between text-left group focus:outline-none"
+                    >
+                      <h3 className="text-2xl font-bold text-emerald-700 flex items-center gap-4">
+                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white text-sm shadow-md">2</span>
+                        CHAPTER II: PRODUCER RESPONSIBILITIES
+                      </h3>
+                      <motion.div
+                        animate={{ rotate: openChapters[2] ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-emerald-600 group-hover:text-emerald-800"
+                      >
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </motion.div>
+                    </button>
 
-          <p className="mb-3">
-            <strong>7. Annual Reporting Requirements.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) Producers shall submit comprehensive annual reports to the State Pollution
-            Control Board detailing the collection and recycling of e-waste.
-          </p>
-          <p className="mb-4 text-gray-700">
-            (2) The format and required details of these annual reports shall be specified by
-            the Central Pollution Control Board.
-          </p>
+                    <AnimatePresence initial={false}>
+                      {openChapters[2] && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                          className="overflow-hidden"
+                        >
+                          <div className="grid gap-6 pl-12 pt-8">
+                            <div className="bg-emerald-50/50 rounded-2xl p-6 border border-emerald-100/50 transition-all hover:shadow-lg hover:bg-emerald-50">
+                              <p className="font-bold text-gray-900 mb-3 text-lg">3. Extended Producer Responsibility (EPR)</p>
+                              <p className="text-gray-700 leading-relaxed">Every producer shall be responsible for establishing a system to collect, refurbish, recycle or dispose of e-waste generated from their products in an environmentally sound manner.</p>
+                            </div>
 
-          <p className="mb-3">
-            <strong>8. Transportation and Handling of E-Waste.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) Producers and authorized dismantlers shall ensure safe and
-            environmentally sound transportation and handling of e-waste materials.
-          </p>
-          <p className="mb-4 text-gray-700">
-            (2) All vehicles used for transportation must fully comply with the
-            guidelines provided by the Central Pollution Control Board.
-          </p>
+                            <div className="grid md:grid-cols-2 gap-6">
+                              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 transition-all hover:shadow-lg hover:bg-white text-center md:text-left">
+                                <p className="font-bold text-emerald-600 mb-2 uppercase text-xs tracking-widest font-cuprum">Rule 4</p>
+                                <p className="font-bold text-gray-900 mb-3 text-lg">Consumer Collection</p>
+                                <p className="text-gray-600 text-sm">Producers must establish dedicated collection centers and provide clear return procedures for end-of-life products.</p>
+                              </div>
+                              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 transition-all hover:shadow-lg hover:bg-white text-center md:text-left">
+                                <p className="font-bold text-emerald-600 mb-2 uppercase text-xs tracking-widest font-cuprum">Rule 5</p>
+                                <p className="font-bold text-gray-900 mb-3 text-lg">Recycling Targets</p>
+                                <p className="text-gray-600 text-sm">Achieve specific recycling targets detailed in Schedule II or face financial penalties from the CPCB.</p>
+                              </div>
+                            </div>
 
-          <p className="mb-3">
-            <strong>9. Public Awareness Programs.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) Producers shall develop, organize and actively participate in awareness programs to
-            educate consumers and the general public about the proper disposal of
-            e-waste.
-          </p>
-          <p className="mb-4 text-gray-700">
-            (2) These programs shall highlight the environmental impact of improper
-            e-waste disposal and promote responsible recycling practices.
-          </p>
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 transition-all hover:shadow-lg hover:bg-white">
+                              <p className="font-bold text-emerald-600 mb-2 uppercase text-xs tracking-widest font-cuprum text-center md:text-left">Rule 6 & 10</p>
+                              <p className="font-bold text-gray-900 mb-3 text-lg text-center md:text-left">Labeling & Compliance</p>
+                              <p className="text-gray-600 text-sm text-center md:text-left">All products must clearly label hazardous substances. Unauthorized handling, dismantling, or recycling of e-waste is strictly prohibited and punishable by law.</p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <p className="mb-3">
-            <strong>10. Prohibition of Unauthorized Handling.</strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) Unauthorized handling, including dismantling and recycling of
-            e-waste, is strictly prohibited under these regulations.
-          </p>
-          <p className="mb-4 text-gray-700">
-            (2) Violation of this rule may result in serious legal consequences, including
-            substantial fines and penalties.
-          </p>
+            {/* Resources Grid */}
+            <div className="mb-20">
+              <h2 className="text-4xl font-bold text-center mb-12 font-cuprum text-gray-900">Information Resources</h2>
 
-          <p className="mb-3">
-            <strong>
-              11. Collaboration with Authorized Treatment and Disposal Facilities.
-            </strong>
-          </p>
-          <p className="mb-2 text-gray-700">
-            (1) Producers shall establish active collaboration with authorized treatment and disposal
-            facilities for the environmentally safe processing of e-waste.
-          </p>
-          <p className="mb-4 text-gray-700">
-            (2) All facilities must strictly comply with the standards established by
-            regulatory authorities.
-          </p>
-        </div>
+              <div className="grid lg:grid-cols-3 gap-8">
+                {/* Official Notifications Column */}
+                <div className="flex flex-col gap-6">
+                  <h3 className="text-xl font-bold text-emerald-700 flex items-center gap-2 mb-2 px-2">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Official Notifications
+                  </h3>
+                  {notifications.map((notif) => (
+                    <a
+                      key={notif.id}
+                      href={notif.Link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block bg-gray-50 hover:bg-emerald-600 border border-gray-200 hover:border-emerald-500 p-6 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1"
+                    >
+                      <h4 className="font-bold text-gray-900 group-hover:text-white mb-2 line-clamp-2 transition-colors">{notif.title}</h4>
+                      <p className="text-sm text-gray-600 group-hover:text-emerald-100 mb-4 transition-colors">{(notif as any).description}</p>
+                      <span className="inline-flex items-center text-emerald-600 group-hover:text-white text-sm font-semibold transition-colors">
+                        View Document <span className="ml-1 transform group-hover:translate-x-1 transition-transform">→</span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+
+                {/* News Column */}
+                <div className="flex flex-col gap-6">
+                  <h3 className="text-xl font-bold text-emerald-700 flex items-center gap-2 mb-2 px-2">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 2v4a2 2 0 002 2h4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h10M7 16h10" />
+                    </svg>
+                    Industry News
+                  </h3>
+                  {news.map((item) => (
+                    <a
+                      key={item.id}
+                      href={item.Link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block bg-gray-50 hover:bg-white border border-gray-200 hover:border-emerald-300 p-6 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-xl"
+                    >
+                      <p className="text-xs font-bold text-emerald-600 mb-2 uppercase tracking-widest">{item.date}</p>
+                      <h4 className="font-bold text-gray-900 group-hover:text-emerald-700 mb-3 transition-colors">{item.title}</h4>
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-4">{item.content}</p>
+                      <span className="inline-flex items-center text-blue-600 group-hover:text-emerald-600 text-sm font-semibold transition-colors">
+                        Read More <span className="ml-1 transform group-hover:translate-x-1 transition-transform">→</span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+
+                {/* Reports Column */}
+                <div className="flex flex-col gap-6">
+                  <h3 className="text-xl font-bold text-emerald-700 flex items-center gap-2 mb-2 px-2">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Annual Reports
+                  </h3>
+                  {report.map((rep) => (
+                    <a
+                      key={rep.id}
+                      href={rep.Link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center justify-between bg-emerald-50 hover:bg-emerald-600 p-6 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-lg border border-emerald-100 hover:border-emerald-500"
+                    >
+                      <h4 className="font-bold text-emerald-900 group-hover:text-white transition-colors">{rep.title}</h4>
+                      <div className="bg-emerald-600 group-hover:bg-white p-2 rounded-lg transition-colors">
+                        <svg className="w-5 h-5 text-white group-hover:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer CTA */}
+        <section className="bg-gray-50 py-16 px-4 border-t border-gray-200">
+          <div className="container mx-auto max-w-4xl text-center">
+            <h2 className="text-3xl font-bold mb-6 text-gray-900 font-cuprum">Have Questions About Compliance?</h2>
+            <p className="text-lg text-gray-600 mb-8">
+              Our team of environmental experts is here to help you navigate the complexities of e-waste regulations.
+            </p>
+            <Link
+              href="/citizen/contactus"
+              className="inline-flex items-center px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-full transition-all shadow-lg hover:shadow-emerald-200 hover:-translate-y-1"
+            >
+              Contact Specialist <span className="ml-2">→</span>
+            </Link>
+          </div>
+        </section>
       </div>
-      <hr className="bg-emerald-200 mt-10 mb-10 p-[1px]" />
-      
-      <div className="flex flex-col md:flex-row w-full mx-auto md:w-full md:max-h-140 max-h-[130rem] gap-10 md:mt-10 px-4">
-        <div className="flex flex-col w-full my-4 projects shadow-lg bg-gray-50 border border-gray-200 rounded-lg overflow-y-auto p-8">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6 py-4 border-b border-emerald-200 text-center text-emerald-600">
-            Official Notifications
-          </h2>
-          {notifications.map((notification, index) => (
-            <div key={index} className="mb-6 p-4 border-l-4 border-emerald-100 hover:bg-gray-100 transition duration-300">
-              <h3 className="text-xl font-semibold mb-3 text-gray-800">
-                {notification.title}
-              </h3>
-              <a
-                href={notification.Link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-emerald-500 underline mb-4 inline-flex items-center"
-              >
-                View Official Document <span className="ml-1">→</span>
-              </a>
-            </div>
-          ))}
-        </div>
-        
-        <div className="flex flex-col w-full my-4 projects shadow-lg bg-gray-50 border border-gray-200 rounded-lg overflow-y-auto p-8">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6 py-4 border-b border-emerald-200 text-center text-emerald-600">
-            Industry Updates & News
-          </h2>
-          {news.map((notification, index) => (
-            <div key={index} className="mb-6 p-4 border-l-4 border-emerald-100 hover:bg-gray-100 transition duration-300">
-              <h3 className="text-xl font-semibold mb-2 text-gray-800">
-                {notification.title}
-              </h3>
-              <p className="text-sm text-emerald-600 mb-2">{notification.date}</p>
-              <p className="text-lg mb-3 text-gray-700">{notification.content}</p>
-              <a
-                href={notification.Link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-emerald-500 underline mb-4 inline-flex items-center"
-              >
-                Read Complete Article <span className="ml-1">→</span>
-              </a>
-            </div>
-          ))}
-        </div>
-        
-        <div className="flex flex-col w-full my-4 projects shadow-lg bg-gray-50 border border-gray-200 rounded-lg overflow-y-auto p-8">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6 py-4 border-b border-emerald-200 text-center text-emerald-600">
-            Maharashtra E-waste Annual Reports
-          </h2>
-          {report.map((notification, index) => (
-            <div key={index} className="mb-6 p-4 border-l-4 border-emerald-100 hover:bg-gray-100 transition duration-300">
-              <h3 className="text-xl font-semibold mb-3 text-gray-800">
-                {notification.title}
-              </h3>
-              <a
-                href={notification.Link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-emerald-500 underline mb-4 inline-flex items-center"
-              >
-                Access Full Report <span className="ml-1">→</span>
-              </a>
-            </div>
-          ))}
-        </div>
-      </div>
-      <hr className="bg-emerald-200 mt-10 p-[1px]" />
-    </div>
     </>
   );
 };

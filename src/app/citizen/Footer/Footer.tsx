@@ -189,7 +189,7 @@ const Footer = () => {
             <li className="footer-item">
               <ClientIonIcon icon={location} aria-hidden="true" className="w-8 h-8 mt-4"></ClientIonIcon>
               <address className="contact-link address">
-                Chh.Sambhajinagar,<br />Maharashtra, India 431001
+                Karamadai, Coimbatore,<br />Tamil Nadu, India 641104
               </address>
             </li>
             <li className="footer-item">
@@ -197,10 +197,10 @@ const Footer = () => {
               <Link
                 target="_blank"
                 rel="noopener noreferrer"
-                href="tel:+911234567890"
+                href="tel:+919788948883"
                 className="contact-link"
               >
-                +91 123 456 7890
+               +91 9788948883
               </Link>
             </li>
             <li className="footer-item">
@@ -268,9 +268,9 @@ const Footer = () => {
       <div className="footer-bottom">
         <div className="container">
           <p className="copyright">
-            &copy; 2023 ELocate | All Rights Reserved by{" "}
+            &copy; 2026 ELocate | All Rights Reserved by{" "}
             <Link href="#" className="copyright-link">
-              Team Spam Byte
+              Team BIT
             </Link>
           </p>
           <ul className="footer-bottom-list">

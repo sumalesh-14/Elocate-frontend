@@ -51,7 +51,7 @@ export const facility = [
   }
 ];
 
-/* Old facility data - Commented out on 2025-12-30
+/* Old facility data - Commented out on 2026-12-30
 export const facility = [
   {
     name: "Green IT Recycling Center Pvt. Ltd.",

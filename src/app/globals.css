@@ -166,6 +166,9 @@ body {
   color: var(--rich-black-fogra-29-1);
   font-size: 1.2rem;
   line-height: 1.7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 :focus-visible {
@@ -921,10 +924,10 @@ body {
 \*-----------------------------------*/
 
 .footer {
+  background-color: hsl(145, 30%, 92%);
   color: var(--rich-black-fogra-29-1);
   padding-inline: 20px;
-  font-size: 1.5rem;
-
+  font-size: 1.3rem;
 }
 
 .footer-top .container {
@@ -938,6 +941,7 @@ body {
 
 .footer-text {
   margin-block: 12px;
+  font-size: 1.25rem;
 }
 
 .newsletter-form {
@@ -1054,12 +1058,11 @@ body {
 .footer-bottom-list {
   display: flex;
   justify-content: flex-start;
-  /* Changed from 'start' to 'flex-start' for better browser support */
-  gap: 20px;
+  gap: 25px;
 }
 
 .footer-bottom-link {
-  font-size: var(--fs-11);
+  font-size: 1rem;
   transition: var(--transition-1);
 }
 
@@ -1364,11 +1367,13 @@ body {
    */
 
   .footer-top .container {
-    grid-template-columns: 1fr 0.8fr 0.8fr 1fr;
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1400px;
+    gap: 80px;
   }
 
   .footer-top {
-    padding-bottom: 10px;
+    padding-bottom: 30px;
   }
 
   .footer-bottom .container {
@@ -1413,8 +1418,14 @@ body {
    * REUSED STYLE
    */
 
-  .container {
-    max-width: 1140px;
+  .container,
+  .footer-top .container,
+  .footer-bottom .container {
+    max-width: 1200px;
+  }
+
+  .footer-top .container {
+    max-width: 1400px;
   }
 
   .btn-link {
@@ -1471,4 +1482,98 @@ body {
 
 .animate-scrolling-images {
   animation: scrolling-images 5s linear infinite;
+}
+
+@keyframes bounce-slow {
+
+  0%,
+  100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite;
+}
+
+@keyframes reverse-spin {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-reverse-spin {
+  animation: reverse-spin 10s linear infinite;
+}
+
+@keyframes flicker {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  33% {
+    opacity: 0.8;
+  }
+
+  66% {
+    opacity: 0.95;
+  }
+
+  77% {
+    opacity: 0.6;
+  }
+
+  88% {
+    opacity: 0.9;
+  }
+}
+
+.animate-flicker {
+  animation: flicker 0.15s infinite;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 15s linear infinite;
+}
+
+@keyframes green-strobe {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.8);
+  }
+}
+
+.animate-green-strobe {
+  animation: green-strobe 2s infinite;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
 }

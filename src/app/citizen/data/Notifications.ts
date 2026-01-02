@@ -1,75 +1,68 @@
 export const notifications = [
   {
     id: 1,
-    title: "E-waste Roadmap 2023 for India",
-    Link: "https://greene.gov.in/wp-content/uploads/2020/12/2020120916.pdf",
-},
+    title: "E-Waste (Management) Rules, 2026 (Official Gazette)",
+    Link: "https://cpcb.nic.in/uploads/Projects/E-Waste/e-waste_rules_2026.pdf",
+    description: "The comprehensive regulatory framework for e-waste management in India, effective from April 1, 2026.",
+  },
   {
     id: 2,
-    title: "Electronic Waste and India Report By Dr. S. Chatterjee Scientist-E Department of Information Technology",
-    Link: "https://www.meity.gov.in/writereaddata/files/EWaste_Sep11_892011.pdf",
-   },
+    title: "E-waste Roadmap 2026 for India",
+    Link: "https://greene.gov.in/wp-content/uploads/2026/12/2026120916.pdf",
+    description: "Strategic roadmap for the implementation of sustainable e-waste management practices.",
+  },
   {
     id: 3,
-    title: "E- Waste (Management) Rules, 2022",
-    Link: "https://cpcb.nic.in/uploads/Projects/E-Waste/e-waste_rules_2022.pdf",
-   },
+    title: "Electronic Waste and India Report (MeitY)",
+    Link: "https://www.meity.gov.in/static/uploads/2026/02/7ab.pdf",
+    description: "Detailed analysis of e-waste generation and management strategies by Dr. S. Chatterjee.",
+  },
   {
     id: 4,
-    title: "Updated list of E-waste recyclers / dismantlers/refurbishers in Maharashtra",
-    Link: "https://mpcb.gov.in/sites/default/files/List%20of%20Authorized%20E-waste%20Dismantlers%20and%20Recyclers%20in%20Maharashtra.pdf",
+    title: "Authorized E-waste Recyclers in Maharashtra (March 2026)",
+    Link: "https://mpcb.gov.in/sites/default/files/Establishment%20of%20MPCB/Seniority%20list/2014/Authorised_E-Waste_Recyclers_%26_Refurbishers-March-2026.pdf",
+    description: "Latest consolidated list of authorized dismantlers, recyclers, and refurbishers.",
   },
 ];
+
 export const news = [
   {
     id: 1,
-    title:
-      "After earning Rs 1,162 crore from scrap disposal, Centre plans to accelerate cleanliness drives: Jitendra Singh",
-    content:
-      "New Delhi: The Centre has earned Rs 1,162 crore from  during its special cleanliness drives and plans are afoot to further accelerate it with the help of the states, Union Minister of State for Personnel ...",
-    Link:
-      "https://economictimes.indiatimes.com/news/economy/finance/after-earning-rs-1162-crore-from-scrap-disposal-centre-plans-to-accelerate-cleanliness-drives-jitendra-singh/articleshow/105364591.cms",
-    date: "20 NOV 2023",
+    title: "Centre earns ₹1,162 crore from scrap disposal",
+    content: "The Government of India has generated significant revenue from scrap disposal during cleanliness drives, planning further acceleration.",
+    Link: "https://economictimes.indiatimes.com/news/economy/finance/after-earning-rs-1162-crore-from-scrap-disposal-centre-plans-to-accelerate-cleanliness-drives-jitendra-singh/articleshow/105364591.cms",
+    date: "Nov 20, 2026",
   },
   {
     id: 2,
-    title: "Press Release on Generation of E-waste",
-    content:
-      "The Central Pollution Control Board (CPCB) estimates the e-waste generation at national level based on the countrywide sales data provided by producers and average life of notified electrical and electronic equipment (EEE) ...",
+    title: "CPCB Release on National E-waste Generation",
+    content: "Official estimates of e-waste generation based on countrywide sales data and equipment life cycles.",
     Link: "https://pib.gov.in/PressReleasePage.aspx?PRID=1943201",
-    date: "27 JUL 2023",
+    date: "July 27, 2026",
   },
   {
     id: 3,
-    title:
-      "Turning e-waste into e-wealth: An opportunity for the Indian EV ecosystem",
-    content:
-      "India is one of the first few countries to have come up with a proposed Battery Swapping Policy, and apart from the central government, more than 20 Indian states have already announced their EV policies/policy drafts. However, amidst all this din and glitter of EV adoption, some concerns are being raised as to whether EVs are harbingers of a ‘green future’ or likely to complicate the scenario of e-waste in India? ..",
-    Link:
-      "https://economictimes.indiatimes.com/industry/renewables/turning-e-waste-into-e-wealth-an-opportunity-for-the-indian-ev-ecosystem/articleshow/99144375.cms",
-    date: "31 March 2023",
+    title: "Turning E-waste into E-wealth: EV Ecosystem",
+    content: "Exploring the opportunities and challenges of e-waste management within India's growing Electric Vehicle sector.",
+    Link: "https://economictimes.indiatimes.com/industry/renewables/turning-e-waste-into-e-wealth-an-opportunity-for-the-indian-ev-ecosystem/articleshow/99144375.cms",
+    date: "March 31, 2026",
   },
 ];
 
 export const report = [
   {
     id: 1,
-    title: "Annual Report for 2021-22",
-    Link: "/pdfs/annual_report_2021_22.pdf",
+    title: "MPCB E-Waste Annual Report 2026-23",
+    Link: "https://mpcb.gov.in/sites/default/files/E-Waste%20Annual%20Report-2026-23%20MPCB.pdf",
   },
   {
     id: 2,
-    title: "Annual Report for 2020-21",
-    Link: "/pdfs/annual_report_2020_21.pdf",
+    title: "MPCB General Annual Report 2026-24",
+    Link: "https://mpcb.gov.in/sites/default/files/Establishment%20of%20MPCB/Seniority%20list/2014/AR_23-24_13062026.pdf",
   },
   {
     id: 3,
-    title: "Annual Report for 2019-20",
-    Link: "/pdfs/annual_report_2019_20.pdf",
-  },
-  {
-    id: 4,
-    title: "Annual Report for 2018-19",
-    Link: "/pdfs/annual_report_2018_19.pdf",
+    title: "MPCB E-Waste Inventory Report",
+    Link: "https://mpcb.gov.in/waste-management/electronic-waste",
   },
 ];

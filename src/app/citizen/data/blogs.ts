@@ -16,7 +16,7 @@ type BlogCard = {
   };
   tags?: string[];
 };
-  
+
 export const blogs: BlogCard[] = [
   {
     id: 1,
@@ -26,7 +26,7 @@ export const blogs: BlogCard[] = [
     category: "Education",
     readTime: "8 min read",
     author: "ELocate Research Team",
-    date: "June 15, 2023",
+    date: "June 15, 2026",
     tags: ["e-waste", "education", "sustainability", "environment"],
     content: {
       intro: "Electronic waste or e-waste is a term used to describe discarded electrical or electronic devices. With the rapid pace of technological advancement and the decreasing lifespan of electronic devices, e-waste has become one of the fastest-growing waste streams globally.",
@@ -50,7 +50,7 @@ export const blogs: BlogCard[] = [
     category: "Sustainability",
     readTime: "10 min read",
     author: "Dr. Sarah Chen",
-    date: "July 3, 2023",
+    date: "July 3, 2026",
     tags: ["lifecycle", "manufacturing", "recycling", "circular economy"],
     content: {
       intro: "The environmental footprint of electronic devices extends far beyond their use phase. From resource extraction to manufacturing, distribution, usage, and finally disposal or recycling, each stage has unique environmental implications."
@@ -64,7 +64,7 @@ export const blogs: BlogCard[] = [
     category: "Guide",
     readTime: "6 min read",
     author: "ELocate Team",
-    date: "August 12, 2023",
+    date: "August 12, 2026",
     tags: ["disposal", "recycling", "guide", "practical tips"]
   },
   {
@@ -75,7 +75,7 @@ export const blogs: BlogCard[] = [
     category: "Health",
     readTime: "7 min read",
     author: "Dr. Michael Rodriguez",
-    date: "September 5, 2023",
+    date: "September 5, 2026",
     tags: ["health", "toxins", "safety", "environmental health"]
   },
   {
@@ -86,7 +86,7 @@ export const blogs: BlogCard[] = [
     category: "Technology",
     readTime: "9 min read",
     author: "Tech Sustainability Initiative",
-    date: "October 18, 2023",
+    date: "October 18, 2026",
     tags: ["technology", "innovation", "recycling", "resource recovery"]
   },
   {
@@ -97,7 +97,7 @@ export const blogs: BlogCard[] = [
     category: "Global Issues",
     readTime: "12 min read",
     author: "International E-Waste Coalition",
-    date: "November 22, 2023",
+    date: "November 22, 2026",
     tags: ["global", "international", "policy", "developing countries"]
   },
   {
@@ -108,7 +108,7 @@ export const blogs: BlogCard[] = [
     category: "Business",
     readTime: "8 min read",
     author: "Corporate Sustainability Watch",
-    date: "December 10, 2023",
+    date: "December 10, 2026",
     tags: ["corporate", "business", "responsibility", "sustainability"]
   },
   {
@@ -119,7 +119,7 @@ export const blogs: BlogCard[] = [
     category: "How-to",
     readTime: "15 min read",
     author: "Repair Collective",
-    date: "January 5, 2024",
+    date: "January 5, 2026",
     tags: ["repair", "DIY", "right to repair", "maintenance"]
   },
   {
@@ -130,7 +130,7 @@ export const blogs: BlogCard[] = [
     category: "Innovation",
     readTime: "11 min read",
     author: "Resource Recovery Institute",
-    date: "February 14, 2024",
+    date: "February 14, 2026",
     tags: ["urban mining", "precious metals", "resource recovery", "innovation"]
   },
   {
@@ -141,7 +141,7 @@ export const blogs: BlogCard[] = [
     category: "Lifestyle",
     readTime: "7 min read",
     author: "Sustainable Living Collective",
-    date: "March 8, 2024",
+    date: "March 8, 2026",
     tags: ["consumption", "lifestyle", "sustainable purchasing", "minimalism"]
   },
   {
@@ -152,7 +152,7 @@ export const blogs: BlogCard[] = [
     category: "Legal",
     readTime: "9 min read",
     author: "Environmental Law Center",
-    date: "April 22, 2024",
+    date: "April 22, 2026",
     tags: ["law", "regulation", "policy", "compliance"]
   },
   {
@@ -163,7 +163,7 @@ export const blogs: BlogCard[] = [
     category: "Future",
     readTime: "10 min read",
     author: "Future Tech Sustainability Forum",
-    date: "May 15, 2024",
+    date: "May 15, 2026",
     tags: ["future", "trends", "innovation", "technology"]
   }
 ];

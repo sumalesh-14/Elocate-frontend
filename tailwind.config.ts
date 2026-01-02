@@ -16,6 +16,10 @@ const config: Config = {
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
+      fontFamily: {
+        cuprum: ['var(--ff-cuprum)', 'sans-serif'],
+        poppins: ['var(--ff-poppins)', 'sans-serif'],
+      },
       spacing: {
 
         '120': "30rem",

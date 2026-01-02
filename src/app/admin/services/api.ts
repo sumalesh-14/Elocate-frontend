@@ -7,28 +7,28 @@ let dummyCategories: Category[] = [
         name: 'Smartphones',
         description: 'Mobile phones with advanced features',
         status: 'Active',
-        createdDate: '2024-01-15T10:00:00Z'
+        createdDate: '2026-01-15T10:00:00Z'
     },
     {
         code: 'CAT002',
         name: 'Laptops',
         description: 'Portable computers',
         status: 'Active',
-        createdDate: '2024-01-16T10:00:00Z'
+        createdDate: '2026-01-16T10:00:00Z'
     },
     {
         code: 'CAT003',
         name: 'Tablets',
         description: 'Touchscreen portable devices',
         status: 'Inactive',
-        createdDate: '2024-01-17T10:00:00Z'
+        createdDate: '2026-01-17T10:00:00Z'
     },
     {
         code: 'CAT004',
         name: 'Smartwatches',
         description: 'Wearable smart devices',
         status: 'Active',
-        createdDate: '2024-01-18T10:00:00Z'
+        createdDate: '2026-01-18T10:00:00Z'
     }
 ];
 
@@ -37,31 +37,31 @@ let dummyBrands: Brand[] = [
         id: 'BRD001',
         name: 'Apple',
         active: true,
-        createdDate: '2024-01-15T10:00:00Z'
+        createdDate: '2026-01-15T10:00:00Z'
     },
     {
         id: 'BRD002',
         name: 'Samsung',
         active: true,
-        createdDate: '2024-01-16T10:00:00Z'
+        createdDate: '2026-01-16T10:00:00Z'
     },
     {
         id: 'BRD003',
         name: 'Dell',
         active: true,
-        createdDate: '2024-01-17T10:00:00Z'
+        createdDate: '2026-01-17T10:00:00Z'
     },
     {
         id: 'BRD004',
         name: 'HP',
         active: false,
-        createdDate: '2024-01-18T10:00:00Z'
+        createdDate: '2026-01-18T10:00:00Z'
     },
     {
         id: 'BRD005',
         name: 'Lenovo',
         active: true,
-        createdDate: '2024-01-19T10:00:00Z'
+        createdDate: '2026-01-19T10:00:00Z'
     }
 ];
 
@@ -72,7 +72,7 @@ let dummyModels: DeviceModel[] = [
         brandId: 'BRD001',
         categoryCode: 'CAT001',
         active: true,
-        createdDate: '2024-01-20T10:00:00Z'
+        createdDate: '2026-01-20T10:00:00Z'
     },
     {
         id: 'MDL002',
@@ -80,7 +80,7 @@ let dummyModels: DeviceModel[] = [
         brandId: 'BRD002',
         categoryCode: 'CAT001',
         active: true,
-        createdDate: '2024-01-21T10:00:00Z'
+        createdDate: '2026-01-21T10:00:00Z'
     },
     {
         id: 'MDL003',
@@ -88,7 +88,7 @@ let dummyModels: DeviceModel[] = [
         brandId: 'BRD001',
         categoryCode: 'CAT002',
         active: true,
-        createdDate: '2024-01-22T10:00:00Z'
+        createdDate: '2026-01-22T10:00:00Z'
     },
     {
         id: 'MDL004',
@@ -96,7 +96,7 @@ let dummyModels: DeviceModel[] = [
         brandId: 'BRD003',
         categoryCode: 'CAT002',
         active: true,
-        createdDate: '2024-01-23T10:00:00Z'
+        createdDate: '2026-01-23T10:00:00Z'
     },
     {
         id: 'MDL005',
@@ -104,7 +104,7 @@ let dummyModels: DeviceModel[] = [
         brandId: 'BRD001',
         categoryCode: 'CAT003',
         active: true,
-        createdDate: '2024-01-24T10:00:00Z'
+        createdDate: '2026-01-24T10:00:00Z'
     },
     {
         id: 'MDL006',
@@ -112,7 +112,7 @@ let dummyModels: DeviceModel[] = [
         brandId: 'BRD001',
         categoryCode: 'CAT004',
         active: true,
-        createdDate: '2024-01-25T10:00:00Z'
+        createdDate: '2026-01-25T10:00:00Z'
     }
 ];
 

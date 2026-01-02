@@ -21,9 +21,9 @@ export default function ConditionalLayout({
         setMounted(true);
     }, []);
 
-    const isAuthRoute = pathname === '/sign-in' || pathname?.startsWith('/sign-up');
+    const isAuthRoute = pathname === '/sign-in' || pathname?.startsWith('/sign-up') || pathname === '/citizen/sign-up' || pathname === '/citizen/sign-in';
     const isAdminRoute = pathname?.startsWith('/admin');
-    const isPublicRoute = pathname === '/' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/recycle');
+    const isPublicRoute = pathname === '/' || pathname === '/citizen/sign-up' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/recycle') || pathname?.startsWith('/citizen/education') || pathname?.startsWith('/citizen/rules');
 
     useEffect(() => {
         if (mounted && !isAuthRoute && !isPublicRoute && !isAuthenticated()) {
@@ -66,13 +66,15 @@ export default function ConditionalLayout({
 
     // Citizen/Intermediary routes with Navbar and Footer
     return (
-        <>
+        <div className="flex flex-col min-h-screen bg-white">
             <NextTopLoader color="#28af60" showSpinner={false} />
             <Navbar />
-            <main className="pt-[80px]">
+            <main className="flex-grow pt-[80px]">
                 {children}
             </main>
-            <Footer />
+            <div className={pathname?.startsWith('/citizen/book-recycle') ? "relative z-[30]" : ""}>
+                <Footer />
+            </div>
             <Script
                 id="tawk_chatbot"
                 strategy="lazyOnload"
@@ -92,6 +94,6 @@ export default function ConditionalLayout({
             `,
                 }}
             />
-        </>
+        </div>
     );
 }

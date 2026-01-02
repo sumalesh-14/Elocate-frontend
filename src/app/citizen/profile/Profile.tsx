@@ -111,54 +111,54 @@ const Profile = () => {
             </div>
 
             <div className="tab-content">
-                 {/* Overview Tab */}
-                {activeTab === 'overview' && (
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <div className="info-icon">📧</div>
-                      <div className="info-content">
-                        <div className="info-label">Email Address</div>
-                        <div className="info-value">{userData.email || 'Not provided'}</div>
-                      </div>
-                    </div>
-                    <div className="info-item">
-                      <div className="info-icon">📱</div>
-                      <div className="info-content">
-                        <div className="info-label">Phone Number</div>
-                        <div className="info-value">{userData.phone || 'Not provided'}</div>
-                      </div>
-                    </div>
-                    <div className="info-item">
-                      <div className="info-icon">👤</div>
-                      <div className="info-content">
-                        <div className="info-label">Full Name</div>
-                        <div className="info-value">{userData.fullname || 'Not provided'}</div>
-                      </div>
-                    </div>
-                    <div className="info-item">
-                      <div className="info-icon">🆔</div>
-                      <div className="info-content">
-                        <div className="info-label">Username</div>
-                        <div className="info-value">@{userData.username || 'Not provided'}</div>
-                      </div>
-                    </div>
-                    <div className="info-item">
-                      <div className="info-icon">📅</div>
-                      <div className="info-content">
-                        <div className="info-label">Member Since</div>
-                        <div className="info-value">December 2024</div>
-                      </div>
-                    </div>
-                    <div className="info-item">
-                      <div className="info-icon">✅</div>
-                      <div className="info-content">
-                        <div className="info-label">Account Status</div>
-                        <div className="info-value">Active</div>
-                      </div>
+              {/* Overview Tab */}
+              {activeTab === 'overview' && (
+                <div className="info-grid">
+                  <div className="info-item">
+                    <div className="info-icon">📧</div>
+                    <div className="info-content">
+                      <div className="info-label">Email Address</div>
+                      <div className="info-value">{userData.email || 'Not provided'}</div>
                     </div>
                   </div>
-                )}
-              </div>
+                  <div className="info-item">
+                    <div className="info-icon">📱</div>
+                    <div className="info-content">
+                      <div className="info-label">Phone Number</div>
+                      <div className="info-value">{userData.phone || 'Not provided'}</div>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">👤</div>
+                    <div className="info-content">
+                      <div className="info-label">Full Name</div>
+                      <div className="info-value">{userData.fullname || 'Not provided'}</div>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">🆔</div>
+                    <div className="info-content">
+                      <div className="info-label">Username</div>
+                      <div className="info-value">@{userData.username || 'Not provided'}</div>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">📅</div>
+                    <div className="info-content">
+                      <div className="info-label">Member Since</div>
+                      <div className="info-value">December 2026</div>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">✅</div>
+                    <div className="info-content">
+                      <div className="info-label">Account Status</div>
+                      <div className="info-value">Active</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

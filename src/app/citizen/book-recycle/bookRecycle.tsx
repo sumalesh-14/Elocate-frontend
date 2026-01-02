@@ -61,21 +61,21 @@ const BookRecycle = () => {
       item: 'MacBook Pro 15"',
       icon: <MdLaptopMac className="text-2xl" />,
       status: "completed",
-      date: "Oct 24, 2023",
+      date: "Oct 24, 2026",
     },
     {
       id: "#REQ-8822",
       item: "iPhone 11 - Broken",
       icon: <MdSmartphone className="text-2xl" />,
       status: "pending",
-      date: "Nov 02, 2023",
+      date: "Nov 02, 2026",
     },
     {
       id: "#REQ-8819",
       item: "Canon Printer",
       icon: <MdPrint className="text-2xl" />,
       status: "cancelled",
-      date: "Oct 15, 2023",
+      date: "Oct 15, 2026",
     },
   ];
 
