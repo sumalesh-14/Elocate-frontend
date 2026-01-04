@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import DashboardSidebar from "../../Components/DashboardSidebar";
+import { Request } from "./types";
+import { downloadReceipt } from "./receiptForm";
 import {
     MdLaptopMac,
     MdSmartphone,
@@ -19,24 +21,6 @@ import {
     MdDownload,
 } from "react-icons/md";
 
-// TypeScript Interfaces
-interface Request {
-    id: string;
-    deviceType: string;
-    deviceBrand: string;
-    deviceModel: string;
-    deviceCondition: string;
-    quantity: number;
-    status: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled";
-    pickupDate: string;
-    pickupTime: string;
-    address: string;
-    city: string;
-    zipCode: string;
-    phoneNumber: string;
-    requestDate: string;
-    estimatedValue?: string;
-}
 
 const MyRequestsList = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -44,7 +28,7 @@ const MyRequestsList = () => {
     const [filterStatus, setFilterStatus] = useState<string>("all");
 
     // Sample data - TODO: Replace with API call
-    const requests: Request[] = [
+    const [requests, setRequests] = useState<Request[]>([
         {
             id: "REQ-8821",
             deviceType: "laptop",
@@ -129,7 +113,7 @@ const MyRequestsList = () => {
             requestDate: "2026-11-03",
             estimatedValue: "$180",
         },
-    ];
+    ]);
 
     const getDeviceIcon = (deviceType: string) => {
         const icons: { [key: string]: React.ReactNode } = {
@@ -176,6 +160,35 @@ const MyRequestsList = () => {
         pending: requests.filter((r) => r.status === "pending").length,
         inProgress: requests.filter((r) => r.status === "in-progress").length,
         completed: requests.filter((r) => r.status === "completed").length,
+    };
+
+    const handleCancelRequest = (requestId: string) => {
+        if (confirm(`Are you sure you want to cancel request ${requestId}?`)) {
+            // Update the request status to cancelled
+            setRequests(prevRequests =>
+                prevRequests.map(request =>
+                    request.id === requestId
+                        ? { ...request, status: "cancelled" as const }
+                        : request
+                )
+            );
+
+            // TODO: Implement API call to cancel the request
+            console.log("Canceling request:", requestId);
+            alert(`Request ${requestId} has been cancelled successfully.`);
+        }
+    };
+
+    const handleReceiptRequest = (requestId: string) => {
+        const request = requests.find((r) => r.id === requestId);
+        if (!request) {
+            alert("Request not found!");
+            return;
+        }
+
+        // Use the utility function to download the receipt
+        downloadReceipt(request);
+        console.log("Receipt downloaded for request:", requestId);
     };
 
     return (
@@ -332,18 +345,25 @@ const MyRequestsList = () => {
 
                                                 {/* Right Section - Actions */}
                                                 <div className="flex flex-col gap-2 lg:w-40">
-                                                    <button className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-sm">
-                                                        <MdVisibility />
-                                                        View Details
-                                                    </button>
+                                                    {/* Request Info - No functionality needed */}
+                                                    <div className="flex flex-col items-center px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                                                        <p className="text-gray-500 text-xs">Requested on</p>
+                                                        <p className="font-medium text-gray-900">{request.requestDate}</p>
+                                                    </div>
                                                     {request.status === "pending" && (
-                                                        <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors text-sm">
+                                                        <button
+                                                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors text-sm"
+                                                            onClick={() => handleCancelRequest(request.id)}
+                                                        >
                                                             <MdCancel />
                                                             Cancel
                                                         </button>
                                                     )}
                                                     {request.status === "completed" && (
-                                                        <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
+                                                        <button
+                                                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
+                                                            onClick={() => handleReceiptRequest(request.id)}
+                                                        >
                                                             <MdDownload />
                                                             Receipt
                                                         </button>
