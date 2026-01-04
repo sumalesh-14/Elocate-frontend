@@ -30,17 +30,17 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     const navigationItems = [
         {
             label: "Dashboard",
-            href: "/book-recycle",
+            href: "/citizen/book-recycle",
             icon: <MdDashboard className="text-2xl" />,
         },
         {
             label: "Recycle Request",
-            href: "/book-recycle/new",
+            href: "/citizen/book-recycle/new",
             icon: <MdRecycling className="text-2xl" />,
         },
         {
             label: "My Requests",
-            href: "/book-recycle/requests",
+            href: "/citizen/book-recycle/requests",
             icon: <MdHistory className="text-2xl" />,
         },
         // {

@@ -200,10 +200,12 @@ const BookRecycle = () => {
                         <p className="text-gray-100 text-lg md:text-xl">
                           Schedule a pickup for your old electronics and boost your eco score today.
                         </p>
-                        <button className="w-fit px-6 py-3 bg-white hover:bg-gray-100 text-green-700 font-medium rounded-lg shadow-lg transition-all flex items-center gap-2">
+                        <Link
+                          href='/citizen/book-recycle/new'
+                          className="w-fit px-6 py-3 bg-white hover:bg-gray-300 text-green-700 font-medium rounded-lg shadow-lg transition-all flex items-center gap-2">
                           <MdAddCircle className="text-xl" />
                           New Request
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -212,7 +214,7 @@ const BookRecycle = () => {
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                       <h3 className="h3">Recent Requests</h3>
-                      <Link href="#" className="text-sm font-medium text-green-600 hover:text-green-700">
+                      <Link href="/citizen/book-recycle/requests" className="text-sm font-medium text-green-600 hover:text-green-700">
                         View All
                       </Link>
                     </div>
