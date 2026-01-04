@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELocate - References</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            padding: 60px 40px;
+            line-height: 1.8;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #e53e3e;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #64748b;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #c53030;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #feb2b2;
+        }
+
+        .reference-item {
+            margin-bottom: 15px;
+            padding-left: 30px;
+            position: relative;
+            text-align: justify;
+        }
+
+        .reference-item::before {
+            content: attr(data-number);
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .author {
+            color: #1e293b;
+            font-weight: 400;
+        }
+
+        .title {
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        .publication {
+            font-style: italic;
+            color: #475569;
+        }
+
+        .year {
+            color: #64748b;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                padding: 20px;
+            }
+
+            .reference-item {
+                page-break-inside: avoid;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .reference-item {
+                padding-left: 25px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>References</h1>
+        <p>ELocate: E-waste Management Platform</p>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Journal Articles</h2>
+
+        <div class="reference-item" data-number="[1].">
+            <span class="author">Kumar, Ashok, et al.</span>
+            <span class="title">"E-waste management: A review of recycling process, environmental and occupational
+                health hazards, and potential solutions."</span>
+            <span class="publication">Environmental Nanotechnology, Monitoring & Management</span>
+            <span class="year">15 (2021): 100409.</span>
+        </div>
+
+        <div class="reference-item" data-number="[2].">
+            <span class="author">Forti, Vanessa, et al.</span>
+            <span class="title">"The Global E-waste Monitor 2020: Quantities, flows, and the circular economy
+                potential."</span>
+            <span class="publication">United Nations University/United Nations Institute for Training and Research,
+                International Telecommunication Union, and International Solid Waste Association</span>
+            <span class="year">(2020).</span>
+        </div>
+
+        <div class="reference-item" data-number="[3].">
+            <span class="author">Borthakur, Anwesha, and Pardeep Singh.</span>
+            <span class="title">"Electronic waste in India: Problems and policies."</span>
+            <span class="publication">International Journal of Environmental Sciences</span>
+            <span class="year">3.1 (2012): 353-362.</span>
+        </div>
+
+        <div class="reference-item" data-number="[4].">
+            <span class="author">Zhang, Kai, et al.</span>
+            <span class="title">"Deep learning-based automatic recognition network of garbage images."</span>
+            <span class="publication">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition
+                Workshops</span>
+            <span class="year">(2018).</span>
+        </div>
+
+        <div class="reference-item" data-number="[5].">
+            <span class="author">Chen, Ming-Chuan, et al.</span>
+            <span class="title">"The development of an intelligent mobile device for waste classification using
+                convolutional neural networks."</span>
+            <span class="publication">Journal of Cleaner Production</span>
+            <span class="year">262 (2020): 121371.</span>
+        </div>
+
+        <div class="reference-item" data-number="[6].">
+            <span class="author">Awasthi, Abhishek Kumar, et al.</span>
+            <span class="title">"Management of electrical and electronic waste: A comparative evaluation of China and
+                India."</span>
+            <span class="publication">Renewable and Sustainable Energy Reviews</span>
+            <span class="year">76 (2017): 434-447.</span>
+        </div>
+
+        <div class="reference-item" data-number="[7].">
+            <span class="author">Islam, Md Tasbirul, and Nazmul Huda.</span>
+            <span class="title">"E-waste in Australia: Generation estimation and untapped material recovery and revenue
+                potential."</span>
+            <span class="publication">Journal of Cleaner Production</span>
+            <span class="year">237 (2019): 117787.</span>
+        </div>
+
+        <div class="reference-item" data-number="[8].">
+            <span class="author">Abbondanza, Martina NM, and Renato J. Souza.</span>
+            <span class="title">"Estimating the generation of household e-waste in municipalities using primary data
+                from surveys: A case study of Sao Jose dos Campos, Brazil."</span>
+            <span class="publication">Waste Management</span>
+            <span class="year">85 (2019): 374-384.</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Conference Proceedings</h2>
+
+        <div class="reference-item" data-number="[1].">
+            <span class="author">Mittal, Gargi, et al.</span>
+            <span class="title">"SpotGarbage: smartphone app to detect garbage using deep learning."</span>
+            <span class="publication">Proceedings of the ACM India Joint International Conference on Data Science and
+                Management of Data</span>
+            <span class="year">(2016): 228-234.</span>
+        </div>
+
+        <div class="reference-item" data-number="[2].">
+            <span class="author">Thung, Gary, and Mindy Yang.</span>
+            <span class="title">"Classification of trash for recyclability status."</span>
+            <span class="publication">CS229 Project Report, Stanford University</span>
+            <span class="year">(2016).</span>
+        </div>
+
+        <div class="reference-item" data-number="[3].">
+            <span class="author">Kumar, Sanjeev, et al.</span>
+            <span class="title">"Deep learning framework for recognition of cattle using muzzle point image
+                pattern."</span>
+            <span class="publication">Measurement</span>
+            <span class="year">116 (2018): 1-17.</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Books</h2>
+
+        <div class="reference-item" data-number="[1].">
+            <span class="author">Goodfellow, Ian, Yoshua Bengio, and Aaron Courville.</span>
+            <span class="title">"Deep learning."</span>
+            <span class="publication">MIT press</span>
+            <span class="year">(2016).</span>
+        </div>
+
+        <div class="reference-item" data-number="[2].">
+            <span class="author">Widmer, Rolf, et al.</span>
+            <span class="title">"Global perspectives on e-waste."</span>
+            <span class="publication">Environmental Impact Assessment Review</span>
+            <span class="year">25.5 (2005): 436-458.</span>
+        </div>
+
+        <div class="reference-item" data-number="[3].">
+            <span class="author">Sthiannopkao, Suthipong, and Ming Hung Wong.</span>
+            <span class="title">"Handling e-waste in developed and developing countries: Initiatives, practices, and
+                consequences."</span>
+            <span class="publication">Science of the Total Environment</span>
+            <span class="year">463 (2013): 1147-1153.</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Technical Reports & Standards</h2>
+
+        <div class="reference-item" data-number="[1].">
+            <span class="author">Ministry of Environment, Forest and Climate Change, Government of India.</span>
+            <span class="title">"E-Waste (Management) Rules, 2016."</span>
+            <span class="publication">The Gazette of India: Extraordinary</span>
+            <span class="year">(2016).</span>
+        </div>
+
+        <div class="reference-item" data-number="[2].">
+            <span class="author">Central Pollution Control Board (CPCB).</span>
+            <span class="title">"Guidelines for environmentally sound management of e-waste."</span>
+            <span class="publication">Ministry of Environment & Forests, Government of India</span>
+            <span class="year">(2008).</span>
+        </div>
+
+        <div class="reference-item" data-number="[3].">
+            <span class="author">Basel Convention.</span>
+            <span class="title">"Technical guidelines for the environmentally sound management of wastes consisting of,
+                containing or contaminated with persistent organic pollutants."</span>
+            <span class="publication">United Nations Environment Programme</span>
+            <span class="year">(2015).</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Online Resources</h2>
+
+        <div class="reference-item" data-number="[1].">
+            <span class="author">World Health Organization.</span>
+            <span class="title">"Electronic waste (e-waste)."</span>
+            <span class="publication">WHO Fact Sheet</span>
+            <span class="year">(2021). Available:
+                https://www.who.int/news-room/fact-sheets/detail/electronic-waste-(e-waste)</span>
+        </div>
+
+        <div class="reference-item" data-number="[2].">
+            <span class="author">United Nations Environment Programme.</span>
+            <span class="title">"Waste Management."</span>
+            <span class="publication">UNEP Resources</span>
+            <span class="year">(2023). Available:
+                https://www.unep.org/explore-topics/resource-efficiency/what-we-do/cities/waste-management</span>
+        </div>
+    </div>
+</body>
+
+</html>

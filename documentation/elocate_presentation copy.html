@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELocate - E-waste Management Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            overflow: hidden;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 80px;
+            color: white;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .bullet-point {
+            font-size: 1.5rem;
+            margin: 20px 0;
+            padding-left: 40px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .bullet-point::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            right: 50px;
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .title-slide {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .title-slide .main-title {
+            font-size: 5rem;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+
+        .title-slide .subtitle {
+            font-size: 2rem;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        .highlight {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .tech-item {
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .tech-item h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #4ade80;
+        }
+
+        .tech-item p {
+            font-size: 1.3rem;
+            line-height: 1.5;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.15);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 15px 0;
+            backdrop-filter: blur(10px);
+            border-left: 5px solid #4ade80;
+        }
+
+        .feature-card h3 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #4ade80;
+        }
+
+        .feature-card p {
+            font-size: 1.3rem;
+            line-height: 1.6;
+        }
+
+        .gradient-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .gradient-2 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .gradient-3 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .gradient-4 {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .gradient-5 {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .gradient-6 {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <!-- Slide 1: Title Slide -->
+        <div class="slide active title-slide">
+            <div class="slide-content">
+                <div class="main-title">♻️ ELocate</div>
+                <div class="subtitle">Premier E-waste Facility Locator & Recycling Platform</div>
+                <p style="font-size: 1.5rem; opacity: 0.8;">Revolutionizing E-waste Management Through Technology</p>
+            </div>
+            <div class="slide-number">1 / 10</div>
+        </div>
+
+        <!-- Slide 2: Aim of the Project -->
+        <div class="slide gradient-1">
+            <div class="slide-title">🎯 Aim of the Project</div>
+            <div class="slide-content">
+                <div class="bullet-point">
+                    <strong>Purpose:</strong> To enable connecting recyclers and E-waste peer disposing agencies to reduce carbon footprint, and promote responsible e-waste management.
+                </div>
+                <div class="bullet-point">
+                    <strong>Team Detection Accuracy:</strong> A total based research tool text identifying unique users with high precision.
+                </div>
+                <div class="bullet-point">
+                    <strong>Digital and Technical Insights:</strong> Drive need and interest, offering library (data comparison) across markets with research benefits.
+                </div>
+                <div class="bullet-point">
+                    <strong>System Tracking:</strong> For matching relation on each facility prior needs for modifier contextual parameters.
+                </div>
+                <div class="bullet-point">
+                    <strong>Incentive and Payments:</strong> E-Locate monitors (optional) facility application, (select of type) integrated informative cash offers with resources and incorporation patterns to boost factory job creation.
+                </div>
+            </div>
+            <div class="slide-number">2 / 10</div>
+        </div>
+
+        <!-- Slide 3: Problem Statement -->
+        <div class="slide gradient-2">
+            <div class="slide-title">⚠️ Problem Statement</div>
+            <div class="slide-content">
+                <div class="bullet-point">
+                    E-waste is growing exponentially, with <span class="highlight">50+ million tons</span> generated globally each year.
+                </div>
+                <div class="bullet-point">
+                    Only <span class="highlight">20%</span> of e-waste is properly recycled, leading to environmental hazards.
+                </div>
+                <div class="bullet-point">
+                    Lack of awareness about certified disposal facilities among consumers.
+                </div>
+                <div class="bullet-point">
+                    Difficulty in tracking and verifying proper e-waste disposal for organizations.
+                </div>
+                <div class="bullet-point">
+                    No centralized platform connecting users with verified recycling centers.
+                </div>
+            </div>
+            <div class="slide-number">3 / 10</div>
+        </div>
+
+        <!-- Slide 4: Solution Overview -->
+        <div class="slide gradient-3">
+            <div class="slide-title">💡 Our Solution</div>
+            <div class="slide-content">
+                <div class="feature-card">
+                    <h3>Comprehensive Platform</h3>
+                    <p>ELocate creates seamless connections between users and certified e-waste disposal facilities through advanced technology.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Environmental Impact</h3>
+                    <p>Promote environmental sustainability and responsible electronics lifecycle management.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>User-Centric Design</h3>
+                    <p>Intuitive interface making e-waste disposal accessible to everyone.</p>
+                </div>
+            </div>
+            <div class="slide-number">4 / 10</div>
+        </div>
+
+        <!-- Slide 5: Key Features -->
+        <div class="slide gradient-4">
+            <div class="slide-title">✨ Key Features</div>
+            <div class="slide-content">
+                <div class="bullet-point">
+                    <strong>Advanced Facility Locator:</strong> Instantly locate the nearest certified e-waste collection centers using interactive maps.
+                </div>
+                <div class="bullet-point">
+                    <strong>Interactive User Dashboard:</strong> Monitor your recycling history and visualize your environmental impact.
+                </div>
+                <div class="bullet-point">
+                    <strong>Comprehensive Educational Resources:</strong> Access expert insights on e-waste management and sustainable practices.
+                </div>
+                <div class="bullet-point">
+                    <strong>Innovative Reward System:</strong> Receive tangible incentives for responsible e-waste disposal.
+                </div>
+                <div class="bullet-point">
+                    <strong>Official Certification:</strong> Obtain validated documentation for corporate e-waste compliance.
+                </div>
+            </div>
+            <div class="slide-number">5 / 10</div>
+        </div>
+
+        <!-- Slide 6: Technology Stack -->
+        <div class="slide gradient-5">
+            <div class="slide-title">🛠️ Technology Stack</div>
+            <div class="slide-content">
+                <div class="tech-grid">
+                    <div class="tech-item">
+                        <h3>Frontend</h3>
+                        <p>Next.js, React, TailwindCSS</p>
+                    </div>
+                    <div class="tech-item">
+                        <h3>Backend</h3>
+                        <p>Java Spring Boot</p>
+                    </div>
+                    <div class="tech-item">
+                        <h3>Database</h3>
+                        <p>PostgreSQL, MongoDB</p>
+                    </div>
+                    <div class="tech-item">
+                        <h3>Authentication</h3>
+                        <p>Auth0 (Firebase migration)</p>
+                    </div>
+                    <div class="tech-item">
+                        <h3>Maps Integration</h3>
+                        <p>Leaflet, MapBox</p>
+                    </div>
+                    <div class="tech-item">
+                        <h3>Deployment</h3>
+                        <p>Vercel/Netlify</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">6 / 10</div>
+        </div>
+
+        <!-- Slide 7: System Architecture -->
+        <div class="slide gradient-6">
+            <div class="slide-title">🏗️ System Architecture</div>
+            <div class="slide-content">
+                <div class="bullet-point">
+                    <strong>Frontend Layer:</strong> Responsive Next.js application with server-side rendering for optimal performance.
+                </div>
+                <div class="bullet-point">
+                    <strong>API Layer:</strong> RESTful APIs built with Spring Boot for robust backend operations.
+                </div>
+                <div class="bullet-point">
+                    <strong>Authentication:</strong> Secure Auth0 integration with role-based access control (Citizen, NGO, Admin).
+                </div>
+                <div class="bullet-point">
+                    <strong>Database Layer:</strong> PostgreSQL for relational data, MongoDB for flexible document storage.
+                </div>
+                <div class="bullet-point">
+                    <strong>Maps Integration:</strong> Real-time facility location with MapBox/Leaflet APIs.
+                </div>
+            </div>
+            <div class="slide-number">7 / 10</div>
+        </div>
+
+        <!-- Slide 8: User Roles & Features -->
+        <div class="slide gradient-1">
+            <div class="slide-title">👥 User Roles & Features</div>
+            <div class="slide-content">
+                <div class="feature-card">
+                    <h3>Citizens</h3>
+                    <p>Book recycling pickups, locate facilities, track environmental impact, earn rewards, view recycling history.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>NGOs/Facilities</h3>
+                    <p>Multi-step registration process, manage facility listings, process recycling requests, issue certificates.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Administrators</h3>
+                    <p>Verify facilities, manage user accounts, oversee platform operations, generate reports.</p>
+                </div>
+            </div>
+            <div class="slide-number">8 / 10</div>
+        </div>
+
+        <!-- Slide 9: Impact & Benefits -->
+        <div class="slide gradient-2">
+            <div class="slide-title">🌍 Impact & Benefits</div>
+            <div class="slide-content">
+                <div class="bullet-point">
+                    <strong>Environmental:</strong> Reduce harmful e-waste in landfills and promote proper recycling practices.
+                </div>
+                <div class="bullet-point">
+                    <strong>Social:</strong> Raise awareness about e-waste management and educate communities.
+                </div>
+                <div class="bullet-point">
+                    <strong>Economic:</strong> Create new opportunities for recycling businesses and reward responsible users.
+                </div>
+                <div class="bullet-point">
+                    <strong>Compliance:</strong> Help organizations meet environmental regulations and obtain certifications.
+                </div>
+                <div class="bullet-point">
+                    <strong>Scalability:</strong> Platform designed to scale across regions and countries.
+                </div>
+            </div>
+            <div class="slide-number">9 / 10</div>
+        </div>
+
+        <!-- Slide 10: Thank You -->
+        <div class="slide title-slide">
+            <div class="slide-content">
+                <div class="main-title">Thank You! 🙏</div>
+                <div class="subtitle">Join us in making the world greener, one device at a time.</div>
+                <p style="font-size: 1.8rem; margin-top: 40px;">♻️ ELocate - Sustainable E-waste Management</p>
+                <p style="font-size: 1.3rem; margin-top: 20px; opacity: 0.8;">Questions & Discussion</p>
+            </div>
+            <div class="slide-number">10 / 10</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" id="prevBtn" onclick="changeSlide(-1)">← Previous</button>
+        <button class="control-btn" id="nextBtn" onclick="changeSlide(1)">Next →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            
+            // Update button states
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            showSlide(currentSlide + direction);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+
+        // Initialize
+        document.getElementById('prevBtn').disabled = true;
+    </script>
+</body>
+</html>

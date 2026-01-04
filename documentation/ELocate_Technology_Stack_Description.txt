@@ -1,0 +1,48 @@
+================================================================================
+                    ELOCATE - TECHNOLOGY STACK DESCRIPTION
+                        E-waste Management Platform
+================================================================================
+
+• Front-End Development: HTML, CSS, and JavaScript are used to design and structure 
+  the user interface. React and Next.js frameworks provide dynamic, responsive 
+  components for seamless user experience. Tailwind CSS enables rapid, utility-first 
+  styling for modern aesthetics.
+
+• Back-End Development: Java with Spring Boot framework is implemented for handling 
+  server-side logic, RESTful API development, and robust business layer operations. 
+  PostgreSQL manages relational data for users, facilities, and bookings, while 
+  MongoDB handles unstructured data for AI model outputs and analytics.
+
+• Deep Learning: Utilizes TensorFlow and PyTorch for object detection algorithms to 
+  identify and classify e-waste devices through image recognition. Convolutional 
+  Neural Networks (CNN) are employed for visual pattern detection in device categorization.
+
+• AI & Text Detection: Employs Natural Language Processing (NLP) for ML-powered chatbot 
+  support and device information extraction. OpenCV is used for real-time QR code 
+  scanning and device recognition through camera integration.
+
+• Mapping & Location Services: MapBox API provides interactive mapping for e-waste 
+  facility visualization and real-time location tracking. Google Maps integration 
+  enables geolocation, route optimization, and distance calculation for pickup services.
+
+• Authentication & Security: Auth0 handles secure user authentication with JWT token-based 
+  authorization. Role-based access control (RBAC) ensures proper separation of Citizen, 
+  NGO, and Admin functionalities.
+
+• Testing: Comprehensive testing suite includes unit tests for backend services, 
+  integration tests for API endpoints, and end-to-end tests for user workflows. 
+  Automated testing validates system reliability and performance.
+
+• DevOps: Docker ensures smooth containerization and deployment across environments. 
+  Git and GitHub Actions provide version control and CI/CD pipelines. Vercel hosts 
+  the frontend application, while Railway manages backend infrastructure deployment.
+
+• Gamification & Analytics: Real-time impact dashboards visualize user contributions, 
+  CO2 savings, and e-waste statistics. Points system, leaderboards, and digital 
+  certificates drive user engagement through reward mechanisms.
+
+• Data Processing: Python scripts handle batch processing for analytics, report 
+  generation, and predictive modeling. Data pipelines aggregate facility performance 
+  metrics and environmental impact calculations.
+
+================================================================================

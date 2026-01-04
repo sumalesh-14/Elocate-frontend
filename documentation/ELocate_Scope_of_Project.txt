@@ -1,0 +1,31 @@
+================================================================================
+                        SCOPE OF THE PROJECT
+================================================================================
+
+The project aims to develop a comprehensive e-waste management platform that 
+revolutionizes how citizens, NGOs, and businesses handle electronic waste 
+disposal through smart technology integration, real-time facility tracking, 
+and sustainable recycling practices. The scope of the project includes the 
+following features:
+
+1. Smart Facility Locator & Booking System: Uses GPS and MapBox/Leaflet APIs 
+   to identify nearest certified e-waste collection centers with real-time 
+   availability, and enables doorstep pickup scheduling with QR verification.
+
+2. AI/ML Integration: Implements machine learning for automated device 
+   recognition from photos and NLP-powered chatbot providing 24/7 support, 
+   personalized recommendations, and guided disposal assistance.
+
+3. Gamification & Impact Dashboard: Provides point-based rewards system with 
+   leaderboards, and visualizes environmental impact including CO2 savings, 
+   materials recovered, and carbon footprint reduction.
+
+4. Multi-Stakeholder Role System: Implements secure role-based platform for 
+   Citizens, NGOs, and Administrators with customized workflows, corporate 
+   compliance tracking, and automated CSR reporting.
+
+5. Circular Economy Ecosystem: Connects all stakeholders in sustainable value 
+   chain with educational resources, certification programs, and analytics to 
+   maximize material recovery and promote environmental awareness.
+
+================================================================================

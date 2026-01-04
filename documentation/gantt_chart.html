@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELocate Project - Gantt Chart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .gantt-wrapper {
+            padding: 40px;
+            overflow-x: auto;
+        }
+
+        .gantt-chart {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        .gantt-chart thead th {
+            background: #f8fafc;
+            padding: 15px;
+            text-align: center;
+            font-weight: 700;
+            border: 2px solid #e2e8f0;
+            color: #1e293b;
+            font-size: 0.95rem;
+        }
+
+        .gantt-chart thead th:first-child {
+            background: #334155;
+            color: white;
+            text-align: left;
+            font-size: 1rem;
+        }
+
+        .gantt-chart tbody td {
+            padding: 20px 15px;
+            border: 2px solid #e2e8f0;
+            position: relative;
+            background: white;
+        }
+
+        .gantt-chart tbody td:first-child {
+            font-weight: 700;
+            color: #1e293b;
+            background: #f1f5f9;
+            text-align: left;
+            font-size: 0.95rem;
+            border-right: 3px solid #cbd5e1;
+        }
+
+        .task-bar {
+            height: 30px;
+            border-radius: 6px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .task-bar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Task colors - gradient style */
+        .completed {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .in-progress {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .pending {
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+        }
+
+        /* Status indicator */
+        .status-badge {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: white;
+            color: #059669;
+        }
+
+        /* Week 1 completed style */
+        .week-completed {
+            background: #dcfce7 !important;
+            border-color: #86efac !important;
+        }
+
+        /* Project info */
+        .project-info {
+            padding: 30px 40px;
+            background: #f8fafc;
+            border-top: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        /* Legend */
+        .legend {
+            padding: 20px 40px;
+            background: #f1f5f9;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 40px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-text {
+            font-size: 0.9rem;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .gantt-wrapper {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .project-info {
+                padding: 20px;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 ELocate Project Timeline</h1>
+            <p>E-waste Management Platform Development Schedule</p>
+        </div>
+
+        <div class="gantt-wrapper">
+            <table class="gantt-chart">
+                <thead>
+                    <tr>
+                        <th>Task / Phase</th>
+                        <th>Week 1</th>
+                        <th>Week 2</th>
+                        <th>Week 3</th>
+                        <th>Week 4</th>
+                        <th>Week 5</th>
+                        <th>Week 6</th>
+                        <th>Week 7</th>
+                        <th>Week 8</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Research -->
+                    <tr>
+                        <td>📚 Research</td>
+                        <td class="week-completed">
+                            <div class="task-bar completed">
+                                <span class="status-badge">✓ Done</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td>📝 Content Planning</td>
+                        <td class="week-completed"></td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+                    <!-- Design -->
+                    <tr>
+                        <td>🎨 Design</td>
+                        <td class="week-completed"></td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+                    <!-- Uploading -->
+                    <tr>
+                        <td>☁️ Uploading Assets</td>
+                        <td class="week-completed"></td>
+                        <td></td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+                    <!-- Developing -->
+                    <tr>
+                        <td>💻 Development</td>
+                        <td class="week-completed"></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+                    <!-- Deploying -->
+                    <tr>
+                        <td>🚀 Deployment</td>
+                        <td class="week-completed"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+                    <!-- Testing -->
+                    <tr>
+                        <td>🧪 Testing</td>
+                        <td class="week-completed"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td></td>
+                    </tr>
+
+                    <!-- Finalizing -->
+                    <tr>
+                        <td>✅ Finalizing</td>
+                        <td class="week-completed"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                        <td>
+                            <div class="task-bar pending"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color completed"></div>
+                <span class="legend-text">✓ Completed</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color in-progress"></div>
+                <span class="legend-text">⏳ In Progress</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color pending"></div>
+                <span class="legend-text">⏸️ Pending</span>
+            </div>
+        </div>
+
+        <div class="project-info">
+            <div class="info-item">
+                <span class="info-label">Project Name</span>
+                <span class="info-value">ELocate Platform</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Duration</span>
+                <span class="info-value">8 Weeks</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Progress</span>
+                <span class="info-value">12.5% (Week 1 Complete)</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Current Phase</span>
+                <span class="info-value">Content Planning</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add subtle animation on load
+        window.addEventListener('load', () => {
+            const taskBars = document.querySelectorAll('.task-bar');
+            taskBars.forEach((bar, index) => {
+                setTimeout(() => {
+                    bar.style.opacity = '0';
+                    bar.style.opacity = '1';
+                    bar.style.transition = 'opacity 0.5s ease';
+                }, index * 50);
+            });
+        });
+
+        // Hover effect to show task details
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            row.addEventListener('mouseenter', function () {
+                this.style.background = '#f8fafc';
+            });
+            row.addEventListener('mouseleave', function () {
+                this.style.background = 'white';
+            });
+        });
+    </script>
+</body>
+
+</html>

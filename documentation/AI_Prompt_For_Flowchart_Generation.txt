@@ -1,0 +1,161 @@
+================================================================================
+        AI PROMPT FOR GENERATING ELOCATE FLOWCHART
+              (Use with ChatGPT, Claude, or Diagram Tools)
+================================================================================
+
+PROMPT FOR AI IMAGE GENERATION:
+-------------------------------
+
+Create a comprehensive, professional flowchart diagram for "ELocate - E-waste Management Platform" showing the complete application workflow with the following specifications:
+
+**FLOWCHART STRUCTURE:**
+
+1. **MAIN ENTRY POINT** (Top Center)
+   - Start: User visits ELocate Platform
+   - Authentication System (Auth0) - diamond decision shape
+   - Split into: New User Registration / Existing User Login
+
+2. **THREE PARALLEL SWIM LANES** (Left to Right):
+   
+   **LANE 1: CITIZEN WORKFLOW** (Left side - Blue theme)
+   - Registration → Role Selection (Citizen)
+   - Citizen Dashboard (rounded rectangle)
+   - Main Features (4 parallel boxes):
+     * Locate Facility (with MapBox/GPS icon)
+     * Book Pickup (with QR code icon)
+     * AI Device Recognition (with camera icon)
+     * ML Chatbot Support (with chat bubble icon)
+   - Facility Selection process
+   - Pickup/Drop-off decision diamond
+   - Post-Disposal actions:
+     * Receive Certificate
+     * Earn Points
+     * Update Impact Dashboard
+   - Additional features box: Education, Gamification, Leaderboards
+   
+   **LANE 2: NGO/FACILITY WORKFLOW** (Middle - Green theme)
+   - Registration → Multi-step process (4 steps in sequence):
+     * Step 1: Basic Info
+     * Step 2: Facility Details
+     * Step 3: Certifications
+     * Step 4: Submit
+   - Pending Verification (waiting state - hexagon)
+   - Admin Approval decision diamond
+   - NGO Dashboard (rounded rectangle)
+   - Manage Bookings:
+     * View Requests
+     * Accept/Decline
+     * Update Status
+   - Process Disposal:
+     * Scan QR Code
+     * Verify Details
+     * Issue Certificate
+   - Analytics & Reporting box
+   
+   **LANE 3: ADMIN WORKFLOW** (Right side - Red theme)
+   - Admin Login
+   - Admin Dashboard (rounded rectangle)
+   - Main Functions (parallel boxes):
+     * Verify Facilities
+     * User Management
+     * Platform Analytics
+     * System Configuration
+   - Verification Process:
+     * Review Documents
+     * Approve/Reject decision diamond
+     * Update Facility Status
+   - Reports & Analytics box
+
+3. **BACKEND PROCESSES LAYER** (Bottom section - Gray theme)
+   - Horizontal flow showing:
+     * Authentication (Auth0 + JWT)
+     * Database Operations (PostgreSQL + MongoDB icons)
+     * AI/ML Processing (TensorFlow, NLP icons)
+     * API Layer (REST APIs)
+     * External Services (MapBox, Payment Gateway)
+
+4. **DATA FLOW ARROWS:**
+   - Solid arrows for primary user actions
+   - Dashed arrows for system processes
+   - Bidirectional arrows for API communications
+   - Different colors for each swim lane
+
+5. **KEY FEATURES TO HIGHLIGHT** (with icons/symbols):
+   - 🗺️ GPS/MapBox integration
+   - 🤖 AI Device Recognition
+   - 💬 ML Chatbot
+   - 📊 Impact Dashboard
+   - 🎁 Gamification & Rewards
+   - 📱 QR Code Verification
+   - 🏆 Leaderboards
+   - 📜 Digital Certificates
+   - ♻️ Circular Economy
+
+**DESIGN SPECIFICATIONS:**
+- Use modern, flat design style
+- Include icons for each major feature
+- Color-code by user role (Blue, Green, Red)
+- Add decision diamonds for approval/rejection points
+- Include database cylinder shapes for data storage
+- Show cloud icons for external APIs
+- Add legend explaining shapes and colors
+- Make it readable and professional for presentation
+
+**OUTPUT FORMAT:**
+- High-resolution flowchart (minimum 2000x1500px)
+- Clear labels and readable text
+- Professional color scheme
+- Include title: "ELocate Application Workflow"
+- Add subtitle: "Comprehensive E-waste Management Platform"
+
+================================================================================
+
+ALTERNATIVE PROMPT FOR MERMAID DIAGRAM:
+---------------------------------------
+
+Generate a Mermaid flowchart code for the ELocate application with three main workflows (Citizen, NGO/Facility, Admin) including authentication, facility location, AI device recognition, booking system, verification processes, and backend integrations. Use subgraphs for each user role, include decision points for approvals, and show connections between users and database systems.
+
+================================================================================
+
+TOOLS YOU CAN USE:
+------------------
+
+1. **ChatGPT/DALL-E**: Use the main prompt above
+2. **Mermaid Live Editor** (mermaid.live): Use Mermaid syntax
+3. **Lucidchart**: Paste description and ask AI to generate
+4. **Draw.io/Diagrams.net**: Manual creation using description
+5. **Figma**: Design custom flowchart
+6. **Microsoft Visio**: Professional diagrams
+7. **Canva**: Quick visual flowcharts
+
+================================================================================
+
+QUICK MERMAID CODE STARTER:
+---------------------------
+
+```mermaid
+flowchart TB
+    Start([User Visits ELocate]) --> Auth{Authentication}
+    Auth -->|New User| Register[Registration]
+    Auth -->|Existing User| Login[Login]
+    
+    Register --> RoleSelect{Select Role}
+    RoleSelect -->|Citizen| CitizenDash[Citizen Dashboard]
+    RoleSelect -->|NGO| NGODash[NGO Dashboard]
+    RoleSelect -->|Admin| AdminDash[Admin Dashboard]
+    
+    CitizenDash --> LocateFacility[Locate Facility]
+    CitizenDash --> BookPickup[Book Pickup]
+    CitizenDash --> AIRecognition[AI Device Recognition]
+    CitizenDash --> Chatbot[ML Chatbot]
+    
+    NGODash --> ManageBookings[Manage Bookings]
+    NGODash --> ProcessDisposal[Process Disposal]
+    NGODash --> Analytics[Analytics & Reports]
+    
+    AdminDash --> VerifyFacilities[Verify Facilities]
+    AdminDash --> UserManagement[User Management]
+    AdminDash --> PlatformAnalytics[Platform Analytics]
+```
+
+================================================================================

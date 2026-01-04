@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELocate - Technology Stack Description</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fef5f5 0%, #ffffff 100%);
+            padding: 60px 40px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 50px 60px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 3px solid #E53E3E;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2D3748;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .tech-list {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .tech-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+            border-radius: 12px;
+            border-left: 4px solid #E53E3E;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .tech-item:hover {
+            transform: translateX(8px);
+            box-shadow: 0 8px 24px rgba(229, 62, 62, 0.15);
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe9e9 100%);
+        }
+
+        .bullet {
+            color: #E53E3E;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .tech-content {
+            flex: 1;
+        }
+
+        .tech-title {
+            font-weight: 700;
+            color: #C53030;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        .tech-description {
+            color: #2D3748;
+            font-size: 1rem;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 25px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .tech-item {
+                padding: 15px;
+            }
+
+            body {
+                padding: 30px 20px;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            .tech-item {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ELocate Technology Stack</h1>
+            <p>E-waste Management Platform</p>
+        </div>
+
+        <div class="tech-list">
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">Front-End Development:</div>
+                    <div class="tech-description">
+                        HTML, CSS, and JavaScript are used to design and structure the user interface.
+                        React and Next.js frameworks provide dynamic, responsive components for seamless
+                        user experience. Tailwind CSS enables rapid, utility-first styling for modern aesthetics.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">Back-End Development:</div>
+                    <div class="tech-description">
+                        Java with Spring Boot framework is implemented for handling server-side logic,
+                        RESTful API development, and robust business layer operations. PostgreSQL manages
+                        relational data for users, facilities, and bookings, while MongoDB handles
+                        unstructured data for AI model outputs and analytics.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">Deep Learning:</div>
+                    <div class="tech-description">
+                        Utilizes TensorFlow and PyTorch for object detection algorithms to identify and
+                        classify e-waste devices through image recognition. Convolutional Neural Networks
+                        (CNN) are employed for visual pattern detection in device categorization.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">AI & Text Detection:</div>
+                    <div class="tech-description">
+                        Employs Natural Language Processing (NLP) for ML-powered chatbot support and device
+                        information extraction. OpenCV is used for real-time QR code scanning and device
+                        recognition through camera integration.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">Mapping & Location Services:</div>
+                    <div class="tech-description">
+                        MapBox API provides interactive mapping for e-waste facility visualization and
+                        real-time location tracking. Google Maps integration enables geolocation, route
+                        optimization, and distance calculation for pickup services.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">Authentication & Security:</div>
+                    <div class="tech-description">
+                        Auth0 handles secure user authentication with JWT token-based authorization.
+                        Role-based access control (RBAC) ensures proper separation of Citizen, NGO,
+                        and Admin functionalities.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">Testing:</div>
+                    <div class="tech-description">
+                        Comprehensive testing suite includes unit tests for backend services, integration
+                        tests for API endpoints, and end-to-end tests for user workflows. Automated
+                        testing validates system reliability and performance.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">DevOps:</div>
+                    <div class="tech-description">
+                        Docker ensures smooth containerization and deployment across environments. Git and
+                        GitHub Actions provide version control and CI/CD pipelines. Vercel hosts the
+                        frontend application, while Railway manages backend infrastructure deployment.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">Gamification & Analytics:</div>
+                    <div class="tech-description">
+                        Real-time impact dashboards visualize user contributions, CO2 savings, and e-waste
+                        statistics. Points system, leaderboards, and digital certificates drive user
+                        engagement through reward mechanisms.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-item">
+                <span class="bullet">•</span>
+                <div class="tech-content">
+                    <div class="tech-title">Data Processing:</div>
+                    <div class="tech-description">
+                        Python scripts handle batch processing for analytics, report generation, and
+                        predictive modeling. Data pipelines aggregate facility performance metrics and
+                        environmental impact calculations.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

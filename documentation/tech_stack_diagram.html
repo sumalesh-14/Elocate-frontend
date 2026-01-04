@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELocate Technology Stack</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(0, 0, 0, .03) 19px, rgba(0, 0, 0, .03) 20px),
+                repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(0, 0, 0, .03) 19px, rgba(0, 0, 0, .03) 20px);
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+            padding: 60px 40px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 80px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 3.5rem;
+            color: #E53E3E;
+            letter-spacing: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 60px;
+            background: linear-gradient(to bottom, #E53E3E, transparent);
+        }
+
+        .stack-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 30px;
+            position: relative;
+            padding-top: 40px;
+        }
+
+        /* Connecting lines */
+        .stack-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: #E53E3E;
+            opacity: 0.3;
+        }
+
+        .category {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            animation: fadeInUp 0.8s ease-out;
+            animation-fill-mode: backwards;
+        }
+
+        .category:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .category:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .category:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .category:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .category:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .category::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(229, 62, 62, 0.3), rgba(229, 62, 62, 0.8));
+        }
+
+        .icon-circle {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #FFE8E0 0%, #FFD5C8 100%);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(229, 62, 62, 0.15);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .icon-circle::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #E53E3E, #F56565);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: -1;
+        }
+
+        .category:hover .icon-circle {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(229, 62, 62, 0.25);
+        }
+
+        .category:hover .icon-circle::before {
+            opacity: 1;
+        }
+
+        .icon {
+            font-size: 3rem;
+        }
+
+        .category-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #E53E3E;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .arrow {
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid #2D3748;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        .tech-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .tech-item {
+            background: linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2D3748;
+            text-align: center;
+            min-width: 140px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .tech-item:hover {
+            transform: translateX(5px);
+            background: linear-gradient(135deg, #FFF5F5 0%, #FED7D7 100%);
+            border-color: #E53E3E;
+            box-shadow: 0 6px 20px rgba(229, 62, 62, 0.15);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .stack-container {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .category {
+                flex: 0 0 calc(50% - 20px);
+                margin-bottom: 60px;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .category {
+                flex: 0 0 100%;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                letter-spacing: 4px;
+            }
+
+            .container {
+                padding: 40px 20px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Project Info */
+        .project-info {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 2px solid #E2E8F0;
+        }
+
+        .project-info h2 {
+            font-family: 'Montserrat', sans-serif;
+            color: #2D3748;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .project-info p {
+            color: #718096;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TECHNOLOGY STACK</h1>
+        </div>
+
+        <div class="stack-container">
+            <!-- Front-End Dev -->
+            <div class="category">
+                <div class="icon-circle">
+                    <div class="icon">💻</div>
+                </div>
+                <div class="category-title">FRONT-END DEV</div>
+                <div class="arrow"></div>
+                <div class="tech-list">
+                    <div class="tech-item">HTML5</div>
+                    <div class="tech-item">CSS3</div>
+                    <div class="tech-item">JavaScript</div>
+                    <div class="tech-item">React</div>
+                    <div class="tech-item">Next.js</div>
+                    <div class="tech-item">Tailwind CSS</div>
+                </div>
+            </div>
+
+            <!-- Backend Dev -->
+            <div class="category">
+                <div class="icon-circle">
+                    <div class="icon">🗄️</div>
+                </div>
+                <div class="category-title">BACKEND DEV</div>
+                <div class="arrow"></div>
+                <div class="tech-list">
+                    <div class="tech-item">Java</div>
+                    <div class="tech-item">Spring Boot</div>
+                    <div class="tech-item">PostgreSQL</div>
+                    <div class="tech-item">MongoDB</div>
+                    <div class="tech-item">Auth0</div>
+                </div>
+            </div>
+
+            <!-- AI/ML -->
+            <div class="category">
+                <div class="icon-circle">
+                    <div class="icon">🧠</div>
+                </div>
+                <div class="category-title">AI/ML</div>
+                <div class="arrow"></div>
+                <div class="tech-list">
+                    <div class="tech-item">Python</div>
+                    <div class="tech-item">TensorFlow</div>
+                    <div class="tech-item">PyTorch</div>
+                    <div class="tech-item">OpenCV</div>
+                    <div class="tech-item">NLP</div>
+                </div>
+            </div>
+
+            <!-- Mapping & Location -->
+            <div class="category">
+                <div class="icon-circle">
+                    <div class="icon">🗺️</div>
+                </div>
+                <div class="category-title">MAPPING & LOCATION</div>
+                <div class="arrow"></div>
+                <div class="tech-list">
+                    <div class="tech-item">MapBox</div>
+                    <div class="tech-item">Google Maps API</div>
+                    <div class="tech-item">Geolocation</div>
+                    <div class="tech-item">GPS Services</div>
+                </div>
+            </div>
+
+            <!-- DevOps -->
+            <div class="category">
+                <div class="icon-circle">
+                    <div class="icon">♾️</div>
+                </div>
+                <div class="category-title">DEVOPS</div>
+                <div class="arrow"></div>
+                <div class="tech-list">
+                    <div class="tech-item">Docker</div>
+                    <div class="tech-item">Git</div>
+                    <div class="tech-item">GitHub Actions</div>
+                    <div class="tech-item">Vercel</div>
+                    <div class="tech-item">Railway</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="project-info">
+            <h2>ELocate Platform</h2>
+            <p>Comprehensive E-waste Management System</p>
+        </div>
+    </div>
+</body>
+
+</html>

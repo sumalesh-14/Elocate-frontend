@@ -1,0 +1,30 @@
+================================================================================
+                    NEED FOR THE CURRENT STUDY
+================================================================================
+
+➤  With the exponential growth of electronic waste (53.6 million tons in 2019, 
+   projected to reach 74 million tons by 2030), there is an urgent need for 
+   technology-driven solutions to address the e-waste crisis. Current disposal 
+   methods are fragmented, with only 17.4% of e-waste being properly recycled. 
+   Citizens lack awareness about certified disposal facilities, and there is no 
+   centralized platform connecting users with verified recycling centers in 
+   their area.
+
+➤  This study addresses these critical limitations by developing a comprehensive 
+   e-waste management platform that integrates smart facility location services, 
+   real-time booking systems, and AI/ML technologies. By combining GPS-based 
+   geolocation with MapBox/Leaflet APIs, users can instantly locate nearest 
+   certified collection centers. The platform incorporates gamification and 
+   rewards to encourage participation, while impact dashboards visualize 
+   environmental contributions (CO2 savings, materials recovered) providing 
+   data-driven motivation for sustainable behavior.
+
+➤  The system creates a multi-stakeholder circular economy ecosystem connecting 
+   citizens, NGOs, and businesses through role-based workflows. This addresses 
+   the gap identified in literature regarding stakeholder integration and value 
+   chain optimization. By implementing secure authentication, facility network 
+   management, and corporate compliance tracking, the platform ensures proper 
+   documentation for CSR requirements and regulatory compliance, making e-waste 
+   disposal more accessible, transparent, and effective for users of all types.
+
+================================================================================

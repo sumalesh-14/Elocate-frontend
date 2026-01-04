@@ -1,0 +1,87 @@
+================================================================================
+                AIM & OBJECTIVES OF THE PROJECT
+                        (Problem Statement)
+================================================================================
+
+Aim of the project
+------------------
+
+The project aims to revolutionize e-waste management by creating a comprehensive 
+platform that connects citizens with certified e-waste disposal facilities. 
+By integrating advanced technologies including AI/ML, blockchain verification, 
+and real-time geolocation services, it provides users with an intelligent system 
+to responsibly dispose of electronic waste, track their environmental impact, 
+earn rewards, and contribute to reducing the global e-waste crisis while promoting 
+environmental sustainability and regulatory compliance.
+
+
+Objectives of the Project
+--------------------------
+
+• Smart Facility Locator: Utilize AI-powered geolocation and MapBox/Leaflet APIs 
+  to identify nearest certified e-waste collection centers with real-time 
+  availability, capacity information, and accepted device types.
+
+• Seamless Booking & Pickup System: Enable users to schedule doorstep pickups, 
+  track collection status in real-time, and receive instant confirmation with 
+  QR code verification for secure transactions.
+
+• AI-Powered Device Recognition: Implement machine learning models using TensorFlow 
+  and computer vision to automatically identify electronic devices from photos, 
+  provide instant value estimation, and generate recycling recommendations.
+
+• Gamification & Rewards System: Develop an incentive mechanism where users earn 
+  points for each recycling transaction, redeem for vouchers or cashback, and 
+  compete on leaderboards to encourage consistent participation.
+
+• Interactive Impact Dashboard: Visualize users' environmental contributions with 
+  metrics such as CO2 saved, materials recovered, and carbon footprint reduction, 
+  with social media sharing capabilities.
+
+• ML-Powered Chatbot Assistant: Implement an intelligent conversational AI using 
+  NLP and machine learning to provide 24/7 support, answer e-waste queries, offer 
+  personalized recycling recommendations, and guide users through the disposal process.
+
+• Educational Hub: Provide comprehensive resources including video tutorials, 
+  recycling guides, environmental impact calculators, and sustainability courses 
+  with certification to raise awareness.
+
+• Corporate Dashboard: Enable businesses to manage bulk e-waste disposal, track 
+  compliance with environmental regulations, access detailed analytics, and 
+  generate automated CSR reports.
+
+• Multi-Platform Accessibility: Develop responsive web application using Next.js 
+  and mobile applications for iOS and Android with offline mode, push notifications, 
+  and barcode scanning for device registration.
+
+• Role-Based Access Control: Implement secure authentication using Auth0 with 
+  distinct roles (Citizen, NGO/Facility, Administrator) each with appropriate 
+  permissions and features.
+
+
+================================================================================
+Problem Statement
+------------------
+
+• E-waste Crisis: 53.6 million tons of e-waste generated globally in 2019, 
+  projected to reach 74 million tons by 2030, with exponential growth rates.
+
+• Poor Recycling Rates: Only 17.4% of e-waste is properly recycled, leaving 
+  82.6% improperly disposed, causing severe soil, water, and air pollution.
+
+• Toxic Materials: E-waste contains hazardous substances (lead, mercury, cadmium, 
+  beryllium) causing serious health risks and long-term environmental damage.
+
+• Consumer Awareness Gap: Most people lack knowledge about where and how to 
+  dispose of electronic devices safely and responsibly.
+
+• Fragmented Infrastructure: No centralized platform connecting citizens with 
+  verified, certified recycling facilities in their local area.
+
+• Compliance Challenges: Organizations struggle to track proper disposal, obtain 
+  documentation for CSR requirements, and meet environmental regulations.
+
+• Lack of Incentives: No motivation system exists to encourage people to 
+  consistently recycle their e-waste instead of discarding it improperly.
+
+================================================================================

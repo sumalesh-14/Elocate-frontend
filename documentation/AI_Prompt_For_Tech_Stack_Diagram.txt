@@ -1,0 +1,197 @@
+================================================================================
+        AI PROMPT FOR GENERATING ELOCATE TECHNOLOGY STACK DIAGRAM
+              (Use with ChatGPT, Midjourney, DALL-E, or Design Tools)
+================================================================================
+
+PROMPT FOR AI IMAGE GENERATION:
+-------------------------------
+
+Create a professional, modern Technology Stack diagram for "ELocate - E-waste Management Platform" with the following specifications:
+
+**LAYOUT STRUCTURE:**
+
+1. **HEADER** (Top Center)
+   - Title: "TECHNOLOGY STACK" in bold, red uppercase letters (Montserrat or similar sans-serif font)
+   - Dotted grid background for technical aesthetic
+
+2. **TREE STRUCTURE** (Branching downward)
+   - Central vertical line from header splitting into 5 branches
+   - Each branch connects to a category circle
+
+3. **FIVE TECHNOLOGY CATEGORIES** (Horizontal row of circles):
+
+   **Category 1: FRONT-END DEV** (Leftmost - Soft peach/pink background)
+   - Icon: Computer monitor with UI elements
+   - Label: "FRONT-END DEV" in red uppercase
+   - Technologies below:
+     * HTML5 logo
+     * CSS3 logo
+     * JavaScript logo
+     * React logo
+     * Next.js logo
+     * Tailwind CSS logo
+
+   **Category 2: BACKEND DEV** (Second from left - Soft peach/pink background)
+   - Icon: Server/database with code brackets
+   - Label: "BACKEND DEV" in red uppercase
+   - Technologies below:
+     * Java logo
+     * Spring Boot logo
+     * PostgreSQL logo
+     * MongoDB logo
+     * Auth0 logo
+
+   **Category 3: AI/ML** (Center - Soft peach/pink background)
+   - Icon: Brain with circuit patterns
+   - Label: "AI/ML" in red uppercase
+   - Technologies below:
+     * Python logo
+     * TensorFlow logo
+     * PyTorch logo
+     * OpenCV logo
+     * NLP icon
+
+   **Category 4: MAPPING & LOCATION** (Second from right - Soft peach/pink background)
+   - Icon: Map pin with location marker
+   - Label: "MAPPING & LOCATION" in red uppercase
+   - Technologies below:
+     * MapBox logo
+     * Google Maps API
+     * Geolocation icon
+     * GPS icon
+
+   **Category 5: DEVOPS** (Rightmost - Soft peach/pink background)
+   - Icon: Infinity symbol (DevOps loop)
+   - Label: "DEVOPS" in red uppercase
+   - Technologies below:
+     * Docker logo
+     * Git logo
+     * GitHub Actions
+     * Vercel logo
+     * Railway logo
+
+4. **VISUAL DESIGN ELEMENTS:**
+   - Soft peach/pink circular backgrounds (#FFE8E0 or similar) for category icons
+   - Dark navy/black line-art icons
+   - Clean, minimalist design
+   - Dotted grid background for technical feel
+   - Black connecting lines from header to categories
+   - Downward arrows (checkmarks) from categories to technology logos
+   - Even spacing between all elements
+
+5. **TECHNOLOGY LOGOS:**
+   - Official brand logos for each technology
+   - Consistent sizing (approximately 60-80px height)
+   - Proper spacing between logos
+   - Logos should be recognizable and colorful
+
+**DESIGN SPECIFICATIONS:**
+- Color scheme: Red (#E53E3E) for text, soft peach/pink (#FFE8E0) for circles, white/light gray background
+- Modern flat design style with subtle shadows
+- Clean sans-serif fonts (Montserrat, Inter, or Outfit)
+- Professional presentation quality
+- Balanced, symmetrical layout
+- Dotted grid pattern in background (subtle, light gray)
+
+**OUTPUT FORMAT:**
+- High-resolution diagram (minimum 1920x1080px)
+- PNG or SVG format
+- Transparent or white background
+- Clear, readable text at all sizes
+- Professional quality suitable for presentations
+
+**ALTERNATIVE DESCRIPTION:**
+Create a technology stack visualization showing 5 main categories (Front-end Dev, Backend Dev, AI/ML, Mapping & Location, DevOps) arranged horizontally. Each category has a circular icon with a soft pink background, connected by tree branches from a centered "TECHNOLOGY STACK" header. Below each category, display the relevant technology logos (HTML/CSS/JS/React/Next.js/Tailwind for frontend; Java/Spring Boot/PostgreSQL/MongoDB/Auth0 for backend; Python/TensorFlow/PyTorch/OpenCV/NLP for AI/ML; MapBox/Google Maps/Geolocation/GPS for mapping; Docker/Git/GitHub Actions/Vercel/Railway for DevOps). Use a clean, modern design with red accent colors and a dotted grid background.
+
+================================================================================
+
+SIMPLIFIED PROMPT (For Quick Generation):
+------------------------------------------
+
+Create a modern tech stack diagram with "TECHNOLOGY STACK" header, 5 circular categories with icons (Front-end Dev, Backend Dev, AI/ML, Mapping, DevOps), connected by tree branches, with technology logos below each category. Use soft pink circles, red text, dotted background, and include: HTML/CSS/JS/React/Next.js for frontend, Java/Spring Boot/PostgreSQL for backend, Python/TensorFlow for AI, MapBox/Google Maps for mapping, Docker/Git for DevOps. Clean, professional, symmetrical design.
+
+================================================================================
+
+PROMPT FOR MERMAID/DIAGRAM TOOLS:
+----------------------------------
+
+```mermaid
+graph TB
+    Header["🏗️ TECHNOLOGY STACK"]
+    
+    Header --> FE["<br/>💻<br/>FRONT-END DEV"]
+    Header --> BE["<br/>🗄️<br/>BACKEND DEV"]
+    Header --> AI["<br/>🧠<br/>AI/ML"]
+    Header --> MAP["<br/>🗺️<br/>MAPPING"]
+    Header --> DO["<br/>♾️<br/>DEVOPS"]
+    
+    FE --> FE1["HTML5 | CSS3 | JavaScript"]
+    FE --> FE2["React | Next.js | Tailwind"]
+    
+    BE --> BE1["Java | Spring Boot"]
+    BE --> BE2["PostgreSQL | MongoDB | Auth0"]
+    
+    AI --> AI1["Python | TensorFlow | PyTorch"]
+    AI --> AI2["OpenCV | NLP"]
+    
+    MAP --> MAP1["MapBox | Google Maps"]
+    MAP --> MAP2["Geolocation | GPS"]
+    
+    DO --> DO1["Docker | Git"]
+    DO --> DO2["GitHub Actions | Vercel | Railway"]
+    
+    style Header fill:#E53E3E,stroke:#333,stroke-width:2px,color:#fff
+    style FE fill:#FFE8E0,stroke:#333,stroke-width:2px
+    style BE fill:#FFE8E0,stroke:#333,stroke-width:2px
+    style AI fill:#FFE8E0,stroke:#333,stroke-width:2px
+    style MAP fill:#FFE8E0,stroke:#333,stroke-width:2px
+    style DO fill:#FFE8E0,stroke:#333,stroke-width:2px
+```
+
+================================================================================
+
+TOOLS YOU CAN USE:
+------------------
+
+1. **ChatGPT/DALL-E**: Use the main prompt above
+2. **Midjourney**: Use simplified prompt with technical diagram focus
+3. **Figma**: Design custom using description as guide
+4. **Canva**: Use "Technology Infographic" templates
+5. **Lucidchart**: Create diagram manually
+6. **Adobe Illustrator**: Professional vector design
+7. **Mermaid Live Editor**: Use Mermaid code above
+8. **Excalidraw**: Hand-drawn style diagram
+
+================================================================================
+
+CUSTOMIZATION OPTIONS:
+----------------------
+
+**Color Variations:**
+- Modern: Red (#E53E3E) + Soft Pink (#FFE8E0) + Navy (#1A365D)
+- Green Tech: Green (#48BB78) + Light Green (#C6F6D5) + Dark Green (#22543D)
+- Blue Tech: Blue (#4299E1) + Light Blue (#BEE3F8) + Dark Blue (#2C5282)
+- Purple: Purple (#9F7AEA) + Light Purple (#E9D8FD) + Dark Purple (#553C9A)
+
+**Icon Styles:**
+- Flat minimal (recommended)
+- Line art with fills
+- Gradient modern
+- Hand-drawn sketch
+- 3D isometric
+
+**Layout Alternatives:**
+- Horizontal tree (shown above) ✓
+- Vertical layers
+- Circular/radial
+- Grid matrix
+- Pyramid/hierarchy
+
+================================================================================
+
+HTML/CSS VERSION:
+-----------------
+See the companion file: tech_stack_diagram.html
+(This will be an interactive, animated version you can use directly)
+
+================================================================================

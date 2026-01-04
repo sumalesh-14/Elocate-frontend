@@ -1,0 +1,100 @@
+================================================================================
+                        ELOCATE PROJECT - REFERENCES
+                    E-waste Management Platform - Bibliography
+================================================================================
+
+JOURNAL ARTICLES
+----------------
+
+[1]. Kumar, Ashok, et al. "E-waste management: A review of recycling process, 
+     environmental and occupational health hazards, and potential solutions." 
+     Environmental Nanotechnology, Monitoring & Management 15 (2021): 100409.
+
+[2]. Forti, Vanessa, et al. "The Global E-waste Monitor 2020: Quantities, 
+     flows, and the circular economy potential." United Nations University/
+     United Nations Institute for Training and Research, International 
+     Telecommunication Union, and International Solid Waste Association (2020).
+
+[3]. Borthakur, Anwesha, and Pardeep Singh. "Electronic waste in India: 
+     Problems and policies." International Journal of Environmental Sciences 
+     3.1 (2012): 353-362.
+
+[4]. Zhang, Kai, et al. "Deep learning-based automatic recognition network of 
+     garbage images." Proceedings of the IEEE Conference on Computer Vision 
+     and Pattern Recognition Workshops (2018).
+
+[5]. Chen, Ming-Chuan, et al. "The development of an intelligent mobile device 
+     for waste classification using convolutional neural networks." Journal of 
+     Cleaner Production 262 (2020): 121371.
+
+[6]. Awasthi, Abhishek Kumar, et al. "Management of electrical and electronic 
+     waste: A comparative evaluation of China and India." Renewable and 
+     Sustainable Energy Reviews 76 (2017): 434-447.
+
+[7]. Islam, Md Tasbirul, and Nazmul Huda. "E-waste in Australia: Generation 
+     estimation and untapped material recovery and revenue potential." Journal 
+     of Cleaner Production 237 (2019): 117787.
+
+[8]. Abbondanza, Martina NM, and Renato J. Souza. "Estimating the generation 
+     of household e-waste in municipalities using primary data from surveys: 
+     A case study of Sao Jose dos Campos, Brazil." Waste Management 85 (2019): 
+     374-384.
+
+
+CONFERENCE PROCEEDINGS
+---------------------
+
+[1]. Mittal, Gargi, et al. "SpotGarbage: smartphone app to detect garbage 
+     using deep learning." Proceedings of the ACM India Joint International 
+     Conference on Data Science and Management of Data (2016): 228-234.
+
+[2]. Thung, Gary, and Mindy Yang. "Classification of trash for recyclability 
+     status." CS229 Project Report, Stanford University (2016).
+
+[3]. Kumar, Sanjeev, et al. "Deep learning framework for recognition of cattle 
+     using muzzle point image pattern." Measurement 116 (2018): 1-17.
+
+
+BOOKS
+-----
+
+[1]. Goodfellow, Ian, Yoshua Bengio, and Aaron Courville. "Deep learning." 
+     MIT press (2016).
+
+[2]. Widmer, Rolf, et al. "Global perspectives on e-waste." Environmental 
+     Impact Assessment Review 25.5 (2005): 436-458.
+
+[3]. Sthiannopkao, Suthipong, and Ming Hung Wong. "Handling e-waste in 
+     developed and developing countries: Initiatives, practices, and 
+     consequences." Science of the Total Environment 463 (2013): 1147-1153.
+
+
+TECHNICAL REPORTS & STANDARDS
+-----------------------------
+
+[1]. Ministry of Environment, Forest and Climate Change, Government of India. 
+     "E-Waste (Management) Rules, 2016." The Gazette of India: Extraordinary 
+     (2016).
+
+[2]. Central Pollution Control Board (CPCB). "Guidelines for environmentally 
+     sound management of e-waste." Ministry of Environment & Forests, 
+     Government of India (2008).
+
+[3]. Basel Convention. "Technical guidelines for the environmentally sound 
+     management of wastes consisting of, containing or contaminated with 
+     persistent organic pollutants." United Nations Environment Programme 
+     (2015).
+
+
+ONLINE RESOURCES
+---------------
+
+[1]. World Health Organization. "Electronic waste (e-waste)." WHO Fact Sheet 
+     (2021). Available: https://www.who.int/news-room/fact-sheets/detail/
+     electronic-waste-(e-waste)
+
+[2]. United Nations Environment Programme. "Waste Management." UNEP Resources 
+     (2023). Available: https://www.unep.org/explore-topics/resource-
+     efficiency/what-we-do/cities/waste-management
+
+================================================================================

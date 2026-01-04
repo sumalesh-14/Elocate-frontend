@@ -1,0 +1,299 @@
+================================================================================
+            ELOCATE APPLICATION WORKFLOW FLOWCHART
+                    Complete System Flow Description
+================================================================================
+
+MAIN ENTRY POINT
+├── User visits ELocate Platform
+└── Authentication System (Auth0)
+    ├── New User → Registration
+    │   └── Select Role: Citizen / NGO-Facility / Admin
+    └── Existing User → Login
+
+
+================================================================================
+WORKFLOW 1: CITIZEN USER JOURNEY
+================================================================================
+
+1. CITIZEN REGISTRATION & LOGIN
+   ├── Sign up with email/password
+   ├── Role selected: CITIZEN
+   ├── Auth0 generates JWT token
+   └── Redirect to Citizen Dashboard
+
+2. CITIZEN DASHBOARD
+   ├── View recycling statistics
+   ├── See environmental impact (CO2 saved, materials recovered)
+   ├── Check rewards points balance
+   └── Access main features
+
+3. LOCATE FACILITY
+   ├── Enter location/address
+   ├── System uses GPS/MapBox API
+   ├── Display nearest facilities on map
+   ├── Show facility details:
+   │   ├── Distance
+   │   ├── Capacity status
+   │   ├── Accepted device types
+   │   ├── Working hours
+   │   └── Verification status
+   └── Select facility
+
+4. BOOK PICKUP (Optional)
+   ├── Choose doorstep pickup
+   ├── Upload device photos → AI Recognition
+   │   ├── ML model identifies device
+   │   ├── Estimates value
+   │   └── Suggests recycling method
+   ├── Select pickup date & time
+   ├── Generate QR code
+   ├── NGO receives booking notification
+   └── Track pickup status
+
+5. DROP-OFF AT FACILITY (Alternative)
+   ├── Visit facility directly
+   ├── Show QR code at facility
+   ├── Facility scans & verifies
+   └── Complete drop-off
+
+6. POST-DISPOSAL
+   ├── Receive digital certificate
+   ├── Earn reward points
+   ├── Update impact dashboard
+   ├── Share achievement on social media
+   └── View recycling history
+
+7. ADDITIONAL FEATURES
+   ├── ML Chatbot Support
+   │   ├── Ask e-waste queries
+   │   ├── Get personalized recommendations
+   │   └── 24/7 assistance
+   ├── Educational Hub
+   │   ├── Watch tutorial videos
+   │   ├── Take sustainability courses
+   │   ├── Use impact calculator
+   │   └── Earn certifications
+   └── Gamification
+       ├── View leaderboards
+       ├── Compete with other users
+       └── Redeem points for rewards
+
+
+================================================================================
+WORKFLOW 2: NGO/FACILITY USER JOURNEY
+================================================================================
+
+1. NGO/FACILITY REGISTRATION
+   ├── Sign up with organization details
+   ├── Role selected: NGO/FACILITY
+   ├── Multi-step registration process:
+   │   ├── Step 1: Basic Information
+   │   │   ├── Organization name
+   │   │   ├── Contact details
+   │   │   └── Location
+   │   ├── Step 2: Facility Details
+   │   │   ├── Capacity information
+   │   │   ├── Accepted e-waste types
+   │   │   ├── Working hours
+   │   │   └── Upload facility images
+   │   ├── Step 3: Certification Documents
+   │   │   ├── Upload license/permits
+   │   │   ├── Environmental certifications
+   │   │   └── Registration numbers
+   │   └── Step 4: Review & Submit
+   ├── Status: PENDING VERIFICATION
+   └── Wait for admin approval
+
+2. ADMIN VERIFICATION
+   ├── Admin reviews application
+   ├── Verifies documents
+   └── Approve/Reject
+       ├── Approved → Status: VERIFIED
+       └── Rejected → Notification sent
+
+3. NGO/FACILITY DASHBOARD
+   ├── View booking requests
+   ├── Manage facility information
+   ├── Track collection statistics
+   └── Generate reports
+
+4. MANAGE BOOKINGS
+   ├── Receive pickup requests
+   ├── View citizen details & device info
+   ├── Accept/Decline request
+   ├── Update pickup status:
+   │   ├── SCHEDULED
+   │   ├── IN TRANSIT
+   │   ├── COLLECTED
+   │   └── COMPLETED
+   └── Scan QR code for verification
+
+5. PROCESS DISPOSAL
+   ├── Scan citizen QR code
+   ├── Verify device details
+   ├── Record weight/quantity
+   ├── Issue digital certificate
+   └── Update inventory
+
+6. FACILITY MANAGEMENT
+   ├── Update capacity status
+   ├── Add/remove accepted device types
+   ├── Manage operating hours
+   └── Upload facility updates
+
+7. ANALYTICS & REPORTING
+   ├── View collection metrics
+   ├── Track processed e-waste volume
+   ├── Generate monthly reports
+   └── Export data for compliance
+
+
+================================================================================
+WORKFLOW 3: ADMIN USER JOURNEY
+================================================================================
+
+1. ADMIN LOGIN
+   ├── Login with admin credentials
+   ├── Role: ADMINISTRATOR
+   └── Access admin dashboard
+
+2. ADMIN DASHBOARD
+   ├── Platform overview statistics
+   ├── Pending verifications count
+   ├── User management
+   └── System health monitoring
+
+3. FACILITY VERIFICATION
+   ├── View pending NGO applications
+   ├── Review submitted documents:
+   │   ├── Organization details
+   │   ├── Certifications
+   │   └── Facility information
+   ├── Verify authenticity
+   └── Approve or Reject
+       ├── Approve → Facility goes LIVE
+       └── Reject → Send reason to NGO
+
+4. USER MANAGEMENT
+   ├── View all users (Citizens, NGOs, Admins)
+   ├── Filter by role/status
+   ├── Suspend/Activate accounts
+   ├── Reset passwords
+   └── View user activity logs
+
+5. FACILITY MANAGEMENT
+   ├── View all facilities
+   ├── Edit facility details
+   ├── Remove non-compliant facilities
+   ├── Monitor facility performance
+   └── Generate facility reports
+
+6. PLATFORM ANALYTICS
+   ├── Total e-waste collected
+   ├── User engagement metrics
+   ├── Facility utilization rates
+   ├── Environmental impact summary
+   └── Regional statistics
+
+7. CONTENT MANAGEMENT
+   ├── Manage educational resources
+   ├── Update tutorial videos
+   ├── Moderate community forum
+   └── Send platform notifications
+
+8. SYSTEM CONFIGURATION
+   ├── Manage reward point values
+   ├── Configure gamification rules
+   ├── Set verification criteria
+   └── Update platform settings
+
+
+================================================================================
+TECHNICAL WORKFLOW: BACKEND PROCESSES
+================================================================================
+
+1. AUTHENTICATION FLOW
+   ├── User submits credentials
+   ├── Auth0 validates credentials
+   ├── Generate JWT token
+   ├── Token includes role (Citizen/NGO/Admin)
+   ├── Frontend stores token
+   └── All API calls include token for authorization
+
+2. FACILITY LOCATION FLOW
+   ├── User requests nearby facilities
+   ├── Frontend gets user GPS coordinates
+   ├── API call to backend with coordinates
+   ├── Backend queries PostgreSQL database
+   ├── Calculate distances using geospatial queries
+   ├── Filter by capacity & verification status
+   ├── Return facilities with MapBox markers
+   └── Display on interactive map
+
+3. AI DEVICE RECOGNITION FLOW
+   ├── User uploads device photo
+   ├── Image sent to backend
+   ├── TensorFlow model processes image
+   ├── CNN identifies device category
+   ├── Estimate device value from database
+   ├── Generate recycling recommendations
+   └── Return results to user
+
+4. ML CHATBOT FLOW
+   ├── User asks question
+   ├── NLP processes query (BERT/DialogFlow)
+   ├── Intent recognition
+   ├── Retrieve relevant information
+   ├── Generate personalized response
+   └── Return answer to user
+
+5. BOOKING & QR CODE FLOW
+   ├── Citizen creates booking
+   ├── Generate unique booking ID
+   ├── Create QR code with booking data
+   ├── Store booking in PostgreSQL
+   ├── Send notification to NGO
+   ├── NGO scans QR code
+   ├── Verify booking details
+   └── Update status in database
+
+6. IMPACT CALCULATION FLOW
+   ├── User completes disposal
+   ├── Backend calculates:
+   │   ├── Device weight/type → CO2 saved
+   │   ├── Materials recovered estimation
+   │   └── Carbon footprint reduction
+   ├── Update user's impact statistics
+   ├── Award reward points
+   ├── Update leaderboard rankings
+   └── Refresh dashboard metrics
+
+7. CIRCULAR ECONOMY TRACKING
+   ├── Citizen disposes device
+   ├── NGO collects & processes
+   ├── Materials tracked in value chain
+   ├── Integration with recycler database
+   ├── Track material recovery rates
+   └── Generate sustainability reports
+
+
+================================================================================
+DATABASE SCHEMA INTERACTIONS
+================================================================================
+
+1. PostgreSQL (Relational Data)
+   ├── Users table (Citizens, NGOs, Admins)
+   ├── Facilities table (NGO facilities)
+   ├── Bookings table (Pickup requests)
+   ├── Transactions table (Disposal records)
+   ├── Rewards table (Points history)
+   └── Certificates table (Digital certificates)
+
+2. MongoDB (Flexible Data)
+   ├── Facility analytics (JSON documents)
+   ├── User activity logs
+   ├── Chatbot conversation history
+   ├── Educational content
+   └── Impact calculations
+
+================================================================================

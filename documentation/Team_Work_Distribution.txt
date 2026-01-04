@@ -1,0 +1,117 @@
+================================================================================
+                    ELOCATE PROJECT - WORK DISTRIBUTION
+                        3-Member Team Task Allocation
+================================================================================
+
+TEAM MEMBER 1 - RESEARCH & AI/ML SPECIALIST
+============================================
+
+1. Project Conceptualization
+   • Define project scope, objectives, and key features
+
+2. Research about Project
+   • Literature survey on e-waste management and AI-based classification systems
+   • Study existing solutions and document findings
+
+3. Analysis of Algorithm
+   • Evaluate object detection algorithms (YOLO, FRCNN, SSD)
+   • Compare deep learning frameworks and select optimal approach
+
+4. Deep Learning Model Development
+   • Design CNN architecture for e-waste device classification
+   • Prepare training dataset (10,000+ images) and label categories
+
+5. Model Training & Optimization
+   • Train FRCNN model for device recognition
+   • Develop NLP model for chatbot functionality
+
+6. AI Model Integration
+   • Integrate trained models with backend API
+   • Create REST endpoints for real-time predictions
+
+7. Documentation
+   • Write technical documentation for AI/ML components
+   • Prepare model performance reports and research findings
+
+
+================================================================================
+
+TEAM MEMBER 2 - FULL-STACK DEVELOPER (FRONTEND FOCUS)
+======================================================
+
+1. UI/UX Design
+   • Create wireframes and mockups for all dashboards
+   • Develop design system (colors, typography, components)
+
+2. User Authentication Interface
+   • Implement Auth0 login/signup pages
+   • Build multi-role registration forms (Citizen, NGO, Admin)
+
+3. Citizen Module Development
+   • Build Citizen Dashboard with MapBox facility locator
+   • Create AI Device Recognition camera interface and ML Chatbot UI
+
+4. Booking & Gamification Features
+   • Develop Book Pickup form with QR code generation
+   • Implement Impact Dashboard, points system, and leaderboards
+
+5. NGO Module Development
+   • Build multi-step NGO registration and verification interface
+   • Create Booking Management and QR scanner components
+
+6. Admin Module Development
+   • Build Admin Dashboard with facility verification interface
+   • Develop User Management and Platform Analytics visualization
+
+7. Responsive Design & Testing
+   • Ensure mobile responsiveness for all pages
+   • Optimize performance and conduct UI/UX testing
+
+
+================================================================================
+
+TEAM MEMBER 3 - BACKEND DEVELOPER & DEVOPS ENGINEER
+====================================================
+
+1. Database Design & Setup
+   • Design PostgreSQL schema (users, facilities, bookings)
+   • Create MongoDB collections for AI outputs and analytics
+
+2. Authentication APIs
+   • Implement Auth0 backend configuration
+   • Build login/signup endpoints with JWT token management
+
+3. Citizen Service APIs
+   • Develop facility search, booking creation, and QR generation APIs
+   • Build certificate generation and points/rewards system
+
+4. NGO & Admin Service APIs
+   • Create NGO registration, verification, and booking management endpoints
+   • Build admin facility approval and user management APIs
+
+5. Third-Party Integrations
+   • Integrate MapBox API for geolocation
+   • Set up email/SMS notifications (SendGrid, Twilio)
+
+6. DevOps & Deployment
+   • Set up Docker containerization and CI/CD with GitHub Actions
+   • Deploy frontend to Vercel and backend to Railway
+
+7. Security & Testing
+   • Implement API rate limiting, validation, and security headers
+   • Conduct load testing and write comprehensive API tests
+
+
+================================================================================
+
+TIMELINE: 8 Weeks
+==================
+
+WEEK 1-2: Research & Planning
+WEEK 3-4: Core Development
+WEEK 5-6: Feature Development
+WEEK 7: Testing & Deployment
+WEEK 8: Finalization & Documentation
+
+
+================================================================================
