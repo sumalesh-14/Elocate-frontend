@@ -211,7 +211,7 @@ const SettingsPage = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Full Name
+                                                    Full Name <span className="text-red-500">*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -225,7 +225,7 @@ const SettingsPage = () => {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Email Address
+                                                    Email Address <span className="text-red-500">*</span>
                                                 </label>
                                                 <div className="relative">
                                                     <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -242,7 +242,7 @@ const SettingsPage = () => {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Phone Number
+                                                    Phone Number <span className="text-red-500">*</span>
                                                 </label>
                                                 <div className="relative">
                                                     <MdPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -258,7 +258,7 @@ const SettingsPage = () => {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">City <span className="text-red-500">*</span> </label>
                                                 <input
                                                     type="text"
                                                     value={profile.city}
@@ -289,7 +289,7 @@ const SettingsPage = () => {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        Current Password
+                                                        Current Password <span className="text-red-500">*</span>
                                                     </label>
                                                     <div className="relative">
                                                         <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -309,7 +309,7 @@ const SettingsPage = () => {
 
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        New Password
+                                                        New Password <span className="text-red-500">*</span>
                                                     </label>
                                                     <div className="relative">
                                                         <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -389,7 +389,7 @@ const SettingsPage = () => {
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Default Pickup Address
+                                                Default Pickup Address <span className="text-red-500">*</span>
                                             </label>
                                             <textarea
                                                 value={pickupPrefs.defaultAddress}
@@ -401,7 +401,7 @@ const SettingsPage = () => {
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Preferred Time Slot
+                                                Preferred Time Slot <span className="text-red-500">*</span>
                                             </label>
                                             <select
                                                 value={pickupPrefs.preferredTimeSlot}
