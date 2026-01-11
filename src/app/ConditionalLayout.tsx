@@ -64,22 +64,37 @@ export default function ConditionalLayout({
         return <>{children}</>;
     }
 
-    // Citizen/Intermediary routes with Navbar and Footer
-    return (
-        <div className="flex flex-col min-h-screen bg-white">
-            <NextTopLoader color="#28af60" showSpinner={false} />
-            <Navbar />
-            <main className="flex-grow pt-[80px]">
-                {children}
-            </main>
-            <div className={pathname?.startsWith('/citizen/book-recycle') ? "relative z-[30]" : ""}>
-                <Footer />
+    // Intermediary routes (without Navbar and Footer)
+    const isIntermediaryRoute = pathname?.startsWith('/intermediary');
+    if (isIntermediaryRoute) {
+        return (
+            <div className="flex flex-col min-h-screen bg-white">
+                <NextTopLoader color="#28af60" showSpinner={false} />
+                <main className="flex-grow">
+                    {children}
+                </main>
             </div>
-            <Script
-                id="tawk_chatbot"
-                strategy="lazyOnload"
-                dangerouslySetInnerHTML={{
-                    __html: `
+        );
+    }
+
+    // Citizen routes with Navbar and Footer
+    const isCitizenRoute = pathname?.startsWith('/citizen');
+    if (isCitizenRoute) {
+        return (
+            <div className="flex flex-col min-h-screen bg-white">
+                <NextTopLoader color="#28af60" showSpinner={false} />
+                <Navbar />
+                <main className="flex-grow pt-[80px]">
+                    {children}
+                </main>
+                <div className={pathname?.startsWith('/citizen/book-recycle') ? "relative z-[30]" : ""}>
+                    <Footer />
+                </div>
+                <Script
+                    id="tawk_chatbot"
+                    strategy="lazyOnload"
+                    dangerouslySetInnerHTML={{
+                        __html: `
               var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
               (function(){
                 var s1=document.createElement("script");
@@ -92,8 +107,19 @@ export default function ConditionalLayout({
                 s1.onerror = function() { console.warn("Tawk.to failed to load"); };
               })();
             `,
-                }}
-            />
+                    }}
+                />
+            </div>
+        );
+    }
+
+    // Default fallback for other routes
+    return (
+        <div className="flex flex-col min-h-screen bg-white">
+            <NextTopLoader color="#28af60" showSpinner={false} />
+            <main className="flex-grow">
+                {children}
+            </main>
         </div>
     );
 }

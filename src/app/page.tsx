@@ -1,36 +1,25 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { isAuthenticated, getRole } from './citizen/sign-in/auth';
-import { ROLE_ROUTES, UserRole } from './sign-in/routes';
-
 export default function Home() {
-    const router = useRouter();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    useEffect(() => {
-        if (mounted) {
-            if (!isAuthenticated()) {
-                router.replace('/citizen');
-            } else {
-                const role = getRole() as UserRole;
-                const redirectPath = ROLE_ROUTES[role] || ROLE_ROUTES.DEFAULT;
-                router.replace(redirectPath);
-            }
-        }
-    }, [router, mounted]);
-
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white font-montserrat">
-            <div className="animate-pulse flex flex-col items-center">
-                <div className="h-12 w-12 bg-emerald-100 rounded-full mb-4"></div>
-                <div className="h-4 w-32 bg-gray-100 rounded"></div>
-                <p className="mt-4 text-emerald-600 font-bold">Redirecting...</p>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-green-100 font-montserrat">
+            <div className="text-center">
+                <h1 className="text-5xl font-bold text-emerald-800 mb-4">Welcome to EcoCycle</h1>
+                <p className="text-xl text-gray-700 mb-8">Your E-Waste Recycling Solution</p>
+                <div className="flex gap-4 justify-center">
+                    <a
+                        href="/sign-in"
+                        className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                    >
+                        Sign In
+                    </a>
+                    <a
+                        href="/citizen"
+                        className="px-6 py-3 bg-white text-emerald-600 border-2 border-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors font-medium"
+                    >
+                        Explore as Guest
+                    </a>
+                </div>
             </div>
         </div>
     );
