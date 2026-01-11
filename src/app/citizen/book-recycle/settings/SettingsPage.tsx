@@ -50,7 +50,8 @@ const SettingsPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("account");
     const [isEditing, setIsEditing] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
     // User Profile State
@@ -74,7 +75,7 @@ const SettingsPage = () => {
 
     // Pickup Preferences State
     const [pickupPrefs, setPickupPrefs] = useState<PickupPreferences>({
-        defaultAddress: "123 Green Valley Rd, Tech Park, San Francisco, CA 94103",
+        defaultAddress: "",
         preferredTimeSlot: "09:00 AM - 11:00 AM",
         specialInstructions: "Please call before arrival",
     });
@@ -82,6 +83,10 @@ const SettingsPage = () => {
     // App Preferences State
     const [theme, setTheme] = useState("light");
     const [language, setLanguage] = useState("en");
+
+    // Password State
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
 
     const tabs = [
         { id: "account", label: "Account", icon: <MdPerson /> },
@@ -114,6 +119,15 @@ const SettingsPage = () => {
         // TODO: Implement data download
         console.log("Downloading user data...");
         alert("Your data download will begin shortly. You'll receive an email when it's ready.");
+    };
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        // Allow only digits, +, -, (, ), and spaces
+        const phoneRegex = /^[0-9+\-() ]*$/;
+        if (phoneRegex.test(value)) {
+            setProfile({ ...profile, phone: value });
+        }
     };
 
     const handleSaveAndUpdations = () => {
@@ -192,7 +206,11 @@ const SettingsPage = () => {
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={handleProfileUpdate}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                                        disabled={!profile.name || !profile.email || !profile.phone || !profile.city}
+                                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${profile.name && profile.email && profile.phone && profile.city
+                                                            ? "bg-green-600 text-white hover:bg-green-700 cursor-pointer"
+                                                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                            }`}
                                                     >
                                                         <MdSave />
                                                         Save
@@ -211,7 +229,7 @@ const SettingsPage = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Full Name
+                                                    Full Name <span className="text-red-500">*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -225,7 +243,7 @@ const SettingsPage = () => {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Email Address
+                                                    Email Address <span className="text-red-500">*</span>
                                                 </label>
                                                 <div className="relative">
                                                     <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -242,14 +260,14 @@ const SettingsPage = () => {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Phone Number
+                                                    Phone Number <span className="text-red-500">*</span>
                                                 </label>
                                                 <div className="relative">
                                                     <MdPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                                     <input
                                                         type="tel"
                                                         value={profile.phone}
-                                                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                                                        onChange={handlePhoneChange}
                                                         disabled={!isEditing}
                                                         className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg ${isEditing ? "focus:ring-2 focus:ring-green-500" : "bg-gray-50"
                                                             }`}
@@ -258,7 +276,7 @@ const SettingsPage = () => {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">City <span className="text-red-500">*</span> </label>
                                                 <input
                                                     type="text"
                                                     value={profile.city}
@@ -289,40 +307,58 @@ const SettingsPage = () => {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        Current Password
+                                                        Current Password <span className="text-red-500">*</span>
                                                     </label>
                                                     <div className="relative">
                                                         <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                                         <input
-                                                            type={showPassword ? "text" : "password"}
+                                                            type={showCurrentPassword ? "text" : "password"}
+                                                            value={currentPassword}
+                                                            onChange={(e) => setCurrentPassword(e.target.value)}
                                                             placeholder="Enter current password"
-                                                            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                                            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                                                         />
                                                         <button
-                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            type="button"
+                                                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                                                             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                                         >
-                                                            {showPassword ? <MdVisibilityOff /> : <MdVisibility />}
+                                                            {showCurrentPassword ? <MdVisibility /> : <MdVisibilityOff />}
                                                         </button>
                                                     </div>
                                                 </div>
 
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        New Password
+                                                        New Password <span className="text-red-500">*</span>
                                                     </label>
                                                     <div className="relative">
                                                         <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                                         <input
-                                                            type={showPassword ? "text" : "password"}
+                                                            type={showNewPassword ? "text" : "password"}
+                                                            value={newPassword}
+                                                            onChange={(e) => setNewPassword(e.target.value)}
                                                             placeholder="Enter new password"
-                                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                                            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                                                         />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                                        >
+                                                            {showNewPassword ? <MdVisibility /> : <MdVisibilityOff />}
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button className="mt-4 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                                onClick={() => handleSaveAndUpdations()} >
+                                            <button
+                                                className={`mt-4 px-6 py-3 rounded-lg transition-colors ${currentPassword && newPassword
+                                                    ? "bg-green-600 text-white hover:bg-green-700 cursor-pointer"
+                                                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                    }`}
+                                                onClick={() => handleSaveAndUpdations()}
+                                                disabled={!currentPassword || !newPassword}
+                                            >
                                                 Update Password
                                             </button>
                                             {showSuccessMessage && (
@@ -389,7 +425,7 @@ const SettingsPage = () => {
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Default Pickup Address
+                                                Default Pickup Address <span className="text-red-500">*</span>
                                             </label>
                                             <textarea
                                                 value={pickupPrefs.defaultAddress}
@@ -401,7 +437,7 @@ const SettingsPage = () => {
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Preferred Time Slot
+                                                Preferred Time Slot <span className="text-red-500">*</span>
                                             </label>
                                             <select
                                                 value={pickupPrefs.preferredTimeSlot}
@@ -429,7 +465,11 @@ const SettingsPage = () => {
                                             />
                                         </div>
 
-                                        <button className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                        <button
+                                            className={`px-6 py-3 rounded-lg transition-colors ${pickupPrefs.defaultAddress
+                                                ? "bg-green-600 text-white hover:bg-green-700 cursor-pointer"
+                                                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                }`}
                                             onClick={() => handleSaveAndUpdations()}
                                         >
                                             Save Preferences

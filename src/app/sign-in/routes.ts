@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
  */
 export const ROLE_ROUTES = {
     ADMIN: "/admin",
-    INTERMEDIARY: "/intermediary/home",
+    INTERMEDIARY: "/intermediary",
     CITIZEN: "/citizen", // Or /citizen/home if preferred
     DEFAULT: "/"
 } as const;

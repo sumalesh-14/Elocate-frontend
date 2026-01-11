@@ -138,6 +138,16 @@ const RecycleRequestForm = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
+
+        // Validate phone number to allow only numbers and common phone formatting characters
+        if (name === "phoneNumber") {
+            // Allow only digits, +, -, (, ), and spaces
+            const phoneRegex = /^[0-9+\-() ]*$/;
+            if (!phoneRegex.test(value)) {
+                return; // Don't update if invalid characters are entered
+            }
+        }
+
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
