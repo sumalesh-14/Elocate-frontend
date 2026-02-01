@@ -284,7 +284,8 @@ const FacilityMap: React.FC = () => {
     return () => {
       map.remove();
     };
-  }, [clientLocation, selectedFacility, facilityData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientLocation, selectedFacility, facilityData.length]);
 
   // Update markers when selected facility changes
   useEffect(() => {
