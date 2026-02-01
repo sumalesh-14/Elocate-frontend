@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fetchDeviceCategories } from '../services/api';
-import { Category } from '@/src/app/types';
+import { Category } from '../types';
 import './ListCategories.css';
 
 const ListCategories: React.FC = () => {

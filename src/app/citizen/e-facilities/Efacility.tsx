@@ -284,7 +284,7 @@ const FacilityMap: React.FC = () => {
     return () => {
       map.remove();
     };
-  }, [clientLocation, selectedFacility, facilityData.length]);
+  }, [clientLocation, selectedFacility, facilityData]);
 
   // Update markers when selected facility changes
   useEffect(() => {

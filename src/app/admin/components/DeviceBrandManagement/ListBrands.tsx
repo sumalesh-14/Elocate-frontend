@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchDeviceBrands } from '../../services/api';
-import { Brand } from '@/src/app/types';
+import { Brand } from '../../types';
 
 const ListBrands: React.FC = () => {
     const [brands, setBrands] = useState<Brand[]>([]);
