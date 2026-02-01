@@ -24,13 +24,15 @@ const HeroSection: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const currentIndex = solutions.indexOf(currentSolution);
-      const nextIndex = (currentIndex + 1) % solutions.length;
-      setCurrentSolution(solutions[nextIndex]);
+      setCurrentSolution((prev) => {
+        const currentIndex = solutions.indexOf(prev);
+        const nextIndex = (currentIndex + 1) % solutions.length;
+        return solutions[nextIndex];
+      });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [currentSolution]);
+  }, []); // Remove currentSolution from dependencies
 
   return (
     <section className="relative min-h-[95vh] flex items-center pt-0 overflow-hidden bg-white" id="home" aria-label="hero">
