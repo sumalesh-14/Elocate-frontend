@@ -3,9 +3,6 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ClientIonIcon from "../../utils/ClientIonIcon";
-import { menuOutline } from "ionicons/icons";
-import { closeOutline } from "ionicons/icons";
-import { location } from "ionicons/icons"
 import logo from "../../../assets/ELocate-s.png"
 import { getEmail, getUser, getUserName, handleLogout, isAuthenticated } from "../sign-in/auth";
 import { FiUser } from 'react-icons/fi';
@@ -182,7 +179,7 @@ const Header = () => {
                                 onClick={toggleNavbar}
                             >
                                 <ClientIonIcon
-                                    icon={closeOutline}
+                                    icon="closeOutline"
                                     className={`close-icon ${isNavbarActive ? "" : "hidden"}`}
                                 ></ClientIonIcon>
                             </button>
@@ -204,7 +201,7 @@ const Header = () => {
                         onClick={handleLocationClick}
                         className='font-montserrat font-bold text-xl ml-12 md:ml-4 md:text-2xl text-emerald-600 flex items-center gap-[1vh] hover:text-emerald-700 transition-colors cursor-pointer'
                     >
-                        <ClientIonIcon icon={location} aria-hidden="true" role="img"></ClientIonIcon>
+                        <ClientIonIcon icon="location" aria-hidden="true" role="img"></ClientIonIcon>
                         {locations || 'Loading...'}
                     </button>
 
@@ -242,7 +239,7 @@ const Header = () => {
                         data-nav-toggler
                         onClick={toggleNavbar}
                     >
-                        <ClientIonIcon icon={menuOutline} aria-hidden="true" role="img"></ClientIonIcon>
+                        <ClientIonIcon icon="menuOutline" aria-hidden="true" role="img"></ClientIonIcon>
                     </button>
 
                     <div
@@ -277,3 +274,4 @@ const NavItem = ({ label }: NavItemProps) => {
 };
 
 export default Header;
+

@@ -11,7 +11,15 @@ import {
   FaUserPlus, 
   FaArrowRight,
   FaUser,
-  FaPhone
+  FaPhone,
+  FaBars,
+  FaTimes,
+  FaMapMarkerAlt,
+  FaPaperPlane,
+  FaLinkedin,
+  FaTwitter,
+  FaInstagram,
+  FaWhatsapp
 } from "react-icons/fa";
 
 // Icon mapping for backward compatibility
@@ -27,6 +35,16 @@ const iconMap: { [key: string]: React.ComponentType<any> } = {
   arrowForwardOutline: FaArrowRight,
   personOutline: FaUser,
   callOutline: FaPhone,
+  menuOutline: FaBars,
+  closeOutline: FaTimes,
+  location: FaMapMarkerAlt,
+  paperPlane: FaPaperPlane,
+  call: FaPhone,
+  mail: FaEnvelope,
+  logoLinkedin: FaLinkedin,
+  logoTwitter: FaTwitter,
+  logoInstagram: FaInstagram,
+  logoWhatsapp: FaWhatsapp,
 };
 
 const ClientIonIcon = ({ icon, className, ...props }: any) => {
