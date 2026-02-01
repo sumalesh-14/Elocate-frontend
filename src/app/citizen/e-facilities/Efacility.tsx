@@ -3,14 +3,13 @@ import React, { useEffect, useRef, useState } from "react";
 import mapboxgl, { Map, Popup } from "mapbox-gl";
 import { FaCheckCircle, FaTimesCircle, FaDirections, FaRecycle, FaMapMarkerAlt, FaPhoneAlt, FaClock } from "react-icons/fa";
 import "mapbox-gl/dist/mapbox-gl.css";
+import "./Efacility.css";
 import getLocation from "../../utils/getLocation";
 import { calculateDistance } from "../../utils/calculateLocation";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import Link from "next/link";
 import { fetchFacilities } from "../../utils/facilityApi";
-import Head from "next/head";
-
 interface Facility {
   address: string;
   distance: number;
@@ -30,6 +29,7 @@ const FacilityMap: React.FC = () => {
   );
   const [selectedFacility, setSelectedFacility] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterVerified, setFilterVerified] = useState<boolean>(false);
   const [filterDistance, setFilterDistance] = useState<number | null>(null);
   const cardContainerRef = useRef<HTMLDivElement>(null);
@@ -39,18 +39,34 @@ const FacilityMap: React.FC = () => {
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   useEffect(() => {
-    mapboxgl.accessToken =
-      "pk.eyJ1Ijoic2h1ZW5jZSIsImEiOiJjbG9wcmt3czMwYnZsMmtvNnpmNTRqdnl6In0.vLBhYMBZBl2kaOh1Fh44Bw";
-
-    setIsLoading(true);
-    getLocation().then((coordinates) => {
-      if (coordinates) {
-        setClientLocation(coordinates.coordinates);
-      } else {
-        setClientLocation([75.7139, 19.7515]);
+    try {
+      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 
+        "pk.eyJ1Ijoic2h1ZW5jZSIsImEiOiJjbG9wcmt3czMwYnZsMmtvNnpmNTRqdnl6In0.vLBhYMBZBl2kaOh1Fh44Bw";
+      
+      if (!mapboxToken) {
+        throw new Error("Mapbox token is not configured");
       }
+      
+      mapboxgl.accessToken = mapboxToken;
+
+      setIsLoading(true);
+      getLocation().then((coordinates) => {
+        if (coordinates) {
+          setClientLocation(coordinates.coordinates);
+        } else {
+          setClientLocation([75.7139, 19.7515]);
+        }
+        setIsLoading(false);
+      }).catch((err) => {
+        console.error("Error getting location:", err);
+        setClientLocation([75.7139, 19.7515]); // Default location
+        setIsLoading(false);
+      });
+    } catch (err) {
+      console.error("Error initializing map:", err);
+      setError("Failed to initialize map. Please refresh the page.");
       setIsLoading(false);
-    });
+    }
   }, []);
 
   const handleAllowLocationClick = () => {
@@ -103,23 +119,29 @@ const FacilityMap: React.FC = () => {
     if (clientLocation) {
       // Fetch facilities from API (with automatic fallback to static data)
       const loadFacilities = async () => {
-        setIsLoading(true);
-        const facilities = await fetchFacilities();
+        try {
+          setIsLoading(true);
+          const facilities = await fetchFacilities();
 
-        const sortedFacilities = facilities
-          .map((facility) => ({
-            ...facility,
-            distance: calculateDistance(
-              clientLocation[1],
-              clientLocation[0],
-              facility.lat,
-              facility.lon
-            ),
-          }))
-          .sort((a, b) => a.distance - b.distance);
+          const sortedFacilities = facilities
+            .map((facility) => ({
+              ...facility,
+              distance: calculateDistance(
+                clientLocation[1],
+                clientLocation[0],
+                facility.lat,
+                facility.lon
+              ),
+            }))
+            .sort((a, b) => a.distance - b.distance);
 
-        setFacilityData(sortedFacilities);
-        setIsLoading(false);
+          setFacilityData(sortedFacilities);
+          setIsLoading(false);
+        } catch (err) {
+          console.error("Error loading facilities:", err);
+          setError("Failed to load facilities. Please try again.");
+          setIsLoading(false);
+        }
       };
 
       loadFacilities();
@@ -402,13 +424,12 @@ const FacilityMap: React.FC = () => {
   }, [selectedFacility, facilityData, clientLocation]);
 
   return (
-    <>
-      <Head>
-        <title>ELocate - Find Nearby E-Waste Recycling Facilities</title>
-        <meta name="description" content="Locate certified e-waste recycling facilities near you. Get directions, facility details, and book recycling services with our interactive map." />
-      </Head>
-
-      <div className="min-h-screen bg-gray-50 e-facilities-container">
+    <div className="min-h-screen bg-gray-50 e-facilities-container">
+        {error && (
+          <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+            {error}
+          </div>
+        )}
         {isLoading ? (
           <div className="flex items-center justify-center h-screen">
             <div className="text-center">
@@ -579,52 +600,7 @@ const FacilityMap: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
-
-      <style jsx global>{`
-        .mapboxgl-popup-content {
-          padding: 0;
-          border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-        
-        .mapboxgl-ctrl-geocoder {
-          width: 100%;
-          max-width: 360px;
-          border-radius: 8px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .directions-popup .mapboxgl-popup-content {
-          border-left: 4px solid #4f46e5;
-        }
-        
-        .pulse-marker::before {
-          content: '';
-          position: absolute;
-          width: 300%;
-          height: 300%;
-          top: -100%;
-          left: -100%;
-          background-color: rgba(16, 185, 129, 0.2);
-          border-radius: 50%;
-          z-index: -1;
-          animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-          0% {
-            transform: scale(0.5);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(1.5);
-            opacity: 0;
-          }
-        }
-      `}</style>
-    </>
+    </div>
   );
 };
 
