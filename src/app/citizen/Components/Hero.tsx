@@ -4,8 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import hero from "../../../../public/e-waste-recycling.jpeg";
-import { IonIcon } from "@ionic/react";
-import { play } from "ionicons/icons";
+import { FaPlay } from "react-icons/fa";
 
 const solutions = [
   "Recycling Revolution",

@@ -1,19 +1,44 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { IonIcon } from "@ionic/react";
+import React from "react";
+import { 
+  FaEnvelope, 
+  FaLock, 
+  FaEye, 
+  FaEyeSlash, 
+  FaGithub, 
+  FaGoogle, 
+  FaLeaf, 
+  FaUserPlus, 
+  FaArrowRight,
+  FaUser,
+  FaPhone
+} from "react-icons/fa";
 
-const ClientIonIcon = (props: any) => {
-    const [mounted, setMounted] = useState(false);
+// Icon mapping for backward compatibility
+const iconMap: { [key: string]: React.ComponentType<any> } = {
+  mailOutline: FaEnvelope,
+  lockClosedOutline: FaLock,
+  eyeOutline: FaEye,
+  eyeOffOutline: FaEyeSlash,
+  logoGithub: FaGithub,
+  logoGoogle: FaGoogle,
+  leafOutline: FaLeaf,
+  personAddOutline: FaUserPlus,
+  arrowForwardOutline: FaArrowRight,
+  personOutline: FaUser,
+  callOutline: FaPhone,
+};
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!mounted) {
-        return null;
-    }
-
-    return <IonIcon {...props} />;
+const ClientIonIcon = ({ icon, className, ...props }: any) => {
+  // If icon is a string (icon name), map it to React Icon
+  if (typeof icon === 'string') {
+    const IconComponent = iconMap[icon] || FaLeaf;
+    return <IconComponent className={className} {...props} />;
+  }
+  
+  // If icon is already a component, render it
+  const IconComponent = icon || FaLeaf;
+  return <IconComponent className={className} {...props} />;
 };
 
 export default ClientIonIcon;
