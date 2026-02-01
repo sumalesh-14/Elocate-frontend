@@ -2,7 +2,6 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Script from "next/script";
-import NextTopLoader from 'nextjs-toploader';
 import Navbar from "@/app/citizen/Header/Navbar";
 import Footer from "@/app/citizen/Footer/Footer";
 import { isAuthenticated } from "@/app/citizen/sign-in/auth";
@@ -35,7 +34,7 @@ export default function ConditionalLayout({
     if (!mounted) {
         return (
             <div className="min-h-screen bg-white">
-                <NextTopLoader color="#28af60" showSpinner={false} />
+
                 <div className="pt-[80px]">{children}</div>
             </div>
         );
@@ -69,7 +68,7 @@ export default function ConditionalLayout({
     if (isIntermediaryRoute) {
         return (
             <div className="flex flex-col min-h-screen bg-white">
-                <NextTopLoader color="#28af60" showSpinner={false} />
+
                 <main className="flex-grow">
                     {children}
                 </main>
@@ -82,7 +81,7 @@ export default function ConditionalLayout({
     if (isCitizenRoute) {
         return (
             <div className="flex flex-col min-h-screen bg-white">
-                <NextTopLoader color="#28af60" showSpinner={false} />
+
                 <Navbar />
                 <main className="flex-grow pt-[80px]">
                     {children}
@@ -116,7 +115,7 @@ export default function ConditionalLayout({
     // Default fallback for other routes
     return (
         <div className="flex flex-col min-h-screen bg-white">
-            <NextTopLoader color="#28af60" showSpinner={false} />
+
             <main className="flex-grow">
                 {children}
             </main>
