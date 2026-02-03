@@ -7,14 +7,7 @@ import { motion } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import { setEmail, setPhoneNumber, setToken, setUser, setUserID, setUserName, setfullname } from "./auth";
 import ClientIonIcon from "../../utils/ClientIonIcon";
-import {
-  mailOutline,
-  lockClosedOutline,
-  eyeOutline,
-  eyeOffOutline,
-  personAddOutline,
-  arrowForwardOutline
-} from "ionicons/icons";
+
 import logo from "../../../assets/ELocate-s.png";
 import bannerImage from "../../../assets/ewaste_login_banner.png";
 
@@ -126,7 +119,7 @@ const Signin: React.FC = () => {
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold rounded-full shadow-lg hover:from-emerald-600 hover:to-emerald-700 transition-all"
           >
-            <ClientIonIcon icon={personAddOutline} className="text-2xl" />
+            <ClientIonIcon icon="personAddOutline" className="text-2xl" />
             <span className="text-lg">Create Account</span>
           </motion.button>
         </Link>
@@ -211,7 +204,7 @@ const Signin: React.FC = () => {
               <label className="block text-lg font-bold text-gray-800 mb-3 ml-1">Email address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-emerald-500 text-gray-400">
-                  <ClientIonIcon icon={mailOutline} className="text-2xl" />
+                  <ClientIonIcon icon="mailOutline" className="text-2xl" />
                 </div>
                 <input
                   required
@@ -238,7 +231,7 @@ const Signin: React.FC = () => {
               </div>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-emerald-500 text-gray-400">
-                  <ClientIonIcon icon={lockClosedOutline} className="text-2xl" />
+                  <ClientIonIcon icon="lockClosedOutline" className="text-2xl" />
                 </div>
                 <input
                   required
@@ -254,7 +247,7 @@ const Signin: React.FC = () => {
                   onClick={togglePasswordVisibility}
                   className="absolute inset-y-0 right-0 pr-5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <ClientIonIcon icon={showPassword ? eyeOffOutline : eyeOutline} className="text-2xl" />
+                  <ClientIonIcon icon={showPassword ? "eyeOffOutline" : "eyeOutline"} className="text-2xl" />
                 </button>
               </div>
             </motion.div>
@@ -293,7 +286,7 @@ const Signin: React.FC = () => {
                 className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 font-bold text-xl rounded-2xl border-2 border-emerald-200 hover:from-emerald-100 hover:to-emerald-200 hover:border-emerald-300 transition-all flex items-center justify-center gap-3 mx-auto"
               >
                 <span>Create your free account</span>
-                <ClientIonIcon icon={arrowForwardOutline} className="text-2xl" />
+                <ClientIonIcon icon="arrowForwardOutline" className="text-2xl" />
               </motion.button>
             </Link>
           </motion.div>
@@ -304,5 +297,6 @@ const Signin: React.FC = () => {
 };
 
 export default Signin;
+
 
 

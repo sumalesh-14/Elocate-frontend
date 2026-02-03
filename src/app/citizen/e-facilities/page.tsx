@@ -3,6 +3,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import FacilityMap from "./Efacility";
 
+// Note: For SEO metadata in Next.js 14 app directory, 
+// create a separate metadata export in a server component or layout
 const Page = () => {
   return (
     <>

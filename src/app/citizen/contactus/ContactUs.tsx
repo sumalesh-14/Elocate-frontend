@@ -2,18 +2,8 @@
 "use client";
 import React, { useState } from "react";
 import ClientIonIcon from "../../utils/ClientIonIcon";
-import {
-  location,
-  call,
-  mail,
-  logoLinkedin,
-  logoTwitter,
-  logoInstagram,
-  logoWhatsapp,
-} from "ionicons/icons";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
-import Head from "next/head";
 import { motion } from "framer-motion";
 import { MdPhoneInTalk, MdEmail, MdLocationOn } from "react-icons/md";
 import { submitContactForm } from "../services/contactApi";
@@ -60,11 +50,6 @@ const ContactUs = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Head>
-        <title>Connect With Us | ELocate</title>
-        <meta name="description" content="Reach out to ELocate's sustainability experts for personalized assistance and information on e-waste management." />
-      </Head>
-
       <ToastContainer theme="dark" position="top-right" />
 
       {/* Hero Section */}
@@ -229,10 +214,10 @@ const ContactUs = () => {
                   <p className="text-sm font-bold text-emerald-200 uppercase tracking-widest mb-6">Social Ecosystem</p>
                   <div className="flex gap-4">
                     {[
-                      { icon: logoLinkedin, label: "LinkedIn" },
-                      { icon: logoTwitter, label: "Twitter" },
-                      { icon: logoInstagram, label: "Instagram" },
-                      { icon: logoWhatsapp, label: "WhatsApp" }
+                      { icon: "logoLinkedin", label: "LinkedIn" },
+                      { icon: "logoTwitter", label: "Twitter" },
+                      { icon: "logoInstagram", label: "Instagram" },
+                      { icon: "logoWhatsapp", label: "WhatsApp" }
                     ].map((app, i) => (
                       <Link
                         key={i}
@@ -274,3 +259,4 @@ const ContactUs = () => {
 };
 
 export default ContactUs;
+

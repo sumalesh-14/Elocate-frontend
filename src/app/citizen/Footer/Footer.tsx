@@ -1,14 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import ClientIonIcon from "../../utils/ClientIonIcon";
-import { paperPlane } from "ionicons/icons";
-import { location } from "ionicons/icons";
-import { call } from "ionicons/icons";
-import { mail } from "ionicons/icons";
-import { logoLinkedin } from "ionicons/icons";
-import { logoTwitter } from "ionicons/icons";
-import { logoInstagram } from "ionicons/icons";
-import { logoWhatsapp } from "ionicons/icons";
 import logo from "../../../assets/ELocate-s.png";
 import Link from "next/link";
 import Image from "next/image";
@@ -99,7 +91,7 @@ const Footer = () => {
                 className="form-btn"
                 aria-label="Subscribe to our newsletter"
               >
-                <ClientIonIcon icon={paperPlane} aria-hidden="true"></ClientIonIcon>
+                <ClientIonIcon icon="paperPlane" aria-hidden="true"></ClientIonIcon>
               </button>
             </form>
           </div>
@@ -187,13 +179,13 @@ const Footer = () => {
               <p className="footer-list-title">Connect With Us</p>
             </li>
             <li className="footer-item">
-              <ClientIonIcon icon={location} aria-hidden="true" className="w-8 h-8 mt-4"></ClientIonIcon>
+              <ClientIonIcon icon="location" aria-hidden="true" className="w-8 h-8 mt-4"></ClientIonIcon>
               <address className="contact-link address">
                 Karamadai, Coimbatore,<br />Tamil Nadu, India 641104
               </address>
             </li>
             <li className="footer-item">
-              <ClientIonIcon icon={call} aria-hidden="true"></ClientIonIcon>
+              <ClientIonIcon icon="call" aria-hidden="true"></ClientIonIcon>
               <Link
                 target="_blank"
                 rel="noopener noreferrer"
@@ -204,7 +196,7 @@ const Footer = () => {
               </Link>
             </li>
             <li className="footer-item">
-              <ClientIonIcon icon={mail} aria-hidden="true"></ClientIonIcon>
+              <ClientIonIcon icon="mail" aria-hidden="true"></ClientIonIcon>
               <Link
                 target="_blank"
                 rel="noopener noreferrer"
@@ -224,7 +216,7 @@ const Footer = () => {
                     aria-label="Connect with ELocate on LinkedIn"
                     className="social-link"
                   >
-                    <ClientIonIcon icon={logoLinkedin}></ClientIonIcon>
+                    <ClientIonIcon icon="logoLinkedin"></ClientIonIcon>
                   </Link>
                 </li>
                 <li>
@@ -235,7 +227,7 @@ const Footer = () => {
                     aria-label="Follow ELocate on Instagram"
                     className="social-link"
                   >
-                    <ClientIonIcon icon={logoInstagram}></ClientIonIcon>
+                    <ClientIonIcon icon="logoInstagram"></ClientIonIcon>
                   </Link>
                 </li>
                 <li>
@@ -246,7 +238,7 @@ const Footer = () => {
                     aria-label="Follow ELocate on Twitter"
                     className="social-link"
                   >
-                    <ClientIonIcon icon={logoTwitter}></ClientIonIcon>
+                    <ClientIonIcon icon="logoTwitter"></ClientIonIcon>
                   </Link>
                 </li>
                 <li>
@@ -257,7 +249,7 @@ const Footer = () => {
                     aria-label="Contact ELocate on WhatsApp"
                     className="social-link"
                   >
-                    <ClientIonIcon icon={logoWhatsapp}></ClientIonIcon>
+                    <ClientIonIcon icon="logoWhatsapp"></ClientIonIcon>
                   </Link>
                 </li>
               </ul>
@@ -292,3 +284,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

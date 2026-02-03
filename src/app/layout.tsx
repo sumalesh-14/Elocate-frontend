@@ -13,6 +13,9 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "ELocate",
   description: "ELocate - One stop solution to Recycle E-Waste, E-waste Facility Locator",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
@@ -22,14 +25,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <link
-          rel="icon"
-          href="/favicon.ico?<generated>"
-          type="image/png"
-          sizes="32x32"
-        />
-      </head>
       <Script
         async
         src="https://www.googletagmanager.com/gtag/js?id=G-5QLTMJKRNP"

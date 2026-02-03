@@ -6,15 +6,6 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import ClientIonIcon from "../../utils/ClientIonIcon";
-import {
-  personOutline,
-  mailOutline,
-  lockClosedOutline,
-  callOutline,
-  eyeOutline,
-  eyeOffOutline,
-  arrowForwardOutline
-} from "ionicons/icons";
 import logoSm from "../../../assets/elocate-sm.png";
 import registerImage from "../../../assets/register.jpg";
 
@@ -287,7 +278,7 @@ const SignUp: React.FC = () => {
                 <label className="block text-base font-bold text-gray-700 mb-2">Full Name</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <ClientIonIcon icon={personOutline} className="text-xl" />
+                    <ClientIonIcon icon="personOutline" className="text-xl" />
                   </div>
                   <input
                     required
@@ -306,7 +297,7 @@ const SignUp: React.FC = () => {
                 <label className="block text-base font-bold text-gray-700 mb-2">Last Name</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <ClientIonIcon icon={personOutline} className="text-xl" />
+                    <ClientIonIcon icon="personOutline" className="text-xl" />
                   </div>
                   <input
                     required
@@ -328,7 +319,7 @@ const SignUp: React.FC = () => {
                 <label className="block text-base font-bold text-gray-700 mb-2">Email Address</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <ClientIonIcon icon={mailOutline} className="text-xl" />
+                    <ClientIonIcon icon="mailOutline" className="text-xl" />
                   </div>
                   <input
                     required
@@ -347,7 +338,7 @@ const SignUp: React.FC = () => {
                 <label className="block text-base font-bold text-gray-700 mb-2">Phone Number</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <ClientIonIcon icon={callOutline} className="text-xl" />
+                    <ClientIonIcon icon="callOutline" className="text-xl" />
                   </div>
                   <input
                     required
@@ -369,7 +360,7 @@ const SignUp: React.FC = () => {
                 <label className="block text-base font-bold text-gray-700 mb-2">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <ClientIonIcon icon={lockClosedOutline} className="text-xl" />
+                    <ClientIonIcon icon="lockClosedOutline" className="text-xl" />
                   </div>
                   <input
                     required
@@ -385,7 +376,7 @@ const SignUp: React.FC = () => {
                     onClick={togglePasswordVisibility}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                   >
-                    <ClientIonIcon icon={showPassword ? eyeOffOutline : eyeOutline} className="text-xl" />
+                    <ClientIonIcon icon={showPassword ? "eyeOffOutline" : "eyeOutline"} className="text-xl" />
                   </button>
                 </div>
                 {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
@@ -395,7 +386,7 @@ const SignUp: React.FC = () => {
                 <label className="block text-base font-bold text-gray-700 mb-2">Confirm Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <ClientIonIcon icon={lockClosedOutline} className="text-xl" />
+                    <ClientIonIcon icon="lockClosedOutline" className="text-xl" />
                   </div>
                   <input
                     required
@@ -445,5 +436,6 @@ const SignUp: React.FC = () => {
 };
 
 export default SignUp;
+
 
 
