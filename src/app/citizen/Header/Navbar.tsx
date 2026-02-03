@@ -60,7 +60,6 @@ const Header = () => {
                             });
                         })
                         .catch(error => {
-                            console.error('Error:', error);
                             setLocation('Location Unavailable');
                             setToastConfig({
                                 isOpen: true,
@@ -70,7 +69,6 @@ const Header = () => {
                         });
                 },
                 (error) => {
-                    console.error("Geolocation error:", error.message);
                     setLocation('Location Unavailable');
                     setToastConfig({
                         isOpen: true,
@@ -81,7 +79,6 @@ const Header = () => {
                 options
             );
         } else {
-            console.error('Geolocation is not supported by this browser.');
             setLocation('Location Unavailable');
             setToastConfig({
                 isOpen: true,
@@ -119,17 +116,13 @@ const Header = () => {
                             setLocation(`${city}, ${state}`);
                         })
                         .catch(error => {
-                            console.error('Error:', error);
                         });
                 },
                 (error) => {
-                    console.error("Geolocation error:", error.message);
                     setLocation('Location Unavailable');
                 },
                 options
             );
-        } else {
-            console.error('Geolocation is not supported by this browser.');
         }
     }, []);
 
