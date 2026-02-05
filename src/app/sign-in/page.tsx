@@ -19,7 +19,7 @@ import ClientIonIcon from "../utils/ClientIonIcon";
 import logo from "../../assets/ELocate-s.png";
 import bannerImage from "../../assets/ewaste_login_banner.png";
 import { jwtDecode } from "jwt-decode";
-import { authApi, ROLE_ROUTES, UserRole } from "./routes";
+import { authApi, ROLE_ROUTES, UserRole } from "../auth/routes";
 
 const CommonLogin: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -94,7 +94,10 @@ const CommonLogin: React.FC = () => {
 
             //  REAL API CALL (Commented out for now)
             const response = await authApi.login(formData);
-            const user = response;
+            if (response.status != 200) {
+                throw new Error("Login failed. Please try again.");
+            }
+            const user = response.data;
 
             // --- DUMMY AUTHENTICATION END ---
 

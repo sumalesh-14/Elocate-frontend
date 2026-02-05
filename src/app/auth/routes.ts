@@ -70,6 +70,11 @@ export const authApi = {
     login: async (credentials: any) => {
         // Calling our internal Next.js API route which proxies to the backend
         const response = await apiClient.post("/api/auth/sign-in", credentials);
-        return response.data;
+        return response;
+    },
+    register: async (credentials: any) => {
+        // Calling our internal Next.js API route which proxies to the backend
+        const response = await apiClient.post("/api/auth/register", credentials);
+        return response;
     },
 };
