@@ -14,7 +14,7 @@ import {
     setUserName,
     setfullname,
     setRole
-} from "../citizen/sign-in/auth";
+} from "./auth";
 import ClientIonIcon from "../utils/ClientIonIcon";
 import logo from "../../assets/ELocate-s.png";
 import bannerImage from "../../assets/ewaste_login_banner.png";
@@ -275,7 +275,7 @@ const CommonLogin: React.FC = () => {
                         >
                             <div className="flex justify-between mb-3">
                                 <label className="text-lg font-bold text-gray-800 ml-1">Password</label>
-                                <Link href="/forgot-password" title="Forgot password?" className="text-lg font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+                                <Link href="/sign-in/forgot-password" title="Forgot password?" className="text-lg font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
                                     Forgot password?
                                 </Link>
                             </div>

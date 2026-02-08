@@ -77,4 +77,9 @@ export const authApi = {
         const response = await apiClient.post("/api/auth/register", credentials);
         return response;
     },
+    forgotPassword: async (email: string) => {
+        // Calling our internal Next.js API route which proxies to the backend
+        const response = await apiClient.post("/api/auth/forgot-password", { email });
+        return response;
+    },
 };

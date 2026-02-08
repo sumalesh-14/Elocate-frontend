@@ -20,7 +20,7 @@ export default function ConditionalLayout({
         setMounted(true);
     }, []);
 
-    const isAuthRoute = pathname === '/sign-in' || pathname?.startsWith('/sign-up') || pathname === '/citizen/sign-up' || pathname === '/citizen/sign-in';
+    const isAuthRoute = pathname.startsWith('/sign-in') || pathname?.startsWith('/sign-up') || pathname === '/citizen/sign-up' || pathname === '/citizen/sign-in';
     const isAdminRoute = pathname?.startsWith('/admin');
     const isPublicRoute = pathname === '/' || pathname === '/citizen/sign-up' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/recycle') || pathname?.startsWith('/citizen/education') || pathname?.startsWith('/citizen/rules');
 
