@@ -21,8 +21,8 @@ const SignUp: React.FC = () => {
     city: "",
     state: "",
     pincode: "",
-    latitude: 90,
-    longitude: 180,
+    latitude: "",
+    longitude: "",
     role: "CITIZEN",
   });
 
@@ -38,6 +38,8 @@ const SignUp: React.FC = () => {
     city: "",
     state: "",
     pincode: "",
+    latitude: "",
+    longitude: "",
   });
 
   const togglePasswordVisibility = () => {
@@ -95,6 +97,16 @@ const SignUp: React.FC = () => {
           error = "Pincode must be 6 digits";
         }
         break;
+      case "latitude":
+        if (!value) {
+          error = "Latitude is required";
+        }
+        break;
+      case "longitude":
+        if (!value) {
+          error = "Longitude is required";
+        }
+        break;
     }
 
     setErrors((prev) => ({ ...prev, [name]: error }));
@@ -114,6 +126,43 @@ const SignUp: React.FC = () => {
     validateField(name, value);
   };
 
+  const detectLocation = () => {
+    if (navigator.geolocation) {
+      const loadingToast = toast.loading("Fetching location...");
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData((prev) => ({
+            ...prev,
+            latitude: position.coords.latitude.toString(),
+            longitude: position.coords.longitude.toString(),
+          }));
+          setErrors((prev) => ({
+            ...prev,
+            latitude: "",
+            longitude: "",
+          }));
+          toast.update(loadingToast, {
+            render: "Location detected successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 2000,
+          });
+        },
+        (error) => {
+          console.error("Error fetching location:", error);
+          toast.update(loadingToast, {
+            render: "Unable to retrieve location. Please enter manually.",
+            type: "error",
+            isLoading: false,
+            autoClose: 3000,
+          });
+        }
+      );
+    } else {
+      toast.error("Geolocation is not supported by this browser.");
+    }
+  };
+
   const register = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -127,6 +176,8 @@ const SignUp: React.FC = () => {
     const isCityValid = validateField("city", formData.city);
     const isStateValid = validateField("state", formData.state);
     const isPincodeValid = validateField("pincode", formData.pincode);
+    const isLatitudeValid = validateField("latitude", formData.latitude);
+    const isLongitudeValid = validateField("longitude", formData.longitude);
 
     if (
       !isFullNameValid ||
@@ -137,7 +188,9 @@ const SignUp: React.FC = () => {
       !isAddressValid ||
       !isCityValid ||
       !isStateValid ||
-      !isPincodeValid
+      !isPincodeValid ||
+      !isLatitudeValid ||
+      !isLongitudeValid
     ) {
       toast.error("Please fix all errors before submitting");
       return;
@@ -517,6 +570,50 @@ const SignUp: React.FC = () => {
               </div>
             </div>
 
+            {/* Location (Latitude & Longitude) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              <div>
+                <label className="block text-base font-bold text-gray-700 mb-2">
+                  Latitude
+                </label>
+                <input
+                  required
+                  type="number"
+                  step="any"
+                  name="latitude"
+                  placeholder="Latitude"
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  onChange={handleInputChange}
+                  value={formData.latitude}
+                />
+              </div>
+              <div>
+                <label className="block text-base font-bold text-gray-700 mb-2">
+                  Longitude
+                </label>
+                <input
+                  required
+                  type="number"
+                  step="any"
+                  name="longitude"
+                  placeholder="Longitude"
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  onChange={handleInputChange}
+                  value={formData.longitude}
+                />
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={detectLocation}
+                  className="w-full bg-emerald-100 text-emerald-700 font-bold py-3 rounded-lg hover:bg-emerald-200 transition-colors border border-emerald-300 flex items-center justify-center gap-2"
+                >
+                  <ClientIonIcon icon="locateOutline" className="text-xl" />
+                  Auto Detect
+                </button>
+              </div>
+            </div>
+
             {/* Password & Confirm Password */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -596,6 +693,8 @@ const SignUp: React.FC = () => {
                 !formData.city ||
                 !formData.state ||
                 !formData.pincode ||
+                !formData.latitude ||
+                !formData.longitude ||
                 !formData.password ||
                 !formData.confirmPassword
               }
