@@ -5,10 +5,11 @@ import Image from "next/image";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
-import { setEmail, setPhoneNumber, setToken, setUser, setUserID, setUserName, setfullname } from "./auth";
+import { setEmail, setPhoneNumber, setRefreshToken, setToken, setUser, setUserID, setUserName, setfullname } from "./auth";
 import ClientIonIcon from "../../utils/ClientIonIcon";
 import logo from "../../../assets/ELocate-s.png";
 import bannerImage from "../../../assets/ewaste_login_banner.png";
+import { authApi } from "@/app/auth/routes";
 
 const Signin: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -39,38 +40,29 @@ const Signin: React.FC = () => {
     const loadingToast = toast.loading("Verifying credentials...");
 
     try {
-      // --- DUMMY AUTHENTICATION START ---
-      const user = {
-        id: "dummy-citizen-id-789",
-        email: formData.email || "citizen@elocate.com",
-        token: "dummy-citizen-token",
-        phoneNumber: "7777777777",
-        fullname: "Citizen User",
-        username: "citizenuser",
-      };
+      /* ORIGINAL API CALL - Uncomment for production */
+      const response = await authApi.login(formData);
+      const data = response.data;
+      const user = data.user;
+      const tokens = data.tokens;
 
-      /* ORIGINAL API CALL - Uncomment for production
-      const response = await axios.post(
-        "http://localhost:8080/elocate/api/v1/auth/login",
-        formData
-      );
-      const user = response.data;
-      */
       // --- DUMMY AUTHENTICATION END ---
 
       console.log(user);
       localStorage.setItem("user", JSON.stringify(user));
 
-      if (user) {
+      if (user && tokens) {
         setUser(user);
         setEmail(user.email);
-        setToken(user.token);
-        setPhoneNumber(user.phoneNumber);
-        setfullname(user.fullname);
+        setToken(tokens.accessToken);
+        setRefreshToken(tokens.refreshToken);
+        setPhoneNumber(user.mobileNumber); // Assuming mobileNumber is in user object
+        setfullname(user.fullName); // Assuming fullName is in user object
         setUserID(user.id);
         if (user.username) {
           setUserName(user.username);
         }
+        // Handle role specific logic if needed
       }
 
       toast.update(loadingToast, {

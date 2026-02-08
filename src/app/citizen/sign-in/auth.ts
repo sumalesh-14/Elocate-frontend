@@ -145,3 +145,16 @@ export const handleLogout = (): void => {
     window.location.href = "/sign-in";
   }
 };
+
+export const setRefreshToken = (token: string): void => {
+  if (isLocalStorageAvailable) {
+    localStorage.setItem('refreshToken', token);
+  }
+};
+
+export const getRefreshToken = (): string | null => {
+  if (isLocalStorageAvailable) {
+    return localStorage.getItem('refreshToken');
+  }
+  return null;
+};

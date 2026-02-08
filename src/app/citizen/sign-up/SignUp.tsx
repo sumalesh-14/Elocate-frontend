@@ -9,6 +9,7 @@ import ClientIonIcon from "../../utils/ClientIonIcon";
 import logoSm from "../../../assets/elocate-sm.png";
 import registerImage from "../../../assets/register.jpg";
 import { authApi } from "@/app/auth/routes";
+import { setEmail, setPhoneNumber, setRefreshToken, setToken, setUser, setUserID, setUserName, setfullname } from "../sign-in/auth";
 
 const SignUp: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -211,15 +212,29 @@ const SignUp: React.FC = () => {
         throw new Error("Registration failed. Please try again.");
       }
 
+      const { user, tokens } = response.data;
+      if (user && tokens) {
+        setUser(user);
+        setEmail(user.email);
+        setToken(tokens.accessToken);
+        setRefreshToken(tokens.refreshToken);
+        setPhoneNumber(user.mobileNumber);
+        setfullname(user.fullName);
+        setUserID(user.id);
+        if (user.username) {
+          setUserName(user.username);
+        }
+      }
+
       toast.update(loadingToast, {
-        render: "Registration Successful! Redirecting to login...",
+        render: response.data.message,
         type: "success",
         isLoading: false,
         autoClose: 2000,
       });
 
       setTimeout(() => {
-        window.location.href = "/citizen/sign-in";
+        window.location.href = "/citizen/sign-up/verify-email";
       }, 1000);
     } catch (error: any) {
       console.error("Register failed:", error);
