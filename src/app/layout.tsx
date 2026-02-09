@@ -13,7 +13,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "ELocate",
-  description: "ELocate - One stop solution to Recycle E-Waste, E-waste Facility Locator",
+  description: "ELocate app - One stop solution to Recycle E-Waste, E-waste Facility Locator",
   icons: {
     icon: '/favicon.ico',
   },
