@@ -1,4 +1,5 @@
 import { Category, Brand, DeviceModel } from '../types';
+import { deviceBrandsApi } from '../../device-brands/routes'
 
 // Dummy data storage
 let dummyCategories: Category[] = [
@@ -167,7 +168,9 @@ export const toggleDeviceCategoryStatus = async (categoryId: string, status: 'Ac
 // Device Brand API calls
 export const fetchDeviceBrands = async (): Promise<Brand[]> => {
     await delay();
-    return [...dummyBrands];
+    // return [...dummyBrands];
+    const response = await deviceBrandsApi.getAll();
+    return response.data;
 };
 
 export const createDeviceBrand = async (brandData: Omit<Brand, 'id' | 'createdDate'>): Promise<Brand> => {

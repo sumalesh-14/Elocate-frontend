@@ -52,10 +52,15 @@ apiClient.interceptors.response.use(
  */
 export const deviceBrandsApi = {
     // Get all device brands
-    // getAll: async () => {
-    //     const response = await apiClient.get("/api/device-brands");
-    //     return response;
-    // },
+    getAll: async () => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const response = await apiClient.get("/api/device-brands", {
+            headers: {
+                ...(token && { Authorization: `Bearer ${token}` }),
+            },
+        });
+        return response;
+    },
 
     // // Get device brand by ID
     // getById: async (id: string | number) => {
