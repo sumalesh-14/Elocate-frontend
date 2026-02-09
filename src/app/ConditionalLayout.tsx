@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import Script from "next/script";
+
 import Navbar from "@/app/citizen/Header/Navbar";
 import Footer from "@/app/citizen/Footer/Footer";
 import { isAuthenticated } from "@/app/citizen/sign-in/auth";
@@ -89,25 +89,7 @@ export default function ConditionalLayout({
                 <div className={pathname?.startsWith('/citizen/book-recycle') ? "relative z-[30]" : ""}>
                     <Footer />
                 </div>
-                <Script
-                    id="tawk_chatbot"
-                    strategy="lazyOnload"
-                    dangerouslySetInnerHTML={{
-                        __html: `
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-              (function(){
-                var s1=document.createElement("script");
-                var s0=document.getElementsByTagName("script")[0];
-                s1.async=true;
-                s1.src='https://embed.tawk.to/656e84bbbfb79148e59a22a3/1hgrrd06h';
-                s1.charset='UTF-8';
-                s1.setAttribute('crossorigin','*');
-                s0.parentNode.insertBefore(s1,s0);
-                s1.onerror = function() { console.warn("Tawk.to failed to load"); };
-              })();
-            `,
-                    }}
-                />
+
             </div>
         );
     }

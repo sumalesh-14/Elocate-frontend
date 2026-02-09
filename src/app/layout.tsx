@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import Script from "next/script";
 import NextTopLoader from 'nextjs-toploader';
+import { ChatWidget } from "@/components/ChatBot/ChatWidget";
 import ConditionalLayout from "./ConditionalLayout";
 
 const poppins = Poppins({
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className={poppins.className}>
         <NextTopLoader color="#28af60" showSpinner={false} />
         <ConditionalLayout>{children}</ConditionalLayout>
+        <ChatWidget />
       </body>
     </html>
   );
