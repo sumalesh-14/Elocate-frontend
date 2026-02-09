@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { fetchDeviceBrands } from '../services/api';
 import './ListBrands.css';
+import { deviceBrandsApi } from '../../device-brands/routes'
 
 interface Brand {
     id: string;
@@ -50,7 +51,10 @@ const ListBrands: React.FC = () => {
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this brand?')) {
             try {
-                setBrands(brands.filter(brand => brand.id !== id));
+                const response = await deviceBrandsApi.delete(id);
+                if (response.status == 200) {
+                    setBrands(brands.filter(brand => brand.id !== id));
+                }
             } catch (err) {
                 setError('Failed to delete brand');
             }
