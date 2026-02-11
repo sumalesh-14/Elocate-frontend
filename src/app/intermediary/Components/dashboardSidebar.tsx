@@ -13,11 +13,6 @@ const DashboardSidebar = () => {
             icon: "📊",
         },
         {
-            name: "Statistics",
-            path: "/intermediary/statistics",
-            icon: "📈",
-        },
-        {
             name: "Collections",
             path: "/intermediary/collections",
             icon: "📦",

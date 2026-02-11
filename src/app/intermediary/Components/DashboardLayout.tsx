@@ -16,7 +16,6 @@ export default function DashboardLayout({ children }: SidebarProps) {
     const getPageTitle = (path: string) => {
         const titleMap: Record<string, string> = {
             '/intermediary': 'Intermediary Dashboard',
-            '/intermediary/statistics': 'Statistics',
             '/intermediary/collections': 'Collections',
             '/intermediary/clients': 'Clients',
             '/intermediary/settings': 'Settings',
