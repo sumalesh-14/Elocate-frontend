@@ -27,6 +27,11 @@ const DashboardSidebar = () => {
             path: "/intermediary/settings",
             icon: "⚙️",
         },
+        {
+            name: "Assign Drivers",
+            path: "/intermediary/assign-drivers",
+            icon: "🚚",
+        },
     ];
 
     return (
