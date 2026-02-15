@@ -2,8 +2,7 @@ import mapboxgl from "mapbox-gl";
 
 const getLocation = (): Promise<{ coordinates: [number, number] | null; address: string | null }> => {
 
-    mapboxgl.accessToken =
-    "pk.eyJ1Ijoic2h1ZW5jZSIsImEiOiJjbG9wcmt3czMwYnZsMmtvNnpmNTRqdnl6In0.vLBhYMBZBl2kaOh1Fh44Bw";
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
     
     return new Promise((resolve, reject) => {
       if (navigator.geolocation) {
