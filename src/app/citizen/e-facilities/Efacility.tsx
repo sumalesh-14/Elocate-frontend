@@ -40,8 +40,7 @@ const FacilityMap: React.FC = () => {
 
   useEffect(() => {
     try {
-      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 
-        "pk.eyJ1Ijoic2h1ZW5jZSIsImEiOiJjbG9wcmt3czMwYnZsMmtvNnpmNTRqdnl6In0.vLBhYMBZBl2kaOh1Fh44Bw";
+      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
       
       if (!mapboxToken) {
         throw new Error("Mapbox token is not configured");
