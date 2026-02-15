@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import React, { useState } from "react";
-import ClientIonIcon from "../../utils/ClientIonIcon";
+import ClientIonIcon from "@/components/ClientIonIcon";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
 import { motion } from "framer-motion";

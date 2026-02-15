@@ -4,12 +4,12 @@ import mapboxgl, { Map, Popup } from "mapbox-gl";
 import { FaCheckCircle, FaTimesCircle, FaDirections, FaRecycle, FaMapMarkerAlt, FaPhoneAlt, FaClock } from "react-icons/fa";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./Efacility.css";
-import getLocation from "../../utils/getLocation";
-import { calculateDistance } from "../../utils/calculateLocation";
+import getLocation from "@/lib/utils/getLocation";
+import { calculateDistance } from "@/lib/utils/calculateLocation";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import Link from "next/link";
-import { fetchFacilities } from "../../utils/facilityApi";
+import { fetchFacilities } from "@/lib/utils/facilityApi";
 interface Facility {
   address: string;
   distance: number;

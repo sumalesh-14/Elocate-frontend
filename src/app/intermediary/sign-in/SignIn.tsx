@@ -6,7 +6,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import { setEmail, setPhoneNumber, setToken, setUser, setUserID, setUserName, setfullname } from "./auth";
-import ClientIonIcon from "../../utils/ClientIonIcon";
+import ClientIonIcon from "@/components/ClientIonIcon";
 
 import logo from "../../../assets/ELocate-s.png";
 import bannerImage from "../../../assets/ewaste_login_banner.png";

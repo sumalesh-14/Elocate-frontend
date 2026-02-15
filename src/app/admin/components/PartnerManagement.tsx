@@ -1,0 +1,674 @@
+'use client';
+
+import React, { useState } from 'react';
+import { 
+  Search, Filter, MoreHorizontal, Mail, Ban, CheckCircle, MapPin, 
+  Building, Send, X, Download, Eye, Edit2, Save, ShieldCheck, 
+  AlertCircle, Check, Briefcase, FileText
+} from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+
+// --- Types ---
+
+interface Partner {
+  id: string;
+  name: string;
+  type: 'Processor' | 'Collector' | 'Refurbisher';
+  location: string;
+  email: string;
+  contactPerson: string;
+  status: 'Active' | 'Suspended';
+  performance: number; // 0-100
+}
+
+interface Application {
+  id: number;
+  name: string;
+  type: string;
+  regDate: string;
+  city: string;
+  status: 'pending' | 'approved' | 'rejected';
+  documents: string;
+  email: string;
+  phone: string;
+}
+
+export const PartnerManagement: React.FC = () => {
+  const { showToast } = useToast();
+  
+  // --- Global State ---
+  const [viewMode, setViewMode] = useState<'partners' | 'approvals'>('partners');
+
+  // --- Partners Tab State ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'All' | 'Active' | 'Suspended'>('All');
+  const [partners, setPartners] = useState<Partner[]>([
+    { id: 'PRT-001', name: 'GreenLoop Recycling', type: 'Processor', location: 'Seattle, WA', email: 'contact@greenloop.com', contactPerson: 'Sarah Jenkins', status: 'Active', performance: 94 },
+    { id: 'PRT-002', name: 'Urban E-Waste', type: 'Collector', location: 'Austin, TX', email: 'ops@urbanewaste.com', contactPerson: 'Mike Ross', status: 'Active', performance: 88 },
+    { id: 'PRT-003', name: 'TechSalvage Inc', type: 'Refurbisher', location: 'Boston, MA', email: 'info@techsalvage.com', contactPerson: 'David Chen', status: 'Suspended', performance: 45 },
+    { id: 'PRT-004', name: 'EcoParts Wholesale', type: 'Processor', location: 'Denver, CO', email: 'supply@ecoparts.com', contactPerson: 'Lisa Ray', status: 'Active', performance: 91 },
+    { id: 'PRT-005', name: 'Rapid Recycle', type: 'Collector', location: 'Miami, FL', email: 'manager@rapidrecycle.com', contactPerson: 'Tom Baker', status: 'Active', performance: 76 },
+  ]);
+  
+  // --- Approvals Tab State ---
+  const [approvalTab, setApprovalTab] = useState<'pending' | 'rejected'>('pending');
+  const [applications, setApplications] = useState<Application[]>([
+    { id: 101, name: 'BlueSky Logistics', type: 'Collector', regDate: '2024-10-24', city: 'Portland, OR', status: 'pending', documents: 'Verified', email: 'hello@bluesky.com', phone: '(555) 123-4567' },
+    { id: 102, name: 'Circuit Breakers Ltd', type: 'Processor', regDate: '2024-10-23', city: 'San Jose, CA', status: 'pending', documents: 'Review Needed', email: 'admin@circuitbreakers.com', phone: '(555) 987-6543' },
+    { id: 103, name: 'ReCharge Systems', type: 'Refurbisher', regDate: '2024-10-18', city: 'Phoenix, AZ', status: 'rejected', documents: 'Incomplete', email: 'info@recharge.com', phone: '(555) 222-3333' },
+  ]);
+
+  // --- Modals State ---
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAppModal, setShowAppModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+
+  // --- Partner Actions ---
+
+  const handlePartnerStatusToggle = (id: string) => {
+    setPartners(partners.map(p => 
+      p.id === id ? { ...p, status: p.status === 'Active' ? 'Suspended' : 'Active' } : p
+    ));
+    const p = partners.find(p => p.id === id);
+    if (p) showToast(`Partner ${p.status === 'Active' ? 'suspended' : 'activated'}.`, 'info');
+  };
+
+  const handleOpenPartnerDetails = (partner: Partner) => {
+    setSelectedPartner({ ...partner });
+    setIsEditing(false);
+    setShowDetailsModal(true);
+  };
+
+  const handleSavePartner = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedPartner) {
+        setPartners(partners.map(p => p.id === selectedPartner.id ? selectedPartner : p));
+        showToast('Partner details updated successfully.');
+        setIsEditing(false);
+    }
+  };
+
+  // --- Approval Actions ---
+
+  const handleOpenAppDetails = (app: Application) => {
+    setSelectedApp({ ...app });
+    setIsEditing(false);
+    setShowAppModal(true);
+  };
+
+  const handleSaveAppDetails = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedApp) {
+      setApplications(applications.map(a => a.id === selectedApp.id ? selectedApp : a));
+      setIsEditing(false);
+      showToast('Application details updated.', 'success');
+    }
+  };
+
+  const handleApproveApp = (appId: number) => {
+    const app = applications.find(a => a.id === appId);
+    if (!app) return;
+
+    // 1. Update Application Status (move to approved - effectively removing from pending/rejected view or we could have an approved tab)
+    // For simplicity, let's mark it approved in the list (though we only filter pending/rejected in tabs)
+    setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: 'approved' } : a));
+
+    // 2. Add to Partners List
+    const newPartner: Partner = {
+      id: `PRT-${Math.floor(Math.random() * 10000)}`,
+      name: app.name,
+      type: app.type as any, // Cast assuming valid type
+      location: app.city,
+      email: app.email,
+      contactPerson: 'Pending Assignment',
+      status: 'Active',
+      performance: 100
+    };
+    
+    setPartners(prev => [newPartner, ...prev]);
+    showToast(`${app.name} has been approved and added to active partners!`);
+    setShowAppModal(false);
+    
+    // Switch view to see the new partner
+    setViewMode('partners');
+  };
+
+  const handleRejectApp = (appId: number) => {
+    setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: 'rejected' } : a));
+    showToast('Application rejected.', 'info');
+    setShowAppModal(false);
+  };
+
+
+  // --- Filtering ---
+  const filteredPartners = partners.filter(partner => {
+    const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          partner.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'All' || partner.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredApps = applications.filter(app => app.status === approvalTab);
+
+  // --- Common CSV Export ---
+  const handleExportCSV = () => {
+    const dataToExport = viewMode === 'partners' ? filteredPartners : filteredApps;
+    if (dataToExport.length === 0) {
+      showToast('No data to export', 'error');
+      return;
+    }
+    
+    // Simple CSV logic (simplified)
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      (viewMode === 'partners' 
+        ? "ID,Name,Type,Location,Status\n" + filteredPartners.map(p => `${p.id},"${p.name}",${p.type},"${p.location}",${p.status}`).join("\n")
+        : "ID,Name,Type,City,Status\n" + filteredApps.map(a => `${a.id},"${a.name}",${a.type},"${a.city}",${a.status}`).join("\n"));
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${viewMode}_export.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`${viewMode === 'partners' ? 'Partners' : 'Applications'} exported successfully!`);
+  };
+
+
+  return (
+    <div className="space-y-6 relative">
+      
+      {/* Header & Main Tabs */}
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-display font-bold text-eco-950">Partner Network</h2>
+            <p className="text-eco-600 mt-1">Manage active partnerships and review new processor applications.</p>
+          </div>
+          <div className="flex gap-2">
+             <button 
+               onClick={handleExportCSV}
+               className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50 text-gray-700 transition-colors"
+             >
+               <Download size={16} />
+               Export
+             </button>
+             {viewMode === 'partners' && (
+               <button className="px-4 py-2 bg-eco-900 text-white rounded-xl text-sm font-medium hover:bg-eco-800 shadow-lg">
+                 Add Partner Manually
+               </button>
+             )}
+          </div>
+        </div>
+
+        {/* View Switcher Tabs */}
+        <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
+          <button 
+            onClick={() => setViewMode('partners')}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              viewMode === 'partners' 
+                ? 'bg-white text-eco-900 shadow-sm' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Active Partners
+          </button>
+          <button 
+            onClick={() => setViewMode('approvals')}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              viewMode === 'approvals' 
+                ? 'bg-white text-eco-900 shadow-sm' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Approvals
+            {applications.filter(a => a.status === 'pending').length > 0 && (
+              <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                {applications.filter(a => a.status === 'pending').length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* ==================== ACTIVE PARTNERS VIEW ==================== */}
+      {viewMode === 'partners' && (
+        <div className="animate-fade-in-up space-y-6">
+          {/* Toolbar */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center z-10 relative">
+            <div className="relative w-full sm:w-96">
+              <input 
+                type="text" 
+                placeholder="Search partners..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tech-lime focus:border-transparent transition-all text-gray-900 placeholder-gray-500"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            </div>
+            
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative group">
+                <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-sm font-medium min-w-[140px] justify-between">
+                  <span className="flex items-center gap-2"><Filter size={16} /> {filterStatus}</span>
+                </button>
+                <div className="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 p-1 hidden group-hover:block z-20">
+                  {['All', 'Active', 'Suspended'].map(status => (
+                    <button 
+                      key={status}
+                      onClick={() => setFilterStatus(status as any)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm ${filterStatus === status ? 'bg-eco-50 text-eco-800 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50/50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Partner</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Performance</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredPartners.map((partner) => (
+                    <tr key={partner.id} className="group hover:bg-gray-50/80 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-eco-100 flex items-center justify-center text-eco-700 font-bold text-sm">
+                            {partner.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-medium text-eco-900">{partner.name}</div>
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Building size={10} /> {partner.type}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-600 flex items-center gap-1.5">
+                          <MapPin size={14} className="text-gray-400" />
+                          {partner.location}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{partner.contactPerson}</div>
+                        <div className="text-xs text-gray-500">{partner.email}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
+                           ${partner.status === 'Active' 
+                             ? 'bg-green-50 text-green-700 border-green-100' 
+                             : 'bg-red-50 text-red-700 border-red-100'}`}>
+                           {partner.status === 'Active' ? <CheckCircle size={12} className="mr-1"/> : <Ban size={12} className="mr-1"/>}
+                           {partner.status}
+                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full ${partner.performance > 90 ? 'bg-green-500' : partner.performance > 70 ? 'bg-tech-lime' : 'bg-orange-400'}`} 
+                              style={{ width: `${partner.performance}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs font-medium text-gray-600">{partner.performance}%</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleOpenPartnerDetails(partner)}
+                            className="p-2 text-eco-600 hover:bg-eco-50 rounded-lg transition-colors tooltip"
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button 
+                            onClick={() => { setSelectedPartner(partner); setShowEmailModal(true); }}
+                            className="p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors tooltip"
+                            title="Send Email"
+                          >
+                            <Mail size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handlePartnerStatusToggle(partner.id)}
+                            className={`p-2 rounded-lg transition-colors tooltip ${
+                              partner.status === 'Active' 
+                                ? 'text-gray-500 hover:bg-red-50 hover:text-red-600' 
+                                : 'text-green-500 hover:bg-green-50 hover:text-green-600'
+                            }`}
+                            title={partner.status === 'Active' ? 'Deactivate Account' : 'Activate Account'}
+                          >
+                            {partner.status === 'Active' ? <Ban size={16} /> : <CheckCircle size={16} />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredPartners.length === 0 && (
+                <div className="p-12 text-center text-gray-500">
+                   No partners found matching your criteria.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== APPROVALS VIEW ==================== */}
+      {viewMode === 'approvals' && (
+        <div className="animate-fade-in-up space-y-6">
+           {/* Sub Tabs */}
+           <div className="flex gap-4 border-b border-gray-200">
+             {['pending', 'rejected'].map((status) => (
+               <button
+                 key={status}
+                 onClick={() => setApprovalTab(status as any)}
+                 className={`pb-3 px-2 text-sm font-medium capitalize transition-all relative ${
+                   approvalTab === status 
+                     ? 'text-eco-900' 
+                     : 'text-gray-400 hover:text-gray-600'
+                 }`}
+               >
+                 {status} Applications
+                 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                   approvalTab === status ? 'bg-eco-100 text-eco-800' : 'bg-gray-100'
+                 }`}>
+                   {applications.filter(a => a.status === status).length}
+                 </span>
+                 {approvalTab === status && (
+                   <div className="absolute bottom-0 left-0 w-full h-0.5 bg-tech-lime"></div>
+                 )}
+               </button>
+             ))}
+           </div>
+
+           {/* Cards Grid */}
+           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+             {filteredApps.map((app) => (
+               <div key={app.id} className="bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                 <div className="flex justify-between items-start">
+                   <div className="flex items-start gap-4">
+                     <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold border-2 
+                        ${app.type === 'Processor' ? 'bg-purple-50 text-purple-600 border-purple-100' : 
+                          app.type === 'Collector' ? 'bg-orange-50 text-orange-600 border-orange-100' : 
+                          'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                        {app.name.charAt(0)}
+                     </div>
+                     <div>
+                       <h3 className="font-bold text-lg text-eco-900">{app.name}</h3>
+                       <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                         <span className="bg-gray-100 px-2 py-0.5 rounded text-xs uppercase tracking-wide font-medium">{app.type}</span>
+                         <span>•</span>
+                         <span>{app.city}</span>
+                       </div>
+                     </div>
+                   </div>
+                   
+                   <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border
+                     ${app.documents === 'Verified' ? 'bg-green-50 text-green-700 border-green-100' : 
+                       'bg-amber-50 text-amber-700 border-amber-100'}`}>
+                     {app.documents === 'Verified' ? <ShieldCheck size={14} /> : <AlertCircle size={14} />}
+                     {app.documents}
+                   </div>
+                 </div>
+
+                 <div className="mt-6 flex items-center justify-between pt-4 border-t border-gray-50">
+                   <div className="text-xs text-gray-400">
+                     Applied: <span className="text-gray-600 font-medium">{app.regDate}</span>
+                   </div>
+                   
+                   <div className="flex gap-2">
+                     <button 
+                      onClick={() => handleOpenAppDetails(app)}
+                      className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors tooltip" 
+                      title="View Details"
+                     >
+                       <Eye size={20} />
+                     </button>
+                     {approvalTab === 'pending' && (
+                       <>
+                         <button 
+                          onClick={() => handleRejectApp(app.id)}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium text-sm transition-colors"
+                         >
+                           <X size={16} /> Reject
+                         </button>
+                         <button 
+                          onClick={() => handleApproveApp(app.id)}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-eco-900 text-white rounded-lg hover:bg-eco-800 font-medium text-sm transition-colors shadow-md hover:shadow-lg"
+                         >
+                           <Check size={16} /> Approve
+                         </button>
+                       </>
+                     )}
+                   </div>
+                 </div>
+               </div>
+             ))}
+             
+             {filteredApps.length === 0 && (
+               <div className="col-span-full py-12 text-center">
+                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                   <Search size={32} />
+                 </div>
+                 <p className="text-gray-500 font-medium">No {approvalTab} applications found.</p>
+               </div>
+             )}
+           </div>
+        </div>
+      )}
+
+      {/* ==================== MODALS ==================== */}
+
+      {/* Partner Details Modal */}
+      {showDetailsModal && selectedPartner && (
+         <div className="fixed inset-0 md:left-72 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[3px] transition-opacity" onClick={() => setShowDetailsModal(false)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/5 overflow-hidden animate-fade-in-up">
+             
+             <div className="px-8 py-6 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-display font-bold text-eco-900">Partner Details</h3>
+                  <p className="text-sm text-gray-500 mt-1">ID: <span className="font-mono">{selectedPartner.id}</span></p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setIsEditing(!isEditing)}
+                    className={`p-2 rounded-full transition-colors ${isEditing ? 'bg-blue-100 text-blue-600' : 'text-blue-600 hover:bg-blue-50'}`}
+                    title="Edit Record"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button onClick={() => setShowDetailsModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+             </div>
+
+             <form onSubmit={handleSavePartner} className="p-8 space-y-4">
+                {/* Reused Form Fields for Partner */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Partner Name</label>
+                  <input 
+                    type="text" 
+                    value={selectedPartner.name} 
+                    disabled={!isEditing}
+                    onChange={(e) => setSelectedPartner({ ...selectedPartner, name: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Type</label>
+                      <select
+                        value={selectedPartner.type}
+                        disabled={!isEditing}
+                        onChange={(e) => setSelectedPartner({ ...selectedPartner, type: e.target.value as any })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 appearance-none text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"
+                      >
+                         <option value="Processor">Processor</option>
+                         <option value="Collector">Collector</option>
+                         <option value="Refurbisher">Refurbisher</option>
+                      </select>
+                   </div>
+                   <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Location</label>
+                      <input 
+                        type="text" 
+                        value={selectedPartner.location} 
+                        disabled={!isEditing}
+                        onChange={(e) => setSelectedPartner({ ...selectedPartner, location: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"
+                      />
+                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Contact Person</label>
+                      <input 
+                        type="text" 
+                        value={selectedPartner.contactPerson} 
+                        disabled={!isEditing}
+                        onChange={(e) => setSelectedPartner({ ...selectedPartner, contactPerson: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"
+                      />
+                   </div>
+                   <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Email</label>
+                      <input 
+                        type="email" 
+                        value={selectedPartner.email} 
+                        disabled={!isEditing}
+                        onChange={(e) => setSelectedPartner({ ...selectedPartner, email: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"
+                      />
+                   </div>
+                </div>
+
+                {isEditing && (
+                   <div className="pt-4 flex gap-3">
+                      <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50">Cancel</button>
+                      <button type="submit" className="flex-1 py-3 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 flex items-center justify-center gap-2"><Save size={18} /> Save Changes</button>
+                   </div>
+                )}
+             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Application Details Modal */}
+      {showAppModal && selectedApp && (
+        <div className="fixed inset-0 md:left-72 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[3px] transition-opacity" onClick={() => setShowAppModal(false)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/5 overflow-hidden animate-fade-in-up">
+             
+             <div className="px-8 py-6 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-display font-bold text-eco-900">Application Details</h3>
+                  <p className="text-sm text-gray-500 mt-1">ID: <span className="font-mono">{selectedApp.id}</span> • Status: <span className="capitalize">{selectedApp.status}</span></p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setIsEditing(!isEditing)} className={`p-2 rounded-full transition-colors ${isEditing ? 'bg-blue-100 text-blue-600' : 'text-blue-600 hover:bg-blue-50'}`}><Edit2 size={18} /></button>
+                  <button onClick={() => setShowAppModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"><X size={20} /></button>
+                </div>
+             </div>
+
+             <form onSubmit={handleSaveAppDetails} className="p-8 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Organization Name</label>
+                  <input type="text" value={selectedApp.name} disabled={!isEditing} onChange={(e) => setSelectedApp({ ...selectedApp, name: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"/>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Type</label>
+                      <select value={selectedApp.type} disabled={!isEditing} onChange={(e) => setSelectedApp({ ...selectedApp, type: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 appearance-none text-gray-700 disabled:bg-gray-100 disabled:text-gray-500">
+                         <option value="Processor">Processor</option>
+                         <option value="Collector">Collector</option>
+                         <option value="Refurbisher">Refurbisher</option>
+                      </select>
+                   </div>
+                   <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">City</label>
+                      <input type="text" value={selectedApp.city} disabled={!isEditing} onChange={(e) => setSelectedApp({ ...selectedApp, city: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"/>
+                   </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Email</label>
+                  <input type="email" value={selectedApp.email} disabled={!isEditing} onChange={(e) => setSelectedApp({ ...selectedApp, email: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Document Status</label>
+                  <input type="text" value={selectedApp.documents} disabled={true} className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-500"/>
+                </div>
+
+                {isEditing && (
+                   <div className="pt-4 flex gap-3">
+                      <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50">Cancel</button>
+                      <button type="submit" className="flex-1 py-3 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 flex items-center justify-center gap-2"><Save size={18} /> Save Changes</button>
+                   </div>
+                )}
+             </form>
+
+             {!isEditing && selectedApp.status === 'pending' && (
+                <div className="p-6 bg-gray-50 border-t border-gray-200 flex gap-3">
+                   <button onClick={() => { handleRejectApp(selectedApp.id); }} className="flex-1 py-3 bg-white border border-red-200 text-red-600 rounded-xl font-medium hover:bg-red-50">Reject Application</button>
+                   <button onClick={() => { handleApproveApp(selectedApp.id); }} className="flex-1 py-3 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 shadow-lg">Approve Application</button>
+                </div>
+             )}
+          </div>
+        </div>
+       )}
+
+      {/* Email Modal */}
+      {showEmailModal && selectedPartner && (
+        <div className="fixed inset-0 md:left-72 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[3px] transition-opacity" onClick={() => setShowEmailModal(false)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/5 overflow-hidden animate-fade-in-up">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-bold text-lg text-eco-900 flex items-center gap-2"><Mail size={18} className="text-eco-600" /> Message {selectedPartner.name}</h3>
+              <button onClick={() => setShowEmailModal(false)} className="p-1 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+               <div>
+                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Recipient</label>
+                 <div className="w-full px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700 border border-gray-100">{selectedPartner.contactPerson} &lt;{selectedPartner.email}&gt;</div>
+               </div>
+               <div>
+                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Subject</label>
+                 <input type="text" defaultValue="Regarding: Quarterly Performance Review" className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-sm"/>
+               </div>
+               <div>
+                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Message</label>
+                 <textarea rows={5} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-tech-lime/50 text-sm resize-none" placeholder="Type your message here..."></textarea>
+               </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+              <button onClick={() => setShowEmailModal(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors">Cancel</button>
+              <button onClick={() => { const btn = document.getElementById('sendBtn'); if (btn) btn.innerText = 'Sending...'; setTimeout(() => setShowEmailModal(false), 1000); }} id="sendBtn" className="px-6 py-2 bg-eco-900 text-white rounded-xl text-sm font-medium hover:bg-eco-800 transition-colors flex items-center gap-2"><Send size={16} /> Send Message</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

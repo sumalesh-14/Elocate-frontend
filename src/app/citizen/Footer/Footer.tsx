@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import ClientIonIcon from "../../utils/ClientIonIcon";
+import ClientIonIcon from "@/components/ClientIonIcon";
 import logo from "../../../assets/ELocate-s.png";
 import Link from "next/link";
 import Image from "next/image";

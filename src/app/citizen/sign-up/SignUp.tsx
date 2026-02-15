@@ -5,10 +5,10 @@ import Image from "next/image";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
-import ClientIonIcon from "../../utils/ClientIonIcon";
+import ClientIonIcon from "@/components/ClientIonIcon";
 import logoSm from "../../../assets/elocate-sm.png";
 import registerImage from "../../../assets/register.jpg";
-import { authApi } from "@/app/auth/routes";
+import { authApi } from "@/lib/auth";
 import { setEmail, setPhoneNumber, setRefreshToken, setToken, setUser, setUserID, setUserName, setfullname } from "../sign-in/auth";
 
 const SignUp: React.FC = () => {

@@ -2,11 +2,11 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import ClientIonIcon from "../../utils/ClientIonIcon";
+import ClientIonIcon from "@/components/ClientIonIcon";
 import logo from "../../../assets/ELocate-s.png"
 import { getEmail, getUser, getUserName, handleLogout, isAuthenticated } from "../sign-in/auth";
 import { FiUser } from 'react-icons/fi';
-import getLocation from "../../utils/getLocation";
+import getLocation from "@/lib/utils/getLocation";
 import Toast from "../Components/Toast";
 
 
