@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   LayoutDashboard, 
@@ -30,7 +30,7 @@ interface AdminLayoutProps {
 
 type Page = 'dashboard' | 'categories' | 'brands' | 'models' | 'facilities' | 'partners' | 'citizens' | 'requests';
 
-export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
+function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pageParam = searchParams.get('page') as Page | null;
@@ -238,5 +238,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
 
       </div>
     </div>
+  );
+}
+
+// Wrap with Suspense boundary for useSearchParams
+export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-eco-200 border-t-eco-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    }>
+      <AdminLayoutContent onLogout={onLogout} />
+    </Suspense>
   );
 };
