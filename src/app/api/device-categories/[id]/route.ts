@@ -10,7 +10,7 @@ export async function GET(
         const { id } = await params;
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-brands/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-categories/${id}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -26,7 +26,7 @@ export async function GET(
 
         return NextResponse.json(data, { status: 200 });
     } catch (error: any) {
-        console.error("Get Device Brand Proxy Error:", error);
+        console.error("Get Device Category Proxy Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error", message: error.message },
             { status: 500 }
@@ -43,7 +43,7 @@ export async function PUT(
         const authHeader = request.headers.get("Authorization");
         const body = await request.json();
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-brands/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-categories/${id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -60,7 +60,7 @@ export async function PUT(
 
         return NextResponse.json(data, { status: 200 });
     } catch (error: any) {
-        console.error("Update Device Brand Proxy Error:", error);
+        console.error("Update Device Category Proxy Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error", message: error.message },
             { status: 500 }
@@ -76,7 +76,7 @@ export async function DELETE(
         const { id } = await params;
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-brands/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-categories/${id}`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
@@ -91,13 +91,13 @@ export async function DELETE(
 
         // Handle empty response (204 No Content)
         if (response.status === 204 || response.headers.get('content-length') === '0') {
-            return NextResponse.json({ message: "Device brand deleted successfully" }, { status: 200 });
+            return NextResponse.json({ message: "Device category deleted successfully" }, { status: 200 });
         }
 
         const data = await response.json();
         return NextResponse.json(data, { status: 200 });
     } catch (error: any) {
-        console.error("Delete Device Brand Proxy Error:", error);
+        console.error("Delete Device Category Proxy Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error", message: error.message },
             { status: 500 }

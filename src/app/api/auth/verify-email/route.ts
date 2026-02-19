@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
 
         // Proxying to the backend server
-        const response = await fetch("https://elocate-api-production-2b4c.up.railway.app/elocate/api/v1/auth/verify-email", {
+        const response = await fetch(`${BACKEND_URL}/api/v1/auth/verify-email`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

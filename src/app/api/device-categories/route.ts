@@ -6,7 +6,7 @@ export async function GET(request: Request) {
     try {
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-brands`, {
+        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-categories`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json(data, { status: 200 });
     } catch (error: any) {
-        console.error("Get Device Brands Proxy Error:", error);
+        console.error("Get Device Categories Proxy Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error", message: error.message },
             { status: 500 }
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         const authHeader = request.headers.get("Authorization");
         const body = await request.json();
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-brands`, {
+        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-categories`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json(data, { status: 200 });
     } catch (error: any) {
-        console.error("Create Device Brand Proxy Error:", error);
+        console.error("Create Device Category Proxy Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error", message: error.message },
             { status: 500 }

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, Filter, MoreHorizontal, Mail, Ban, CheckCircle, MapPin, 
   Building, Send, X, Download, Eye, Edit2, Save, ShieldCheck, 
   AlertCircle, Check, Briefcase, FileText
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
+import { partnerAuthApi } from '@/lib/partner-auth-api';
 
 // --- Types ---
 
@@ -19,10 +20,18 @@ interface Partner {
   contactPerson: string;
   status: 'Active' | 'Suspended';
   performance: number; // 0-100
+  registrationNumber?: string;
+  facilityName?: string;
+  address?: string;
+  state?: string;
+  pincode?: string;
+  approvalStatus?: string;
+  isVerified?: boolean;
+  createdAt?: string;
 }
 
 interface Application {
-  id: number;
+  id: string;
   name: string;
   type: string;
   regDate: string;
@@ -31,6 +40,14 @@ interface Application {
   documents: string;
   email: string;
   phone: string;
+  registrationNumber?: string;
+  facilityName?: string;
+  address?: string;
+  state?: string;
+  pincode?: string;
+  approvalStatus?: string;
+  isVerified?: boolean;
+  createdAt?: string;
 }
 
 export const PartnerManagement: React.FC = () => {
@@ -38,43 +55,157 @@ export const PartnerManagement: React.FC = () => {
   
   // --- Global State ---
   const [viewMode, setViewMode] = useState<'partners' | 'approvals'>('partners');
+  const [loading, setLoading] = useState(false);
 
   // --- Partners Tab State ---
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Active' | 'Suspended'>('All');
-  const [partners, setPartners] = useState<Partner[]>([
-    { id: 'PRT-001', name: 'GreenLoop Recycling', type: 'Processor', location: 'Seattle, WA', email: 'contact@greenloop.com', contactPerson: 'Sarah Jenkins', status: 'Active', performance: 94 },
-    { id: 'PRT-002', name: 'Urban E-Waste', type: 'Collector', location: 'Austin, TX', email: 'ops@urbanewaste.com', contactPerson: 'Mike Ross', status: 'Active', performance: 88 },
-    { id: 'PRT-003', name: 'TechSalvage Inc', type: 'Refurbisher', location: 'Boston, MA', email: 'info@techsalvage.com', contactPerson: 'David Chen', status: 'Suspended', performance: 45 },
-    { id: 'PRT-004', name: 'EcoParts Wholesale', type: 'Processor', location: 'Denver, CO', email: 'supply@ecoparts.com', contactPerson: 'Lisa Ray', status: 'Active', performance: 91 },
-    { id: 'PRT-005', name: 'Rapid Recycle', type: 'Collector', location: 'Miami, FL', email: 'manager@rapidrecycle.com', contactPerson: 'Tom Baker', status: 'Active', performance: 76 },
-  ]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   
   // --- Approvals Tab State ---
   const [approvalTab, setApprovalTab] = useState<'pending' | 'rejected'>('pending');
-  const [applications, setApplications] = useState<Application[]>([
-    { id: 101, name: 'BlueSky Logistics', type: 'Collector', regDate: '2024-10-24', city: 'Portland, OR', status: 'pending', documents: 'Verified', email: 'hello@bluesky.com', phone: '(555) 123-4567' },
-    { id: 102, name: 'Circuit Breakers Ltd', type: 'Processor', regDate: '2024-10-23', city: 'San Jose, CA', status: 'pending', documents: 'Review Needed', email: 'admin@circuitbreakers.com', phone: '(555) 987-6543' },
-    { id: 103, name: 'ReCharge Systems', type: 'Refurbisher', regDate: '2024-10-18', city: 'Phoenix, AZ', status: 'rejected', documents: 'Incomplete', email: 'info@recharge.com', phone: '(555) 222-3333' },
-  ]);
+  const [applications, setApplications] = useState<Application[]>([]);
 
   // --- Modals State ---
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAppModal, setShowAppModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
 
+  // --- Load Data on Mount ---
+  useEffect(() => {
+    loadPartners();
+    loadApplications();
+  }, []);
+
+  // --- API Functions ---
+  const loadPartners = async () => {
+    setLoading(true);
+    try {
+      // Get auth token
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('/api/partners?page=0&size=100&isVerified=true', {
+        headers,
+      });
+      const data = await response.json();
+      
+      // Transform API data to match UI format
+      const transformedPartners: Partner[] = (data.content || []).map((p: any) => ({
+        id: p.id,
+        name: p.facilityName || p.name || 'Unknown',
+        type: 'Processor' as const, // Default type
+        location: `${p.state || ''}, ${p.pincode || ''}`.trim() || p.address || 'Unknown',
+        email: p.email || '',
+        contactPerson: p.fullName || 'N/A',
+        status: p.isActive ? 'Active' : 'Suspended',
+        performance: Math.floor(Math.random() * 30) + 70, // Mock performance for now
+        registrationNumber: p.registrationNumber,
+        facilityName: p.facilityName,
+        address: p.address,
+        state: p.state,
+        pincode: p.pincode,
+        approvalStatus: p.approvalStatus,
+        isVerified: p.isVerified,
+        createdAt: p.createdAt
+      }));
+      
+      setPartners(transformedPartners);
+    } catch (error) {
+      console.error('Failed to load partners:', error);
+      showToast('Failed to load partners', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadApplications = async () => {
+    try {
+      // Load pending applications
+      const pendingData = await partnerAuthApi.listPartnersByStatus('PENDING', 0, 50);
+      const rejectedData = await partnerAuthApi.listPartnersByStatus('REJECTED', 0, 50);
+      
+      // Transform API data to match UI format
+      const transformPending: Application[] = (pendingData.content || []).map((p: any) => ({
+        id: p.id,
+        name: p.facilityName || 'Unknown',
+        type: 'Processor', // Default
+        regDate: p.createdAt ? new Date(p.createdAt).toISOString().split('T')[0] : '',
+        city: `${p.state || ''}, ${p.pincode || ''}`.trim() || 'Unknown',
+        status: 'pending' as const,
+        documents: p.isVerified ? 'Verified' : 'Review Needed',
+        email: p.email || '',
+        phone: p.contactNumber || '',
+        registrationNumber: p.registrationNumber,
+        facilityName: p.facilityName,
+        address: p.address,
+        state: p.state,
+        pincode: p.pincode,
+        approvalStatus: p.approvalStatus,
+        isVerified: p.isVerified,
+        createdAt: p.createdAt
+      }));
+
+      const transformRejected: Application[] = (rejectedData.content || []).map((p: any) => ({
+        id: p.id,
+        name: p.facilityName || 'Unknown',
+        type: 'Processor',
+        regDate: p.createdAt ? new Date(p.createdAt).toISOString().split('T')[0] : '',
+        city: `${p.state || ''}, ${p.pincode || ''}`.trim() || 'Unknown',
+        status: 'rejected' as const,
+        documents: 'Incomplete',
+        email: p.email || '',
+        phone: p.contactNumber || '',
+        registrationNumber: p.registrationNumber,
+        facilityName: p.facilityName,
+        address: p.address,
+        state: p.state,
+        pincode: p.pincode,
+        approvalStatus: p.approvalStatus,
+        isVerified: p.isVerified,
+        createdAt: p.createdAt
+      }));
+      
+      setApplications([...transformPending, ...transformRejected]);
+    } catch (error) {
+      console.error('Failed to load applications:', error);
+      showToast('Failed to load applications', 'error');
+    }
+  };
+
   // --- Partner Actions ---
 
-  const handlePartnerStatusToggle = (id: string) => {
-    setPartners(partners.map(p => 
-      p.id === id ? { ...p, status: p.status === 'Active' ? 'Suspended' : 'Active' } : p
-    ));
-    const p = partners.find(p => p.id === id);
-    if (p) showToast(`Partner ${p.status === 'Active' ? 'suspended' : 'activated'}.`, 'info');
+  const handlePartnerStatusToggle = async (id: string) => {
+    const partner = partners.find(p => p.id === id);
+    if (!partner) return;
+
+    try {
+      // Toggle status via API
+      const newStatus = partner.status === 'Active' ? 'Suspended' : 'Active';
+      
+      // Update local state immediately for better UX
+      setPartners(partners.map(p => 
+        p.id === id ? { ...p, status: newStatus } : p
+      ));
+      
+      showToast(`Partner ${newStatus === 'Suspended' ? 'suspended' : 'activated'}.`, 'info');
+      
+      // Note: You may need to add an API endpoint to toggle partner status
+      // For now, this updates the UI only
+    } catch (error) {
+      console.error('Failed to toggle partner status:', error);
+      showToast('Failed to update partner status', 'error');
+    }
   };
 
   const handleOpenPartnerDetails = (partner: Partner) => {
@@ -109,38 +240,75 @@ export const PartnerManagement: React.FC = () => {
     }
   };
 
-  const handleApproveApp = (appId: number) => {
+  const handleApproveApp = async (appId: string) => {
     const app = applications.find(a => a.id === appId);
     if (!app) return;
 
-    // 1. Update Application Status (move to approved - effectively removing from pending/rejected view or we could have an approved tab)
-    // For simplicity, let's mark it approved in the list (though we only filter pending/rejected in tabs)
-    setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: 'approved' } : a));
+    try {
+      // Call API to approve partner
+      await partnerAuthApi.approvePartner(appId, {
+        approvalStatus: 'APPROVED',
+        isVerified: true,
+        remarks: 'Approved by admin'
+      });
 
-    // 2. Add to Partners List
-    const newPartner: Partner = {
-      id: `PRT-${Math.floor(Math.random() * 10000)}`,
-      name: app.name,
-      type: app.type as any, // Cast assuming valid type
-      location: app.city,
-      email: app.email,
-      contactPerson: 'Pending Assignment',
-      status: 'Active',
-      performance: 100
-    };
-    
-    setPartners(prev => [newPartner, ...prev]);
-    showToast(`${app.name} has been approved and added to active partners!`);
-    setShowAppModal(false);
-    
-    // Switch view to see the new partner
-    setViewMode('partners');
+      // Update local state
+      setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: 'approved' as const } : a));
+
+      // Add to Partners List
+      const newPartner: Partner = {
+        id: appId,
+        name: app.name,
+        type: app.type as any,
+        location: app.city,
+        email: app.email,
+        contactPerson: 'Pending Assignment',
+        status: 'Active',
+        performance: 100,
+        registrationNumber: app.registrationNumber,
+        facilityName: app.facilityName,
+        address: app.address,
+        state: app.state,
+        pincode: app.pincode
+      };
+      
+      setPartners(prev => [newPartner, ...prev]);
+      showToast(`${app.name} has been approved and added to active partners!`);
+      setShowAppModal(false);
+      
+      // Reload data
+      loadPartners();
+      loadApplications();
+      
+      // Switch view to see the new partner
+      setViewMode('partners');
+    } catch (error) {
+      console.error('Failed to approve partner:', error);
+      showToast('Failed to approve partner', 'error');
+    }
   };
 
-  const handleRejectApp = (appId: number) => {
-    setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: 'rejected' } : a));
-    showToast('Application rejected.', 'info');
-    setShowAppModal(false);
+  const handleRejectApp = async (appId: string) => {
+    const remarks = prompt('Enter rejection reason:');
+    if (!remarks) return;
+
+    try {
+      await partnerAuthApi.approvePartner(appId, {
+        approvalStatus: 'REJECTED',
+        isVerified: false,
+        remarks
+      });
+
+      setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: 'rejected' as const } : a));
+      showToast('Application rejected.', 'info');
+      setShowAppModal(false);
+      
+      // Reload data
+      loadApplications();
+    } catch (error) {
+      console.error('Failed to reject partner:', error);
+      showToast('Failed to reject partner', 'error');
+    }
   };
 
 
@@ -198,7 +366,10 @@ export const PartnerManagement: React.FC = () => {
                Export
              </button>
              {viewMode === 'partners' && (
-               <button className="px-4 py-2 bg-eco-900 text-white rounded-xl text-sm font-medium hover:bg-eco-800 shadow-lg">
+               <button 
+                 onClick={() => setShowCreateModal(true)}
+                 className="px-4 py-2 bg-eco-900 text-white rounded-xl text-sm font-medium hover:bg-eco-800 shadow-lg"
+               >
                  Add Partner Manually
                </button>
              )}
@@ -273,11 +444,20 @@ export const PartnerManagement: React.FC = () => {
 
           {/* Table */}
           <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-4 border-eco-200 border-t-eco-600 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading partners...</p>
+                </div>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50/50">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Partner</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Registration No.</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
@@ -299,6 +479,11 @@ export const PartnerManagement: React.FC = () => {
                               <Building size={10} /> {partner.type}
                             </div>
                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-mono text-sm text-gray-900 font-medium">
+                          {partner.registrationNumber || 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -370,6 +555,7 @@ export const PartnerManagement: React.FC = () => {
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
       )}
@@ -669,6 +855,205 @@ export const PartnerManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Create Partner Modal */}
+      {showCreateModal && (
+        <CreatePartnerModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            loadPartners();
+          }}
+        />
+      )}
     </div>
   );
 };
+
+// Create Partner Modal Component
+function CreatePartnerModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    temporaryPassword: '',
+    mobileNumber: '',
+    registrationNumber: '',
+    facilityName: '',
+    address: '',
+    latitude: 0,
+    longitude: 0,
+    capacity: 1000,
+    contactNumber: '',
+    operatingHours: '9AM-6PM',
+    state: '',
+    pincode: '',
+    autoApprove: true
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await partnerAuthApi.adminCreatePartner(formData);
+      alert('Partner created successfully!');
+      onSuccess();
+    } catch (error) {
+      console.error('Failed to create partner:', error);
+      alert('Failed to create partner');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 md:left-72 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[3px]" onClick={onClose}></div>
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/5 overflow-hidden animate-fade-in-up max-h-[90vh] overflow-y-auto">
+        <div className="px-8 py-6 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
+          <h3 className="text-xl font-display font-bold text-eco-900">Create Partner Account</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-8 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Full Name</label>
+              <input
+                type="text"
+                required
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Email</label>
+              <input
+                type="email"
+                required
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Temporary Password</label>
+              <input
+                type="password"
+                required
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.temporaryPassword}
+                onChange={(e) => setFormData({ ...formData, temporaryPassword: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Mobile Number</label>
+              <input
+                type="tel"
+                required
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.mobileNumber}
+                onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Registration Number</label>
+              <input
+                type="text"
+                required
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.registrationNumber}
+                onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Facility Name</label>
+              <input
+                type="text"
+                required
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.facilityName}
+                onChange={(e) => setFormData({ ...formData, facilityName: e.target.value })}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Address</label>
+            <input
+              type="text"
+              required
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Latitude</label>
+              <input
+                type="number"
+                step="0.000001"
+                required
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.latitude}
+                onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Longitude</label>
+              <input
+                type="number"
+                step="0.000001"
+                required
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.longitude}
+                onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">State</label>
+              <input
+                type="text"
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.state}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Pincode</label>
+              <input
+                type="text"
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                value={formData.pincode}
+                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 flex gap-3">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50"
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="flex-1 py-3 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 disabled:opacity-50"
+              disabled={submitting}
+            >
+              {submitting ? 'Creating...' : 'Create Partner'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

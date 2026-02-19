@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Layers, 
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 import { DashboardHome } from './DashboardHome';
 import { ResourceManager } from './ResourceManager';
+import { ResourceManagerIntegrated } from './ResourceManagerIntegrated';
 import { PartnerManagement } from './PartnerManagement';
 import { CitizenManagement } from './CitizenManagement';
 import { RecycleRequests } from './RecycleRequests';
@@ -26,11 +28,22 @@ interface AdminLayoutProps {
   onLogout: () => void;
 }
 
-type Page = 'dashboard' | 'categories' | 'brands' | 'models' | 'partners' | 'citizens' | 'requests';
+type Page = 'dashboard' | 'categories' | 'brands' | 'models' | 'facilities' | 'partners' | 'citizens' | 'requests';
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
-  const [activePage, setActivePage] = useState<Page>('dashboard');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pageParam = searchParams.get('page') as Page | null;
+  
+  const [activePage, setActivePage] = useState<Page>(pageParam || 'dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Update active page when URL changes
+  useEffect(() => {
+    if (pageParam && pageParam !== activePage) {
+      setActivePage(pageParam);
+    }
+  }, [pageParam]);
 
   // Grouped Menu Items
   const menuGroups = [
@@ -70,11 +83,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
       case 'requests':
         return <RecycleRequests />;
       case 'categories':
-        return <ResourceManager type="categories" />;
+        return <ResourceManagerIntegrated type="categories" />;
       case 'brands':
-        return <ResourceManager type="brands" />;
+        return <ResourceManagerIntegrated type="brands" />;
       case 'models':
-        return <ResourceManager type="models" />;
+        return <ResourceManagerIntegrated type="models" />;
       case 'partners':
         return <PartnerManagement />;
       case 'citizens':
@@ -87,7 +100,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
   const activeLabel = menuGroups.flatMap(g => g.items).find(i => i.id === activePage)?.label;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans">
+    <div className="min-h-screen h-screen bg-slate-50 flex font-sans overflow-hidden">
       
       {/* Sidebar */}
       <aside className={`
@@ -140,6 +153,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
                       key={item.id}
                       onClick={() => {
                         setActivePage(item.id as Page);
+                        router.push(`/admin?page=${item.id}`);
                         setIsMobileMenuOpen(false);
                       }}
                       className={`

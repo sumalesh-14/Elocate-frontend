@@ -138,23 +138,26 @@ def main():
             now = datetime.utcnow().isoformat()
             pincode = extract_pincode(address)
             
+            # Generate registration number from state and index
+            reg_number = f"REG-{state[:3]}-{stats['total']:04d}"
+            
             cursor.execute(
                 """
                 INSERT INTO recycling_facility (
                     id, name, address, latitude, longitude, 
                     capacity, contact_number, operating_hours, 
                     is_verified, is_active, created_at, updated_at, 
-                    geocode_source, email, state, pincode
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    geocode_source, email, state, pincode, registration_number
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
                     str(uuid.uuid4()), name, address, lat, lon,
                     1000, '', '9AM-6PM', False, True, now, now,
-                    source, email, state, pincode
+                    source, email, state, pincode, reg_number
                 )
             )
             stats['imported'] += 1
-            print(f"  ✅ Inserted ({lat}, {lon})")
+            print(f"  ✅ Inserted ({lat}, {lon}) - Reg: {reg_number}")
         except Exception as e:
             print(f"  ❌ Insert failed: {e}")
             conn.rollback()

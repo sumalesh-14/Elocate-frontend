@@ -15,7 +15,7 @@ interface SignInProps {
   onSignIn: () => void;
 }
 
-type AuthView = 'login' | 'role-selection' | 'register-citizen' | 'register-intermediary' | 'otp-verify';
+type AuthView = 'login' | 'role-selection' | 'register-citizen' | 'register-intermediary' | 'otp-verify' | 'pending-approval' | 'account-pending';
 type LoginMethod = 'password' | 'otp';
 
 const INDIAN_STATES = [
@@ -50,6 +50,8 @@ interface IntermediaryPayload {
   contactNumber: string;
   operatingHours: string;
   email: string;
+  password: string;
+  registrationNumber: string;
   facilityServiceAreas: ServiceArea[];
 }
 
@@ -61,6 +63,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('password');
   const [isLoading, setIsLoading] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [registrationType, setRegistrationType] = useState<'citizen' | 'partner'>('citizen');
 
   // Login Form State
   const [loginEmail, setLoginEmail] = useState('');
@@ -89,6 +92,8 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
     contactNumber: '',
     operatingHours: '',
     email: '',
+    password: '',
+    registrationNumber: '',
     facilityServiceAreas: [{ address: '', pincode: '', city: '', state: '' }]
   });
   const [fileName, setFileName] = useState<string | null>(null);
@@ -149,14 +154,27 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
         const data = await response.json();
 
         if (!response.ok) {
+          // Check if the error is due to pending approval
+          if (data.message && (data.message.includes('pending') || data.message.includes('not approved') || data.message.includes('inactive'))) {
+            setView('account-pending');
+            setIsLoading(false);
+            return;
+          }
           showToast(data.message || 'Login failed', 'error');
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if user account is active (for partners)
+        const user = data.user;
+        if (user && user.role === 'PARTNER' && user.isActive === false) {
+          setView('account-pending');
           setIsLoading(false);
           return;
         }
 
         // Store auth data - handle both token structures
         const token = data.token || data.tokens?.accessToken;
-        const user = data.user;
         
         if (token) setToken(token);
         if (user) {
@@ -194,32 +212,52 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
     
     try {
       let payload: any;
+      let endpoint: string;
       
       if (view === 'register-citizen') {
+        endpoint = '/api/auth/register';
+        setRegistrationType('citizen');
         payload = {
-          name: citizenData.name,
+          fullName: citizenData.name,
           email: citizenData.email,
           mobileNumber: citizenData.mobile,
           password: citizenData.password,
           role: 'CITIZEN',
-          address: {
-            address: citizenData.address,
-            latitude: parseFloat(citizenData.latitude) || 0,
-            longitude: parseFloat(citizenData.longitude) || 0,
-            pincode: citizenData.pincode,
-            city: citizenData.city,
-            state: citizenData.state,
-          }
+          address: citizenData.address,
+          latitude: parseFloat(citizenData.latitude) || 0,
+          longitude: parseFloat(citizenData.longitude) || 0,
+          pincode: citizenData.pincode,
+          city: citizenData.city,
+          state: citizenData.state,
         };
       } else {
-        // Intermediary registration
+        // Partner/Intermediary registration - use partner endpoint
+        endpoint = '/api/partner-auth/register';
+        setRegistrationType('partner');
         payload = {
-          ...facilityData,
-          role: 'INTERMEDIARY',
+          fullName: facilityData.name,
+          email: facilityData.email,
+          password: facilityData.password,
+          mobileNumber: facilityData.contactNumber,
+          registrationNumber: facilityData.registrationNumber,
+          facilityName: facilityData.name,
+          address: facilityData.address.address,
+          latitude: facilityData.address.latitude,
+          longitude: facilityData.address.longitude,
+          capacity: facilityData.capacity,
+          contactNumber: facilityData.contactNumber,
+          operatingHours: facilityData.operatingHours,
+          state: facilityData.address.state,
+          pincode: facilityData.address.pincode,
         };
       }
 
-      const response = await fetch('/api/auth/register', {
+      console.log('=== REGISTRATION DEBUG ===');
+      console.log('Endpoint:', endpoint);
+      console.log('Payload:', JSON.stringify(payload, null, 2));
+      console.log('========================');
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -264,7 +302,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: view === 'register-citizen' ? citizenData.email : facilityData.email,
+          email: registrationType === 'citizen' ? citizenData.email : facilityData.email,
           otp: otpCode,
         }),
       });
@@ -276,19 +314,25 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
         return;
       }
 
-      // Store auth data if provided
-      if (data.token) setToken(data.token);
-      if (data.user) {
-        setUser(data.user);
-        if (data.user.id) setUserID(data.user.id);
-        if (data.user.name) setFullName(data.user.name);
-        if (data.user.email) setEmail(data.user.email);
-        if (data.user.mobileNumber) setMobileNumber(data.user.mobileNumber);
-        if (data.user.role) setRole(data.user.role);
-      }
-
       showToast('Verification successful!', 'success');
-      onSignIn();
+      
+      // Check if this is a partner registration
+      if (registrationType === 'partner') {
+        // Show pending approval screen for partners
+        setView('pending-approval');
+      } else {
+        // For citizens, store auth data and proceed to login
+        if (data.token) setToken(data.token);
+        if (data.user) {
+          setUser(data.user);
+          if (data.user.id) setUserID(data.user.id);
+          if (data.user.name) setFullName(data.user.name);
+          if (data.user.email) setEmail(data.user.email);
+          if (data.user.mobileNumber) setMobileNumber(data.user.mobileNumber);
+          if (data.user.role) setRole(data.user.role);
+        }
+        onSignIn();
+      }
     } catch (error: any) {
       console.error('OTP verification error:', error);
       showToast(error.message || 'An error occurred during verification', 'error');
@@ -729,8 +773,16 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
                            <input type="text" required className="input-compact" placeholder="GreenCycle Hub" value={facilityData.name} onChange={e => handleFacilityChange('name', e.target.value)} />
                         </div>
                         <div className="col-span-1">
+                           <label className="label-tiny">Registration Number</label>
+                           <input type="text" required className="input-compact" placeholder="REG123456" value={facilityData.registrationNumber} onChange={e => handleFacilityChange('registrationNumber', e.target.value)} />
+                        </div>
+                        <div className="col-span-1">
                            <label className="label-tiny">Email</label>
                            <input type="email" required className="input-compact" placeholder="contact@facility.com" value={facilityData.email} onChange={e => handleFacilityChange('email', e.target.value)} />
+                        </div>
+                        <div className="col-span-1">
+                           <label className="label-tiny">Password</label>
+                           <input type="password" required className="input-compact" placeholder="Min 8 characters" value={facilityData.password} onChange={e => handleFacilityChange('password', e.target.value)} />
                         </div>
                          <div className="col-span-1">
                            <label className="label-tiny">Contact Number</label>
@@ -837,6 +889,97 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
                  <div className="mt-8 text-sm text-gray-500">
                    Didn't receive code? <button type="button" onClick={handleResendOtp} className="font-bold text-eco-700 hover:underline ml-1">Resend</button>
                  </div>
+              </div>
+            )}
+
+            {/* --- VIEW: PENDING APPROVAL --- */}
+            {view === 'pending-approval' && (
+              <div className="max-w-md mx-auto animate-fade-in-up text-center pt-10">
+                 <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                   <Building2 size={40} />
+                 </div>
+                 <h3 className="font-display font-bold text-3xl text-eco-950 mb-3">Request Received!</h3>
+                 <p className="text-gray-600 mb-6 text-lg leading-relaxed">
+                   Thank you for registering as a recycling partner. <br/>
+                   Your application is currently under review.
+                 </p>
+                 
+                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8 text-left">
+                   <h4 className="font-bold text-eco-900 mb-3 flex items-center gap-2">
+                     <CheckCircle size={20} className="text-yellow-600" />
+                     What happens next?
+                   </h4>
+                   <ul className="space-y-2 text-sm text-gray-700">
+                     <li className="flex items-start gap-2">
+                       <span className="text-yellow-600 mt-0.5">•</span>
+                       <span>Our team will review your facility details and documents</span>
+                     </li>
+                     <li className="flex items-start gap-2">
+                       <span className="text-yellow-600 mt-0.5">•</span>
+                       <span>You'll receive an email notification once approved</span>
+                     </li>
+                     <li className="flex items-start gap-2">
+                       <span className="text-yellow-600 mt-0.5">•</span>
+                       <span>Approval typically takes 2-3 business days</span>
+                     </li>
+                   </ul>
+                 </div>
+
+                 <button 
+                    onClick={() => {
+                      onClose();
+                      window.location.href = '/';
+                    }}
+                    className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
+                  >
+                    Return to Home
+                  </button>
+                  
+                  <p className="mt-6 text-sm text-gray-500">
+                    Questions? Contact us at <a href="mailto:support@elocate.com" className="text-eco-700 font-semibold hover:underline">support@elocate.com</a>
+                  </p>
+              </div>
+            )}
+
+            {/* --- VIEW: ACCOUNT PENDING --- */}
+            {view === 'account-pending' && (
+              <div className="max-w-md mx-auto animate-fade-in-up text-center pt-10">
+                 <div className="w-20 h-20 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                   <Building2 size={40} />
+                 </div>
+                 <h3 className="font-display font-bold text-3xl text-eco-950 mb-3">Account Pending Approval</h3>
+                 <p className="text-gray-600 mb-6 text-lg leading-relaxed">
+                   Your partner account is currently under review by our admin team.
+                 </p>
+                 
+                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-8 text-left">
+                   <h4 className="font-bold text-eco-900 mb-3 flex items-center gap-2">
+                     <Mail size={20} className="text-orange-600" />
+                     Status Update
+                   </h4>
+                   <p className="text-sm text-gray-700 mb-3">
+                     You'll receive an email notification once your account has been approved. 
+                     After approval, you'll be able to access your partner dashboard.
+                   </p>
+                   <p className="text-xs text-gray-600">
+                     Approval typically takes 2-3 business days.
+                   </p>
+                 </div>
+
+                 <button 
+                    onClick={() => {
+                      setView('login');
+                      setLoginEmail('');
+                      setLoginPass('');
+                    }}
+                    className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
+                  >
+                    Back to Login
+                  </button>
+                  
+                  <p className="mt-6 text-sm text-gray-500">
+                    Need help? <a href="mailto:support@elocate.com" className="text-eco-700 font-semibold hover:underline">Contact Support</a>
+                  </p>
               </div>
             )}
 
