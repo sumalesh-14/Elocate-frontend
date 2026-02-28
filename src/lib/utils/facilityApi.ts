@@ -24,7 +24,7 @@ export async function fetchFacilities(): Promise<Facility[]> {
     try {
         // Use environment variable or fallback to localhost for development
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-        const apiUrl = `${baseUrl}/elocate/api/v1/facility`;
+        const apiUrl = `${baseUrl}/api/v1/facility`;
 
         console.log('Attempting to fetch facilities from:', apiUrl);
 

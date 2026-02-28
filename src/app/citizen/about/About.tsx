@@ -10,7 +10,7 @@ const About = () => {
   return (
     <div className="bg-white">
       {/* Hero Section */}
-      <section className="relative py-24 px-4 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      <section className="relative pt-40 pb-24 px-4 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-50 animated-pulse" />
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-teal-100 rounded-full blur-3xl opacity-50" />
 

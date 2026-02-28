@@ -136,8 +136,9 @@ export const deviceBrandsApi = {
  * Device Models API
  */
 export const deviceModelsApi = {
-    getAll: async () => {
+    getAll: async (params?: { page?: number; size?: number; search?: string; isActive?: boolean; categoryId?: string; brandId?: string }) => {
         const response = await adminApiClient.get("/api/device-models", {
+            params,
             headers: getAuthHeaders(),
         });
         return response;

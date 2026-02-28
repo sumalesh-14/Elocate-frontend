@@ -41,11 +41,11 @@ const FacilityMap: React.FC = () => {
   useEffect(() => {
     try {
       const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-      
+
       if (!mapboxToken) {
         throw new Error("Mapbox token is not configured");
       }
-      
+
       mapboxgl.accessToken = mapboxToken;
 
       setIsLoading(true);
@@ -424,181 +424,181 @@ const FacilityMap: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 e-facilities-container">
-        {error && (
-          <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-            {error}
+      {error && (
+        <div className="fixed top-[100px] right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {error}
+        </div>
+      )}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-xl text-gray-600">Locating the nearest e-waste facilities...</p>
           </div>
-        )}
-        {isLoading ? (
-          <div className="flex items-center justify-center h-screen">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-xl text-gray-600">Locating the nearest e-waste facilities...</p>
+        </div>
+      ) : clientLocation ? (
+        <div className="pt-8 pb-16 px-4 md:px-8">
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">E-Waste Recycling Facility Locator</h1>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Find certified e-waste collection and recycling centers near you. Get directions, check facility details, and book recycling services.
+            </p>
+          </div>
+
+          <div className="mb-6 flex flex-wrap gap-4 justify-center">
+            <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
+              <span className="w-4 h-4 rounded-full bg-green-500 mr-2"></span>
+              <span className="text-gray-700">Verified Facility</span>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
+              <span className="w-4 h-4 rounded-full bg-orange-500 mr-2"></span>
+              <span className="text-gray-700">Unverified Facility</span>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
+              <span className="w-4 h-4 rounded-full bg-blue-500 mr-2"></span>
+              <span className="text-gray-700">Your Location</span>
             </div>
           </div>
-        ) : clientLocation ? (
-          <div className="pt-8 pb-16 px-4 md:px-8">
-            <div className="mb-8 text-center">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">E-Waste Recycling Facility Locator</h1>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Find certified e-waste collection and recycling centers near you. Get directions, check facility details, and book recycling services.
-              </p>
-            </div>
 
-            <div className="mb-6 flex flex-wrap gap-4 justify-center">
-              <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
-                <span className="w-4 h-4 rounded-full bg-green-500 mr-2"></span>
-                <span className="text-gray-700">Verified Facility</span>
-              </div>
-              <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
-                <span className="w-4 h-4 rounded-full bg-orange-500 mr-2"></span>
-                <span className="text-gray-700">Unverified Facility</span>
-              </div>
-              <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
-                <span className="w-4 h-4 rounded-full bg-blue-500 mr-2"></span>
-                <span className="text-gray-700">Your Location</span>
-              </div>
-            </div>
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="lg:w-1/3 flex flex-col">
+              <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+                <h2 className="font-bold text-xl mb-3 text-gray-800">Filter Facilities</h2>
 
-            <div className="flex flex-col lg:flex-row gap-6">
-              <div className="lg:w-1/3 flex flex-col">
-                <div className="bg-white p-4 rounded-lg shadow-md mb-4">
-                  <h2 className="font-bold text-xl mb-3 text-gray-800">Filter Facilities</h2>
+                <div className="flex gap-4 mb-4 flex-wrap">
+                  <button
+                    className={`px-4 py-2 rounded-md ${filterVerified ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+                    onClick={() => setFilterVerified(!filterVerified)}
+                  >
+                    Verified Only
+                  </button>
 
-                  <div className="flex gap-4 mb-4 flex-wrap">
-                    <button
-                      className={`px-4 py-2 rounded-md ${filterVerified ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-700'}`}
-                      onClick={() => setFilterVerified(!filterVerified)}
-                    >
-                      Verified Only
-                    </button>
-
-                    <select
-                      className="px-4 py-2 rounded-md border border-gray-200 bg-gray-100"
-                      value={filterDistance || ""}
-                      onChange={(e) => setFilterDistance(e.target.value ? parseInt(e.target.value) : null)}
-                    >
-                      <option value="">Distance - Any</option>
-                      <option value="5">Within 5 km</option>
-                      <option value="10">Within 10 km</option>
-                      <option value="20">Within 20 km</option>
-                      <option value="50">Within 50 km</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div
-                  ref={cardContainerRef}
-                  className="flex-grow bg-gray-50 rounded-lg overflow-y-auto max-h-[70vh] p-1"
-                  style={{ scrollbarWidth: 'thin' }}
-                >
-                  {filteredFacilities().length > 0 ? (
-                    filteredFacilities().map((info, index) => (
-                      <div
-                        key={index}
-                        className={`p-4 bg-white rounded-lg shadow-sm cursor-pointer mb-4 border-l-4 transition-all duration-200 hover:shadow-md
-                          ${selectedFacility === index ? "border-l-emerald-500 shadow-md" : info.verified ? "border-l-green-500" : "border-l-orange-500"}`}
-                        onClick={() => {
-                          setSelectedFacility(index);
-                        }}
-                      >
-                        <div className="flex justify-between items-center mb-3">
-                          <h2 className="text-xl font-bold text-gray-800">{info.name}</h2>
-                          {info.verified ? (
-                            <div className="flex items-center text-green-500 text-sm font-medium">
-                              <FaCheckCircle className="mr-1" />
-                              Verified
-                            </div>
-                          ) : (
-                            <div className="flex items-center text-orange-500 text-sm font-medium">
-                              <FaTimesCircle className="mr-1" />
-                              Unverified
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mb-3 space-y-1 text-gray-600">
-                          <div className="flex items-start">
-                            <FaMapMarkerAlt className="text-gray-400 mt-1 mr-2 flex-shrink-0" />
-                            <p>{info.address}</p>
-                          </div>
-                          <div className="flex items-center">
-                            <FaPhoneAlt className="text-gray-400 mr-2 flex-shrink-0" />
-                            <p>{info.contact}</p>
-                          </div>
-                          <div className="flex items-center">
-                            <FaClock className="text-gray-400 mr-2 flex-shrink-0" />
-                            <p>{info.time}</p>
-                          </div>
-                          <p className="font-medium text-indigo-600">
-                            {info.distance.toFixed(2)} km away
-                          </p>
-                        </div>
-
-                        <div className="flex space-x-2">
-                          <button
-                            className="flex-1 flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (clientLocation) {
-                                getDirections(clientLocation, [info.lon, info.lat]);
-                              }
-                            }}
-                          >
-                            <FaDirections className="mr-2" />
-                            Directions
-                          </button>
-
-                          <Link
-                            href="/citizen/recycle"
-                            className="flex-1 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                          >
-                            <FaRecycle className="mr-2" />
-                            Book Recycling
-                          </Link>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-8 text-center text-gray-600">
-                      No facilities match your current filters. Try adjusting your search criteria.
-                    </div>
-                  )}
+                  <select
+                    className="px-4 py-2 rounded-md border border-gray-200 bg-gray-100"
+                    value={filterDistance || ""}
+                    onChange={(e) => setFilterDistance(e.target.value ? parseInt(e.target.value) : null)}
+                  >
+                    <option value="">Distance - Any</option>
+                    <option value="5">Within 5 km</option>
+                    <option value="10">Within 10 km</option>
+                    <option value="20">Within 20 km</option>
+                    <option value="50">Within 50 km</option>
+                  </select>
                 </div>
               </div>
 
               <div
-                ref={mapContainerRef}
-                id="map"
-                className="lg:w-2/3 h-[75vh] rounded-lg shadow-md"
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-screen bg-gray-50 px-4">
-            <div className="max-w-md mx-auto text-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-gray-400 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Location Access Required
-              </h2>
-
-              <p className="text-gray-600 mb-8">
-                We need access to your location to show you nearby e-waste recycling facilities. Please enable location services in your browser settings.
-              </p>
-
-              <button
-                onClick={handleAllowLocationClick}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-3 px-6 rounded-md transition-colors duration-300"
+                ref={cardContainerRef}
+                className="flex-grow bg-gray-50 rounded-lg overflow-y-auto max-h-[70vh] p-1"
+                style={{ scrollbarWidth: 'thin' }}
               >
-                Allow Location Access
-              </button>
+                {filteredFacilities().length > 0 ? (
+                  filteredFacilities().map((info, index) => (
+                    <div
+                      key={index}
+                      className={`p-4 bg-white rounded-lg shadow-sm cursor-pointer mb-4 border-l-4 transition-all duration-200 hover:shadow-md
+                          ${selectedFacility === index ? "border-l-emerald-500 shadow-md" : info.verified ? "border-l-green-500" : "border-l-orange-500"}`}
+                      onClick={() => {
+                        setSelectedFacility(index);
+                      }}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <h2 className="text-xl font-bold text-gray-800">{info.name}</h2>
+                        {info.verified ? (
+                          <div className="flex items-center text-green-500 text-sm font-medium">
+                            <FaCheckCircle className="mr-1" />
+                            Verified
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-orange-500 text-sm font-medium">
+                            <FaTimesCircle className="mr-1" />
+                            Unverified
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mb-3 space-y-1 text-gray-600">
+                        <div className="flex items-start">
+                          <FaMapMarkerAlt className="text-gray-400 mt-1 mr-2 flex-shrink-0" />
+                          <p>{info.address}</p>
+                        </div>
+                        <div className="flex items-center">
+                          <FaPhoneAlt className="text-gray-400 mr-2 flex-shrink-0" />
+                          <p>{info.contact}</p>
+                        </div>
+                        <div className="flex items-center">
+                          <FaClock className="text-gray-400 mr-2 flex-shrink-0" />
+                          <p>{info.time}</p>
+                        </div>
+                        <p className="font-medium text-indigo-600">
+                          {info.distance.toFixed(2)} km away
+                        </p>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <button
+                          className="flex-1 flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (clientLocation) {
+                              getDirections(clientLocation, [info.lon, info.lat]);
+                            }
+                          }}
+                        >
+                          <FaDirections className="mr-2" />
+                          Directions
+                        </button>
+
+                        <Link
+                          href="/citizen/recycle"
+                          className="flex-1 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                        >
+                          <FaRecycle className="mr-2" />
+                          Book Recycling
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-gray-600">
+                    No facilities match your current filters. Try adjusting your search criteria.
+                  </div>
+                )}
+              </div>
             </div>
+
+            <div
+              ref={mapContainerRef}
+              id="map"
+              className="lg:w-2/3 h-[75vh] rounded-lg shadow-md"
+            />
           </div>
-        )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-screen bg-gray-50 px-4">
+          <div className="max-w-md mx-auto text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-gray-400 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Location Access Required
+            </h2>
+
+            <p className="text-gray-600 mb-8">
+              We need access to your location to show you nearby e-waste recycling facilities. Please enable location services in your browser settings.
+            </p>
+
+            <button
+              onClick={handleAllowLocationClick}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-3 px-6 rounded-md transition-colors duration-300"
+            >
+              Allow Location Access
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -8,9 +8,10 @@ export async function GET(
 ) {
     try {
         const { categoryId } = await params;
+        const { searchParams } = new URL(request.url);
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/category-brands/category/${categoryId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/category-brands/category/${categoryId}?${searchParams.toString()}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

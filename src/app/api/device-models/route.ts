@@ -4,9 +4,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-models`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/device-models?${searchParams.toString()}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
         const authHeader = request.headers.get("Authorization");
         const body = await request.json();
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-models`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/device-models`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

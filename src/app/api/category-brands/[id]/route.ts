@@ -10,7 +10,7 @@ export async function DELETE(
         const { id } = await params;
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/category-brands/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/category-brands/${id}`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",

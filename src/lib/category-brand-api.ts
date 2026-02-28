@@ -57,24 +57,27 @@ const getAuthHeaders = () => {
  */
 export const categoryBrandApi = {
     // Get all associations
-    getAll: async () => {
+    getAll: async (page = 0, size = 10) => {
         const response = await categoryBrandApiClient.get("/api/category-brands", {
+            params: { page, size },
             headers: getAuthHeaders(),
         });
         return response;
     },
 
     // Get brands for a specific category
-    getBrandsByCategory: async (categoryId: string) => {
+    getBrandsByCategory: async (categoryId: string, page = 0, size = 10) => {
         const response = await categoryBrandApiClient.get(`/api/category-brands/category/${categoryId}`, {
+            params: { page, size },
             headers: getAuthHeaders(),
         });
         return response;
     },
 
     // Get categories for a specific brand
-    getCategoriesByBrand: async (brandId: string) => {
+    getCategoriesByBrand: async (brandId: string, page = 0, size = 10) => {
         const response = await categoryBrandApiClient.get(`/api/category-brands/brand/${brandId}`, {
+            params: { page, size },
             headers: getAuthHeaders(),
         });
         return response;

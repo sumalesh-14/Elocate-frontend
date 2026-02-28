@@ -48,7 +48,7 @@ const Blog: React.FC<BlogPageProps> = ({ params }) => {
   return (
     <div className="bg-white min-h-screen">
       {/* Reading progress bar */}
-      <div className="fixed top-0 left-0 w-full h-1 bg-gray-200 z-50">
+      <div className="fixed top-[80px] left-0 w-full h-1 bg-gray-200 z-50">
         <div
           className="h-full bg-emerald-600 transition-all duration-150"
           style={{ width: `${readingProgress}%` }}

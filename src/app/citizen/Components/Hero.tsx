@@ -34,7 +34,7 @@ const HeroSection: React.FC = () => {
   }, []); // Remove currentSolution from dependencies
 
   return (
-    <section className="relative min-h-[95vh] flex items-center pt-0 overflow-hidden bg-white" id="home" aria-label="hero">
+    <section className="relative min-h-[95vh] flex items-center pt-32 overflow-hidden bg-white" id="home" aria-label="hero">
       {/* Futuristic Green Background Video */}
       <div className="absolute inset-0 z-0 opacity-10">
         <video

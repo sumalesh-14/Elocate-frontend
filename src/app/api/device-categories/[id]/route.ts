@@ -10,7 +10,7 @@ export async function GET(
         const { id } = await params;
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-categories/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/device-categories/${id}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export async function PUT(
         const authHeader = request.headers.get("Authorization");
         const body = await request.json();
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-categories/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/device-categories/${id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -76,7 +76,7 @@ export async function DELETE(
         const { id } = await params;
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-categories/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/device-categories/${id}`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",

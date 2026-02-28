@@ -87,16 +87,7 @@ main,
   scroll-margin-top: 100px;
 }
 
-/* Global body padding removed to avoid gaps on fullscreen pages like login */
-
-/* Page-specific content adjustments */
-.e-facilities-container,
-.recycle-container,
-.education-container,
-.rules-container,
-.contactus-container {
-  padding-top: 20px;
-}
+/* Hero sections in components handle their own top padding to clear the fixed navbar */
 
 /*-----------------------------------*\
   #RESET
@@ -197,7 +188,7 @@ body {
 \*-----------------------------------*/
 
 .container {
-  padding-inline: 5px;
+  padding-inline: 20px;
 }
 
 .section {
@@ -434,7 +425,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 4;
+  z-index: 1000;
   font-size: 1.5rem;
 }
 
@@ -477,7 +468,7 @@ body {
   transition: 0.25s var(--cubic-in);
   transform: translateX(280px);
   /* Initial position off-screen */
-  z-index: 4;
+  z-index: 1001;
 }
 
 .navbar.active {
@@ -518,7 +509,7 @@ body {
   visibility: hidden;
   opacity: 0;
   transition: var(--transition-1);
-  z-index: 3;
+  z-index: 999;
 }
 
 .overlay.active {

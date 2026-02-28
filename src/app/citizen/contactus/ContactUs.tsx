@@ -53,27 +53,52 @@ const ContactUs = () => {
       <ToastContainer theme="dark" position="top-right" />
 
       {/* Hero Section */}
-      <section className="relative py-12 px-4 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl shadow-emerald-500" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-300 rounded-full blur-3xl opacity-20" />
+      <section className="relative pt-48 pb-20 px-4 bg-white overflow-hidden">
+        {/* Futuristic Green Background Video */}
+        <div className="absolute inset-0 z-0 opacity-10">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          >
+            <source src="https://cdn.pixabay.com/video/2021/04/12/70860-538805601_large.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/40 to-white" />
         </div>
+
+        {/* Emerald Scanning Grid */}
+        <div className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none"
+          style={{ backgroundImage: 'linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+        </div>
+
+        {/* High-Velocity Scanning Line */}
+        <motion.div
+          animate={{ top: ['0%', '100%'] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          className="absolute left-0 right-0 h-[1px] bg-emerald-400/50 shadow-[0_0_15px_#10b981] z-0 pointer-events-none"
+        />
+
+        {/* Pulsing Emerald Orbs */}
+        <div className="absolute top-1/4 left-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-emerald-600/5 rounded-full blur-[120px] animate-pulse pointer-events-none" />
 
         <div className="container mx-auto max-w-5xl relative z-10 text-center">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-6xl font-bold mb-6 font-cuprum tracking-tight"
+            className="text-5xl md:text-6xl font-black mb-6 font-cuprum tracking-tight text-gray-900 leading-none"
           >
-            Get In Touch
+            Get In <span className="text-emerald-600 drop-shadow-sm">Touch</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-xl md:text-2xl text-emerald-50 max-w-2xl mx-auto leading-relaxed"
+            className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed font-medium"
           >
-            Have questions about compliance or recycling? Our experts are here to navigate the future of electronics with you.
+            Have questions about compliance or recycling? <br className="hidden md:block" /> Our experts are here to navigate the future of electronics with you.
           </motion.p>
         </div>
       </section>

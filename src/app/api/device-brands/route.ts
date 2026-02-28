@@ -6,7 +6,7 @@ export async function GET(request: Request) {
     try {
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-brands`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/device-brands`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         const authHeader = request.headers.get("Authorization");
         const body = await request.json();
 
-        const response = await fetch(`${API_BASE_URL}/elocate/api/v1/device-brands`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/device-brands`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
