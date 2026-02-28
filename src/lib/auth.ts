@@ -106,29 +106,29 @@ apiClient.interceptors.response.use(
 export const authApi = {
     login: async (credentials: any) => {
         // Calling our internal Next.js API route which proxies to the backend
-        const response = await apiClient.post("/api/auth/sign-in", credentials);
+        const response = await apiClient.post("/api/v1/auth/sign-in", credentials);
         return response;
     },
     register: async (credentials: any) => {
         // Calling our internal Next.js API route which proxies to the backend
-        const response = await apiClient.post("/api/auth/register", credentials);
+        const response = await apiClient.post("/api/v1/auth/register", credentials);
         return response;
     },
     forgotPassword: async (email: string) => {
         // Calling our internal Next.js API route which proxies to the backend
-        const response = await apiClient.post("/api/auth/forgot-password", { email });
+        const response = await apiClient.post("/api/v1/auth/forgot-password", { email });
         return response;
     },
     verifyEmail: async (credentials: any) => {
-        const response = await apiClient.post("/api/auth/verify-email", credentials);
+        const response = await apiClient.post("/api/v1/auth/verify-email", credentials);
         return response;
     },
     resendOtp: async (credentials: any) => {
-        const response = await apiClient.post("/api/auth/resend-otp", credentials);
+        const response = await apiClient.post("/api/v1/auth/resend-otp", credentials);
         return response;
     },
     refreshToken: async (token: string) => {
-        const response = await apiClient.post("/api/auth/refresh", { refreshToken: token });
+        const response = await apiClient.post("/api/v1/auth/refresh", { refreshToken: token });
         return response;
     },
 };

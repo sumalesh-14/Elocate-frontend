@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  X, Mail, Lock, ArrowRight, Leaf, Recycle, 
-  Smartphone, Battery, Laptop, CheckCircle, 
+import {
+  X, Mail, Lock, ArrowRight, Leaf, Recycle,
+  Smartphone, Battery, Laptop, CheckCircle,
   Building2, User, MapPin, UploadCloud, Plus, Trash2, ArrowLeft, Phone, Home, ChevronDown
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
@@ -19,10 +19,10 @@ type AuthView = 'login' | 'role-selection' | 'register-citizen' | 'register-inte
 type LoginMethod = 'password' | 'otp';
 
 const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", 
-  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", 
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", 
-  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", 
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
+  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
   "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
 ];
 
@@ -57,7 +57,7 @@ interface IntermediaryPayload {
 
 export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => {
   const { showToast } = useToast();
-  
+
   // State Machine
   const [view, setView] = useState<AuthView>('login');
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('password');
@@ -99,13 +99,13 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
   const [fileName, setFileName] = useState<string | null>(null);
 
   // --- Animation Elements ---
-  const [fallingItems, setFallingItems] = useState<Array<{id: number, type: string, left: number, delay: number}>>([]);
+  const [fallingItems, setFallingItems] = useState<Array<{ id: number, type: string, left: number, delay: number }>>([]);
 
   useEffect(() => {
     if (isOpen) {
       // Lock body scroll
       document.body.style.overflow = 'hidden';
-      
+
       // Reset state on open
       setView('login');
       const items = Array.from({ length: 20 }).map((_, i) => ({
@@ -131,7 +131,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       if (loginMethod === 'otp') {
         // For OTP login, just move to OTP verification view
@@ -140,7 +140,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
         showToast('OTP sent to your email/mobile', 'info');
       } else {
         // Password login - call API
-        const response = await fetch('/api/auth/sign-in', {
+        const response = await fetch('/api/v1/auth/sign-in', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
 
         // Store auth data - handle both token structures
         const token = data.token || data.tokens?.accessToken;
-        
+
         if (token) setToken(token);
         if (user) {
           setUser(user);
@@ -187,7 +187,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
         }
 
         showToast('Welcome back!', 'success');
-        
+
         // Call the onSignIn callback which will handle navigation
         onSignIn();
       }
@@ -200,22 +200,22 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (view === 'register-citizen') {
-        if (citizenData.password !== citizenData.confirmPassword) {
-            showToast('Passwords do not match!', 'error');
-            return;
-        }
+      if (citizenData.password !== citizenData.confirmPassword) {
+        showToast('Passwords do not match!', 'error');
+        return;
+      }
     }
 
     setIsLoading(true);
-    
+
     try {
       let payload: any;
       let endpoint: string;
-      
+
       if (view === 'register-citizen') {
-        endpoint = '/api/auth/register';
+        endpoint = '/api/v1/auth/register';
         setRegistrationType('citizen');
         payload = {
           fullName: citizenData.name,
@@ -232,7 +232,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
         };
       } else {
         // Partner/Intermediary registration - use partner endpoint
-        endpoint = '/api/partner-auth/register';
+        endpoint = '/api/v1/partner-auth/register';
         setRegistrationType('partner');
         payload = {
           fullName: facilityData.name,
@@ -287,16 +287,16 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
   const handleOtpVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = otp.join('');
-    
+
     if (otpCode.length !== 6) {
       showToast('Please enter complete OTP', 'error');
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
-      const response = await fetch('/api/auth/verify-email', {
+      const response = await fetch('/api/v1/auth/verify-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -315,7 +315,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
       }
 
       showToast('Verification successful!', 'success');
-      
+
       // Check if this is a partner registration
       if (registrationType === 'partner') {
         // Show pending approval screen for partners
@@ -340,10 +340,10 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
       setIsLoading(false);
     }
   };
-  
+
   const handleResendOtp = async () => {
     try {
-      const response = await fetch('/api/auth/resend-otp', {
+      const response = await fetch('/api/v1/auth/resend-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -495,32 +495,32 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
   return (
     <div className="fixed inset-0 z-[100] flex bg-white animate-fade-in-up">
       <style>{animationStyles}</style>
-      
+
       {/* LEFT SIDE: Animation Panel */}
       <div className="hidden lg:flex w-[40%] bg-eco-950 relative overflow-hidden flex-col items-center justify-between">
         <div className="absolute inset-0 bg-gradient-to-b from-eco-900 to-eco-950"></div>
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-tech-lime/10 rounded-full blur-[100px]"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[80px]"></div>
-        
+
         <div className="relative z-20 pt-20 px-12 text-center">
-           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-tech-lime text-xs font-bold uppercase tracking-wider mb-6">
-             <Recycle size={14} /> The Future of E-Waste
-           </div>
-           <h2 className="text-5xl font-display font-bold text-white mb-6 leading-tight">
-             Turn your old gadgets into <span className="text-transparent bg-clip-text bg-gradient-to-r from-tech-lime to-emerald-400">new possibilities.</span>
-           </h2>
-           <p className="text-eco-200/60 text-lg max-w-md mx-auto leading-relaxed">
-             Join the global network that is recovering millions of precious materials from electronic waste every day.
-           </p>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-tech-lime text-xs font-bold uppercase tracking-wider mb-6">
+            <Recycle size={14} /> The Future of E-Waste
+          </div>
+          <h2 className="text-5xl font-display font-bold text-white mb-6 leading-tight">
+            Turn your old gadgets into <span className="text-transparent bg-clip-text bg-gradient-to-r from-tech-lime to-emerald-400">new possibilities.</span>
+          </h2>
+          <p className="text-eco-200/60 text-lg max-w-md mx-auto leading-relaxed">
+            Join the global network that is recovering millions of precious materials from electronic waste every day.
+          </p>
         </div>
 
         <div className="relative w-full flex-1 flex justify-center perspective-1000 overflow-hidden">
           {fallingItems.map((item) => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               className="waste-item text-eco-200/80 drop-shadow-[0_0_15px_rgba(217,249,157,0.3)]"
-              style={{ 
-                left: `${item.left}%`, 
+              style={{
+                left: `${item.left}%`,
                 animationDelay: `${item.delay}s`,
                 animationDuration: `${4 + Math.random() * 3}s`
               }}
@@ -532,25 +532,25 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
           ))}
 
           <div className="absolute bottom-24 w-72 h-64 z-20">
-              <div className="absolute inset-x-6 bottom-0 h-48 bg-eco-800/80 rounded-b-[2.5rem] transform skew-x-3 border border-white/5"></div>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/20 shadow-2xl flex items-center justify-center flex-col z-30 group">
-                <div className="w-24 h-2 bg-tech-lime/50 rounded-full mb-6 group-hover:bg-tech-lime/80 transition-colors"></div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-tech-lime/20 blur-xl rounded-full animate-pulse"></div>
-                  <Recycle className="text-white relative z-10" size={64} strokeWidth={1.5} />
-                </div>
-                <div className="mt-4 flex flex-col items-center gap-1">
-                  <span className="text-xs text-tech-lime font-bold uppercase tracking-[0.2em]">Processing</span>
-                  <div className="flex gap-1">
-                     <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce"></span>
-                     <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce delay-75"></span>
-                     <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce delay-150"></span>
-                  </div>
+            <div className="absolute inset-x-6 bottom-0 h-48 bg-eco-800/80 rounded-b-[2.5rem] transform skew-x-3 border border-white/5"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/20 shadow-2xl flex items-center justify-center flex-col z-30 group">
+              <div className="w-24 h-2 bg-tech-lime/50 rounded-full mb-6 group-hover:bg-tech-lime/80 transition-colors"></div>
+              <div className="relative">
+                <div className="absolute inset-0 bg-tech-lime/20 blur-xl rounded-full animate-pulse"></div>
+                <Recycle className="text-white relative z-10" size={64} strokeWidth={1.5} />
+              </div>
+              <div className="mt-4 flex flex-col items-center gap-1">
+                <span className="text-xs text-tech-lime font-bold uppercase tracking-[0.2em]">Processing</span>
+                <div className="flex gap-1">
+                  <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce"></span>
+                  <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce delay-75"></span>
+                  <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce delay-150"></span>
                 </div>
               </div>
+            </div>
           </div>
         </div>
-        
+
         <div className="relative z-20 pb-8 text-eco-200/40 text-xs uppercase tracking-widest font-medium">
           Powered by EcoBot AI & Gemini
         </div>
@@ -558,22 +558,22 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
 
       {/* RIGHT SIDE: Content & Forms */}
       <div className="w-full lg:w-[60%] flex flex-col bg-[#FDFDFC] relative h-full shadow-[-20px_0_40px_rgba(0,0,0,0.05)]">
-        
+
         {/* Top Navigation Bar */}
         <div className="absolute top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 bg-white/80 backdrop-blur-md border-b border-gray-100/50">
           <div className="flex items-center gap-2">
-             <button 
-               onClick={onClose}
-               className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-eco-900 transition-colors"
-               title="Back to Home"
-             >
-               <ArrowLeft size={24} />
-             </button>
-             <span className="font-display font-bold text-xl text-eco-900 tracking-tight ml-2">ELocate</span>
+            <button
+              onClick={onClose}
+              className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-eco-900 transition-colors"
+              title="Back to Home"
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <span className="font-display font-bold text-xl text-eco-900 tracking-tight ml-2">ELocate</span>
           </div>
           <div className="text-sm font-medium text-gray-500">
             {view === 'login' ? "Don't have an account?" : "Already have an account?"}
-            <button 
+            <button
               onClick={() => setView(view === 'login' ? 'role-selection' : 'login')}
               className="ml-2 text-eco-700 hover:text-eco-900 font-bold hover:underline transition-all"
             >
@@ -581,12 +581,12 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
             </button>
           </div>
         </div>
-        
+
         {/* Scrollable Form Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar pt-40 pb-6 px-6 md:px-12 flex flex-col items-center justify-start">
           {/* Dynamic Width Container */}
           <div className={`w-full transition-all duration-300 ${isWideView ? 'max-w-3xl' : 'max-w-md'}`}>
-            
+
             {/* --- VIEW: LOGIN --- */}
             {view === 'login' && (
               <div className="animate-fade-in-up">
@@ -646,347 +646,347 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
             {/* --- VIEW: REGISTER CITIZEN --- */}
             {view === 'register-citizen' && (
               <div className="animate-fade-in-up">
-                 <div className="mb-6 text-center md:text-left">
-                   <h3 className="font-display font-bold text-3xl text-eco-900 mb-1">Create Citizen Account</h3>
-                   <p className="text-gray-500 text-sm">Start your journey towards a zero-waste lifestyle.</p>
-                 </div>
-                 
-                 <form onSubmit={handleRegisterSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                    
-                    {/* Row 1: Name & Mobile */}
-                    <div className="col-span-1">
-                      <label className="label-tiny">Full Name</label>
+                <div className="mb-6 text-center md:text-left">
+                  <h3 className="font-display font-bold text-3xl text-eco-900 mb-1">Create Citizen Account</h3>
+                  <p className="text-gray-500 text-sm">Start your journey towards a zero-waste lifestyle.</p>
+                </div>
+
+                <form onSubmit={handleRegisterSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+
+                  {/* Row 1: Name & Mobile */}
+                  <div className="col-span-1">
+                    <label className="label-tiny">Full Name</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                      <input type="text" required value={citizenData.name} onChange={(e) => handleCitizenChange('name', e.target.value)} className="input-compact !pl-12" placeholder="John Doe" />
+                    </div>
+                  </div>
+                  <div className="col-span-1">
+                    <label className="label-tiny">Mobile Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                      <input type="tel" required value={citizenData.mobile} onChange={(e) => handleCitizenChange('mobile', e.target.value)} className="input-compact !pl-12" placeholder="+91 9999999999" />
+                    </div>
+                  </div>
+
+                  {/* Row 2: Email */}
+                  <div className="col-span-1 md:col-span-2">
+                    <label className="label-tiny">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                      <input type="email" required value={citizenData.email} onChange={(e) => handleCitizenChange('email', e.target.value)} className="input-compact !pl-12" placeholder="citizen@gmail.com" />
+                    </div>
+                  </div>
+
+                  {/* Row 3: Address */}
+                  <div className="col-span-1 md:col-span-2">
+                    <label className="label-tiny">Address</label>
+                    <div className="relative">
+                      <Home className="absolute left-4 top-4 text-gray-400 pointer-events-none" size={18} />
+                      <textarea rows={1} value={citizenData.address} onChange={(e) => handleCitizenChange('address', e.target.value)} className="input-compact !pl-12 resize-none py-3" placeholder="Street Address, Area"></textarea>
+                    </div>
+                  </div>
+
+                  {/* Row 4: City, State, Pincode */}
+                  <div className="col-span-1 md:col-span-2 grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="label-tiny">City</label>
+                      <input type="text" value={citizenData.city} onChange={(e) => handleCitizenChange('city', e.target.value)} className="input-compact" placeholder="City" />
+                    </div>
+                    <div>
+                      <label className="label-tiny">State</label>
                       <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                        <input type="text" required value={citizenData.name} onChange={(e) => handleCitizenChange('name', e.target.value)} className="input-compact !pl-12" placeholder="John Doe" />
+                        <select
+                          value={citizenData.state}
+                          onChange={(e) => handleCitizenChange('state', e.target.value)}
+                          className="input-compact appearance-none bg-white pr-8"
+                        >
+                          <option value="">Select State</option>
+                          {INDIAN_STATES.map(state => (
+                            <option key={state} value={state}>{state}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                       </div>
                     </div>
-                    <div className="col-span-1">
-                      <label className="label-tiny">Mobile Number</label>
-                      <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                        <input type="tel" required value={citizenData.mobile} onChange={(e) => handleCitizenChange('mobile', e.target.value)} className="input-compact !pl-12" placeholder="+91 9999999999" />
-                      </div>
+                    <div>
+                      <label className="label-tiny">Pincode</label>
+                      <input type="text" value={citizenData.pincode} onChange={(e) => handleCitizenChange('pincode', e.target.value)} className="input-compact" placeholder="Pincode" />
                     </div>
+                  </div>
 
-                    {/* Row 2: Email */}
-                    <div className="col-span-1 md:col-span-2">
-                        <label className="label-tiny">Email Address</label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                          <input type="email" required value={citizenData.email} onChange={(e) => handleCitizenChange('email', e.target.value)} className="input-compact !pl-12" placeholder="citizen@gmail.com" />
-                        </div>
+                  {/* Row 5: Location */}
+                  <div className="col-span-1 md:col-span-2 grid grid-cols-12 gap-4 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
+                    <div className="col-span-4 md:col-span-3">
+                      <label className="label-tiny">Latitude</label>
+                      <input type="text" disabled value={citizenData.latitude} className="input-compact bg-white text-gray-500 text-xs py-2.5" placeholder="0.00" />
                     </div>
+                    <div className="col-span-4 md:col-span-3">
+                      <label className="label-tiny">Longitude</label>
+                      <input type="text" disabled value={citizenData.longitude} className="input-compact bg-white text-gray-500 text-xs py-2.5" placeholder="0.00" />
+                    </div>
+                    <div className="col-span-4 md:col-span-6">
+                      <button type="button" onClick={autoDetectCitizenLocation} className="w-full py-2.5 bg-tech-lime text-eco-900 rounded-lg font-bold hover:bg-lime-400 transition-colors flex items-center justify-center gap-2 shadow-sm text-sm border border-tech-lime">
+                        <Leaf size={16} /> <span className="hidden md:inline">Auto Detect Location</span><span className="md:hidden">Detect</span>
+                      </button>
+                    </div>
+                  </div>
 
-                    {/* Row 3: Address */}
-                    <div className="col-span-1 md:col-span-2">
-                      <label className="label-tiny">Address</label>
-                      <div className="relative">
-                        <Home className="absolute left-4 top-4 text-gray-400 pointer-events-none" size={18} />
-                        <textarea rows={1} value={citizenData.address} onChange={(e) => handleCitizenChange('address', e.target.value)} className="input-compact !pl-12 resize-none py-3" placeholder="Street Address, Area"></textarea>
-                      </div>
+                  {/* Row 6: Passwords */}
+                  <div className="col-span-1">
+                    <label className="label-tiny">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                      <input type="password" required value={citizenData.password} onChange={(e) => handleCitizenChange('password', e.target.value)} className="input-compact !pl-12" placeholder="••••••••" />
                     </div>
+                  </div>
+                  <div className="col-span-1">
+                    <label className="label-tiny">Confirm Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                      <input type="password" required value={citizenData.confirmPassword} onChange={(e) => handleCitizenChange('confirmPassword', e.target.value)} className="input-compact !pl-12" placeholder="••••••••" />
+                    </div>
+                  </div>
 
-                    {/* Row 4: City, State, Pincode */}
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-3 gap-4">
-                       <div>
-                          <label className="label-tiny">City</label>
-                          <input type="text" value={citizenData.city} onChange={(e) => handleCitizenChange('city', e.target.value)} className="input-compact" placeholder="City" />
-                       </div>
-                       <div>
-                          <label className="label-tiny">State</label>
-                          <div className="relative">
-                            <select 
-                              value={citizenData.state} 
-                              onChange={(e) => handleCitizenChange('state', e.target.value)} 
-                              className="input-compact appearance-none bg-white pr-8"
-                            >
-                              <option value="">Select State</option>
-                              {INDIAN_STATES.map(state => (
-                                <option key={state} value={state}>{state}</option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-                          </div>
-                       </div>
-                       <div>
-                          <label className="label-tiny">Pincode</label>
-                          <input type="text" value={citizenData.pincode} onChange={(e) => handleCitizenChange('pincode', e.target.value)} className="input-compact" placeholder="Pincode" />
-                       </div>
-                    </div>
-
-                    {/* Row 5: Location */}
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-12 gap-4 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
-                         <div className="col-span-4 md:col-span-3">
-                            <label className="label-tiny">Latitude</label>
-                            <input type="text" disabled value={citizenData.latitude} className="input-compact bg-white text-gray-500 text-xs py-2.5" placeholder="0.00" />
-                         </div>
-                         <div className="col-span-4 md:col-span-3">
-                            <label className="label-tiny">Longitude</label>
-                            <input type="text" disabled value={citizenData.longitude} className="input-compact bg-white text-gray-500 text-xs py-2.5" placeholder="0.00" />
-                         </div>
-                         <div className="col-span-4 md:col-span-6">
-                            <button type="button" onClick={autoDetectCitizenLocation} className="w-full py-2.5 bg-tech-lime text-eco-900 rounded-lg font-bold hover:bg-lime-400 transition-colors flex items-center justify-center gap-2 shadow-sm text-sm border border-tech-lime">
-                               <Leaf size={16} /> <span className="hidden md:inline">Auto Detect Location</span><span className="md:hidden">Detect</span>
-                            </button>
-                         </div>
-                    </div>
-
-                    {/* Row 6: Passwords */}
-                    <div className="col-span-1">
-                       <label className="label-tiny">Password</label>
-                       <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                          <input type="password" required value={citizenData.password} onChange={(e) => handleCitizenChange('password', e.target.value)} className="input-compact !pl-12" placeholder="••••••••" />
-                       </div>
-                    </div>
-                    <div className="col-span-1">
-                       <label className="label-tiny">Confirm Password</label>
-                       <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                          <input type="password" required value={citizenData.confirmPassword} onChange={(e) => handleCitizenChange('confirmPassword', e.target.value)} className="input-compact !pl-12" placeholder="••••••••" />
-                       </div>
-                    </div>
-
-                    <div className="col-span-1 md:col-span-2 mt-4">
-                        <button type="submit" className="w-full py-3.5 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl">
-                          Complete Registration
-                        </button>
-                    </div>
-                 </form>
+                  <div className="col-span-1 md:col-span-2 mt-4">
+                    <button type="submit" className="w-full py-3.5 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl">
+                      Complete Registration
+                    </button>
+                  </div>
+                </form>
               </div>
             )}
 
             {/* --- VIEW: REGISTER INTERMEDIARY --- */}
             {view === 'register-intermediary' && (
               <div className="animate-fade-in-up">
-                 <div className="mb-6 text-center md:text-left">
-                   <h3 className="font-display font-bold text-3xl text-eco-900 mb-1">Facility Registration</h3>
-                   <p className="text-gray-500 text-sm">Register your organization as an official partner.</p>
-                 </div>
+                <div className="mb-6 text-center md:text-left">
+                  <h3 className="font-display font-bold text-3xl text-eco-900 mb-1">Facility Registration</h3>
+                  <p className="text-gray-500 text-sm">Register your organization as an official partner.</p>
+                </div>
 
-                 <form onSubmit={handleRegisterSubmit} className="space-y-6">
-                    {/* Basic Info & Location Compacted */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <div className="col-span-1 md:col-span-2">
-                           <label className="label-tiny">Facility Name</label>
-                           <input type="text" required className="input-compact" placeholder="GreenCycle Hub" value={facilityData.name} onChange={e => handleFacilityChange('name', e.target.value)} />
-                        </div>
-                        <div className="col-span-1">
-                           <label className="label-tiny">Registration Number</label>
-                           <input type="text" required className="input-compact" placeholder="REG123456" value={facilityData.registrationNumber} onChange={e => handleFacilityChange('registrationNumber', e.target.value)} />
-                        </div>
-                        <div className="col-span-1">
-                           <label className="label-tiny">Email</label>
-                           <input type="email" required className="input-compact" placeholder="contact@facility.com" value={facilityData.email} onChange={e => handleFacilityChange('email', e.target.value)} />
-                        </div>
-                        <div className="col-span-1">
-                           <label className="label-tiny">Password</label>
-                           <input type="password" required className="input-compact" placeholder="Min 8 characters" value={facilityData.password} onChange={e => handleFacilityChange('password', e.target.value)} />
-                        </div>
-                         <div className="col-span-1">
-                           <label className="label-tiny">Contact Number</label>
-                           <input type="tel" required className="input-compact" placeholder="+1 234 567 8900" value={facilityData.contactNumber} onChange={e => handleFacilityChange('contactNumber', e.target.value)} />
-                        </div>
-                        <div className="col-span-1">
-                           <label className="label-tiny">Daily Capacity (kg)</label>
-                           <input type="number" required className="input-compact" placeholder="1000" value={facilityData.capacity} onChange={e => handleFacilityChange('capacity', Number(e.target.value))} />
-                        </div>
-                         <div className="col-span-1">
-                           <label className="label-tiny">Operating Hours</label>
-                           <input type="text" required className="input-compact" placeholder="Mon-Fri, 9AM-5PM" value={facilityData.operatingHours} onChange={e => handleFacilityChange('operatingHours', e.target.value)} />
-                        </div>
-                        
-                        {/* Address Block */}
-                        <div className="col-span-1 md:col-span-2 pt-2 border-t border-gray-100 mt-2">
-                          <div className="flex justify-between items-center mb-2">
-                             <label className="label-tiny mb-0">Address</label>
-                             <button type="button" onClick={autoDetectLocation} className="text-[10px] bg-tech-lime/20 text-eco-800 px-2 py-0.5 rounded hover:bg-tech-lime/40 transition-colors font-bold flex items-center gap-1 uppercase tracking-wide">
-                               <Leaf size={10} /> Auto Detect
-                             </button>
-                          </div>
-                          <input type="text" required className="input-compact mb-3" placeholder="Street Address" value={facilityData.address.address} onChange={e => handleAddressChange('address', e.target.value)} />
-                          
-                          <div className="grid grid-cols-3 gap-3 mb-3">
-                             <input type="text" className="input-compact" placeholder="City" value={facilityData.address.city} onChange={e => handleAddressChange('city', e.target.value)} />
-                             <div className="relative">
-                               <select 
-                                 value={facilityData.address.state} 
-                                 onChange={e => handleAddressChange('state', e.target.value)} 
-                                 className="input-compact appearance-none bg-white pr-8 text-sm"
-                               >
-                                 <option value="">State</option>
-                                 {INDIAN_STATES.map(state => (
-                                   <option key={state} value={state}>{state}</option>
-                                 ))}
-                               </select>
-                               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
-                             </div>
-                             <input type="text" className="input-compact" placeholder="Zip" value={facilityData.address.pincode} onChange={e => handleAddressChange('pincode', e.target.value)} />
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-3">
-                             <input type="number" disabled className="input-compact bg-gray-50 text-gray-500 text-xs" placeholder="Lat: 0.00" value={facilityData.address.latitude} />
-                             <input type="number" disabled className="input-compact bg-gray-50 text-gray-500 text-xs" placeholder="Long: 0.00" value={facilityData.address.longitude} />
-                          </div>
-                        </div>
+                <form onSubmit={handleRegisterSubmit} className="space-y-6">
+                  {/* Basic Info & Location Compacted */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="label-tiny">Facility Name</label>
+                      <input type="text" required className="input-compact" placeholder="GreenCycle Hub" value={facilityData.name} onChange={e => handleFacilityChange('name', e.target.value)} />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="label-tiny">Registration Number</label>
+                      <input type="text" required className="input-compact" placeholder="REG123456" value={facilityData.registrationNumber} onChange={e => handleFacilityChange('registrationNumber', e.target.value)} />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="label-tiny">Email</label>
+                      <input type="email" required className="input-compact" placeholder="contact@facility.com" value={facilityData.email} onChange={e => handleFacilityChange('email', e.target.value)} />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="label-tiny">Password</label>
+                      <input type="password" required className="input-compact" placeholder="Min 8 characters" value={facilityData.password} onChange={e => handleFacilityChange('password', e.target.value)} />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="label-tiny">Contact Number</label>
+                      <input type="tel" required className="input-compact" placeholder="+1 234 567 8900" value={facilityData.contactNumber} onChange={e => handleFacilityChange('contactNumber', e.target.value)} />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="label-tiny">Daily Capacity (kg)</label>
+                      <input type="number" required className="input-compact" placeholder="1000" value={facilityData.capacity} onChange={e => handleFacilityChange('capacity', Number(e.target.value))} />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="label-tiny">Operating Hours</label>
+                      <input type="text" required className="input-compact" placeholder="Mon-Fri, 9AM-5PM" value={facilityData.operatingHours} onChange={e => handleFacilityChange('operatingHours', e.target.value)} />
                     </div>
 
-                    {/* File Upload */}
-                    <div className="pt-2 border-t border-gray-100">
-                       <label className="label-tiny mb-2">Verification Documents</label>
-                       <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-white hover:border-tech-lime transition-all">
-                          <div className="flex items-center gap-3">
-                              <UploadCloud className="w-5 h-5 text-gray-400" />
-                              <p className="text-xs text-gray-500"><span className="font-semibold">Click to upload</span> (PDF, JPG)</p>
-                          </div>
-                          <input type="file" className="hidden" onChange={handleFileUpload} />
-                       </label>
-                       {fileName && <div className="mt-2 text-xs text-eco-700 flex items-center gap-1"><CheckCircle size={12}/> {fileName}</div>}
-                    </div>
+                    {/* Address Block */}
+                    <div className="col-span-1 md:col-span-2 pt-2 border-t border-gray-100 mt-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="label-tiny mb-0">Address</label>
+                        <button type="button" onClick={autoDetectLocation} className="text-[10px] bg-tech-lime/20 text-eco-800 px-2 py-0.5 rounded hover:bg-tech-lime/40 transition-colors font-bold flex items-center gap-1 uppercase tracking-wide">
+                          <Leaf size={10} /> Auto Detect
+                        </button>
+                      </div>
+                      <input type="text" required className="input-compact mb-3" placeholder="Street Address" value={facilityData.address.address} onChange={e => handleAddressChange('address', e.target.value)} />
 
-                    <button type="submit" className="w-full py-3.5 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl">
-                      Complete Registration
-                    </button>
-                 </form>
+                      <div className="grid grid-cols-3 gap-3 mb-3">
+                        <input type="text" className="input-compact" placeholder="City" value={facilityData.address.city} onChange={e => handleAddressChange('city', e.target.value)} />
+                        <div className="relative">
+                          <select
+                            value={facilityData.address.state}
+                            onChange={e => handleAddressChange('state', e.target.value)}
+                            className="input-compact appearance-none bg-white pr-8 text-sm"
+                          >
+                            <option value="">State</option>
+                            {INDIAN_STATES.map(state => (
+                              <option key={state} value={state}>{state}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                        </div>
+                        <input type="text" className="input-compact" placeholder="Zip" value={facilityData.address.pincode} onChange={e => handleAddressChange('pincode', e.target.value)} />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <input type="number" disabled className="input-compact bg-gray-50 text-gray-500 text-xs" placeholder="Lat: 0.00" value={facilityData.address.latitude} />
+                        <input type="number" disabled className="input-compact bg-gray-50 text-gray-500 text-xs" placeholder="Long: 0.00" value={facilityData.address.longitude} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* File Upload */}
+                  <div className="pt-2 border-t border-gray-100">
+                    <label className="label-tiny mb-2">Verification Documents</label>
+                    <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-white hover:border-tech-lime transition-all">
+                      <div className="flex items-center gap-3">
+                        <UploadCloud className="w-5 h-5 text-gray-400" />
+                        <p className="text-xs text-gray-500"><span className="font-semibold">Click to upload</span> (PDF, JPG)</p>
+                      </div>
+                      <input type="file" className="hidden" onChange={handleFileUpload} />
+                    </label>
+                    {fileName && <div className="mt-2 text-xs text-eco-700 flex items-center gap-1"><CheckCircle size={12} /> {fileName}</div>}
+                  </div>
+
+                  <button type="submit" className="w-full py-3.5 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl">
+                    Complete Registration
+                  </button>
+                </form>
               </div>
             )}
 
             {/* --- VIEW: OTP VERIFICATION --- */}
             {view === 'otp-verify' && (
               <div className="max-w-md mx-auto animate-fade-in-up text-center pt-10">
-                 <div className="w-16 h-16 bg-tech-lime/20 text-eco-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                   <Mail size={32} />
-                 </div>
-                 <h3 className="font-display font-bold text-3xl text-eco-950 mb-2">Verify It's You</h3>
-                 <p className="text-gray-500 mb-8 text-lg">
-                   We've sent a 6-digit code to your email/mobile. <br/> Please enter it below to continue.
-                 </p>
+                <div className="w-16 h-16 bg-tech-lime/20 text-eco-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Mail size={32} />
+                </div>
+                <h3 className="font-display font-bold text-3xl text-eco-950 mb-2">Verify It's You</h3>
+                <p className="text-gray-500 mb-8 text-lg">
+                  We've sent a 6-digit code to your email/mobile. <br /> Please enter it below to continue.
+                </p>
 
-                 <form onSubmit={handleOtpVerify}>
-                   <div className="flex gap-3 justify-center mb-8">
-                      {otp.map((digit, idx) => (
-                        <input 
-                          key={idx}
-                          id={`otp-${idx}`}
-                          type="text" 
-                          maxLength={1}
-                          value={digit}
-                          onChange={(e) => handleOtpChange(idx, e.target.value)}
-                          onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                          className="w-12 h-14 bg-white border border-gray-300 rounded-xl text-center text-2xl font-bold text-eco-900 focus:border-tech-lime focus:ring-2 focus:ring-tech-lime/50 focus:outline-none transition-all shadow-sm"
-                        />
-                      ))}
-                   </div>
-                   
-                   <button 
-                      type="submit" 
-                      className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
-                    >
-                      Submit
-                    </button>
-                 </form>
-                 <div className="mt-8 text-sm text-gray-500">
-                   Didn't receive code? <button type="button" onClick={handleResendOtp} className="font-bold text-eco-700 hover:underline ml-1">Resend</button>
-                 </div>
+                <form onSubmit={handleOtpVerify}>
+                  <div className="flex gap-3 justify-center mb-8">
+                    {otp.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        id={`otp-${idx}`}
+                        type="text"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                        className="w-12 h-14 bg-white border border-gray-300 rounded-xl text-center text-2xl font-bold text-eco-900 focus:border-tech-lime focus:ring-2 focus:ring-tech-lime/50 focus:outline-none transition-all shadow-sm"
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
+                  >
+                    Submit
+                  </button>
+                </form>
+                <div className="mt-8 text-sm text-gray-500">
+                  Didn't receive code? <button type="button" onClick={handleResendOtp} className="font-bold text-eco-700 hover:underline ml-1">Resend</button>
+                </div>
               </div>
             )}
 
             {/* --- VIEW: PENDING APPROVAL --- */}
             {view === 'pending-approval' && (
               <div className="max-w-md mx-auto animate-fade-in-up text-center pt-10">
-                 <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                   <Building2 size={40} />
-                 </div>
-                 <h3 className="font-display font-bold text-3xl text-eco-950 mb-3">Request Received!</h3>
-                 <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                   Thank you for registering as a recycling partner. <br/>
-                   Your application is currently under review.
-                 </p>
-                 
-                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8 text-left">
-                   <h4 className="font-bold text-eco-900 mb-3 flex items-center gap-2">
-                     <CheckCircle size={20} className="text-yellow-600" />
-                     What happens next?
-                   </h4>
-                   <ul className="space-y-2 text-sm text-gray-700">
-                     <li className="flex items-start gap-2">
-                       <span className="text-yellow-600 mt-0.5">•</span>
-                       <span>Our team will review your facility details and documents</span>
-                     </li>
-                     <li className="flex items-start gap-2">
-                       <span className="text-yellow-600 mt-0.5">•</span>
-                       <span>You'll receive an email notification once approved</span>
-                     </li>
-                     <li className="flex items-start gap-2">
-                       <span className="text-yellow-600 mt-0.5">•</span>
-                       <span>Approval typically takes 2-3 business days</span>
-                     </li>
-                   </ul>
-                 </div>
+                <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Building2 size={40} />
+                </div>
+                <h3 className="font-display font-bold text-3xl text-eco-950 mb-3">Request Received!</h3>
+                <p className="text-gray-600 mb-6 text-lg leading-relaxed">
+                  Thank you for registering as a recycling partner. <br />
+                  Your application is currently under review.
+                </p>
 
-                 <button 
-                    onClick={() => {
-                      onClose();
-                      window.location.href = '/';
-                    }}
-                    className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
-                  >
-                    Return to Home
-                  </button>
-                  
-                  <p className="mt-6 text-sm text-gray-500">
-                    Questions? Contact us at <a href="mailto:support@elocate.com" className="text-eco-700 font-semibold hover:underline">support@elocate.com</a>
-                  </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8 text-left">
+                  <h4 className="font-bold text-eco-900 mb-3 flex items-center gap-2">
+                    <CheckCircle size={20} className="text-yellow-600" />
+                    What happens next?
+                  </h4>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-600 mt-0.5">•</span>
+                      <span>Our team will review your facility details and documents</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-600 mt-0.5">•</span>
+                      <span>You'll receive an email notification once approved</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-600 mt-0.5">•</span>
+                      <span>Approval typically takes 2-3 business days</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => {
+                    onClose();
+                    window.location.href = '/';
+                  }}
+                  className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
+                >
+                  Return to Home
+                </button>
+
+                <p className="mt-6 text-sm text-gray-500">
+                  Questions? Contact us at <a href="mailto:support@elocate.com" className="text-eco-700 font-semibold hover:underline">support@elocate.com</a>
+                </p>
               </div>
             )}
 
             {/* --- VIEW: ACCOUNT PENDING --- */}
             {view === 'account-pending' && (
               <div className="max-w-md mx-auto animate-fade-in-up text-center pt-10">
-                 <div className="w-20 h-20 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                   <Building2 size={40} />
-                 </div>
-                 <h3 className="font-display font-bold text-3xl text-eco-950 mb-3">Account Pending Approval</h3>
-                 <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                   Your partner account is currently under review by our admin team.
-                 </p>
-                 
-                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-8 text-left">
-                   <h4 className="font-bold text-eco-900 mb-3 flex items-center gap-2">
-                     <Mail size={20} className="text-orange-600" />
-                     Status Update
-                   </h4>
-                   <p className="text-sm text-gray-700 mb-3">
-                     You'll receive an email notification once your account has been approved. 
-                     After approval, you'll be able to access your partner dashboard.
-                   </p>
-                   <p className="text-xs text-gray-600">
-                     Approval typically takes 2-3 business days.
-                   </p>
-                 </div>
+                <div className="w-20 h-20 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Building2 size={40} />
+                </div>
+                <h3 className="font-display font-bold text-3xl text-eco-950 mb-3">Account Pending Approval</h3>
+                <p className="text-gray-600 mb-6 text-lg leading-relaxed">
+                  Your partner account is currently under review by our admin team.
+                </p>
 
-                 <button 
-                    onClick={() => {
-                      setView('login');
-                      setLoginEmail('');
-                      setLoginPass('');
-                    }}
-                    className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
-                  >
-                    Back to Login
-                  </button>
-                  
-                  <p className="mt-6 text-sm text-gray-500">
-                    Need help? <a href="mailto:support@elocate.com" className="text-eco-700 font-semibold hover:underline">Contact Support</a>
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-8 text-left">
+                  <h4 className="font-bold text-eco-900 mb-3 flex items-center gap-2">
+                    <Mail size={20} className="text-orange-600" />
+                    Status Update
+                  </h4>
+                  <p className="text-sm text-gray-700 mb-3">
+                    You'll receive an email notification once your account has been approved.
+                    After approval, you'll be able to access your partner dashboard.
                   </p>
+                  <p className="text-xs text-gray-600">
+                    Approval typically takes 2-3 business days.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setView('login');
+                    setLoginEmail('');
+                    setLoginPass('');
+                  }}
+                  className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
+                >
+                  Back to Login
+                </button>
+
+                <p className="mt-6 text-sm text-gray-500">
+                  Need help? <a href="mailto:support@elocate.com" className="text-eco-700 font-semibold hover:underline">Contact Support</a>
+                </p>
               </div>
             )}
 
           </div>
         </div>
       </div>
-      
+
       {/* Global Input Styles */}
       <style>{`
         .input-std {

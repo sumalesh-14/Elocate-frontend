@@ -24,13 +24,13 @@ interface FormFieldProps {
   setCurrentItem: (item: any) => void;
 }
 
-const FormField: React.FC<FormFieldProps> = ({ 
-  label, 
-  value, 
-  field, 
-  type = "text", 
-  options = [], 
-  required = true, 
+const FormField: React.FC<FormFieldProps> = ({
+  label,
+  value,
+  field,
+  type = "text",
+  options = [],
+  required = true,
   helpText = '',
   modalMode,
   currentItem,
@@ -74,7 +74,7 @@ const FormField: React.FC<FormFieldProps> = ({
         rows={3}
       />
     ) : (
-      <input 
+      <input
         type={type}
         value={value || ''}
         disabled={modalMode === 'view'}
@@ -98,7 +98,7 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
-  
+
   // Category-Brand associations state
   const [linkedItems, setLinkedItems] = useState<any[]>([]);
   const [loadingLinks, setLoadingLinks] = useState(false);
@@ -148,7 +148,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
       } else {
         response = await deviceModelsApi.getAll();
       }
-      setData(response.data || []);
+      const raw = response.data;
+      setData(Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : []);
     } catch (error: any) {
       console.error(`Error fetching ${type}:`, error);
       showToast(`Failed to load ${type}. ${error.response?.data?.message || error.message}`, 'error');
@@ -161,7 +162,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
   const fetchCategories = async () => {
     try {
       const response = await deviceCategoriesApi.getAll();
-      setCategories(response.data || []);
+      const raw = response.data;
+      setCategories(Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : []);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -170,7 +172,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
   const fetchBrands = async () => {
     try {
       const response = await deviceBrandsApi.getAll();
-      setBrands(response.data || []);
+      const raw = response.data;
+      setBrands(Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : []);
     } catch (error) {
       console.error('Error fetching brands:', error);
     }
@@ -179,23 +182,23 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
   const handleOpenCreate = () => {
     setModalMode('create');
     // Initialize with exact backend payload structure
-    const defaultItem = type === 'categories' 
-      ? { 
+    const defaultItem = type === 'categories'
+      ? {
+        code: '',
+        name: '',
+        description: '',
+        isActive: true
+      }
+      : type === 'brands'
+        ? {
           code: '',
-          name: '', 
-          description: '',
-          isActive: true
-        } 
-      : type === 'brands' 
-      ? { 
-          code: '',
-          name: '', 
+          name: '',
           description: '',
           isActive: true
         }
-      : { 
-          modelName: '', 
-          brandId: '', 
+        : {
+          modelName: '',
+          brandId: '',
           categoryId: '',
           releaseYear: '',
           avgWeightGrams: '',
@@ -207,7 +210,7 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
           basePoints: '',
           isActive: true
         };
-    
+
     setCurrentItem(defaultItem);
     setIsModalOpen(true);
   };
@@ -222,7 +225,7 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
     setModalMode('view');
     setCurrentItem({ ...item });
     setIsModalOpen(true);
-    
+
     // Load linked items for categories and brands
     if (type === 'categories' || type === 'brands') {
       fetchLinkedItems(item.id);
@@ -260,7 +263,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
       } else {
         response = await categoryBrandApi.getCategoriesByBrand(itemId);
       }
-      setLinkedItems(response.data || []);
+      const raw = response.data;
+      setLinkedItems(Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : []);
     } catch (error: any) {
       console.error('Error fetching linked items:', error);
       setLinkedItems([]);
@@ -272,13 +276,13 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
   const handleOpenLinkModal = async () => {
     setShowLinkModal(true);
     setSelectedForLink('');
-    
+
     // Get available items to link
     try {
-      const linkedIds = linkedItems.map(item => 
+      const linkedIds = linkedItems.map(item =>
         type === 'categories' ? item.brand?.id : item.category?.id
       );
-      
+
       if (type === 'categories') {
         const available = brands.filter(b => !linkedIds.includes(b.id));
         setAvailableForLink(available);
@@ -329,7 +333,7 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields based on backend DTO
     if (type === 'categories' || type === 'brands') {
       if (!currentItem.code || currentItem.code.trim() === '') {
@@ -394,7 +398,7 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
       }, {} as any);
 
       // Remove undefined values
-      Object.keys(cleanedData).forEach(key => 
+      Object.keys(cleanedData).forEach(key =>
         cleanedData[key] === undefined && delete cleanedData[key]
       );
 
@@ -417,12 +421,12 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
         }
         showToast(`${config.title.slice(0, -1)} updated successfully!`, 'success');
       }
-      
+
       setIsModalOpen(false);
       fetchData();
     } catch (error: any) {
       console.error(`Error saving ${type}:`, error);
-      
+
       // Extract detailed error message
       let errorMessage = 'Failed to save';
       if (error.response?.data) {
@@ -439,13 +443,13 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       showToast(errorMessage, 'error');
     }
   };
 
-  const filteredData = data.filter((item: any) => 
-    Object.values(item).some(val => 
+  const filteredData = data.filter((item: any) =>
+    Object.values(item).some(val =>
       String(val).toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
@@ -465,9 +469,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
           <td className="px-6 py-4 text-sm font-medium text-eco-900">{row.name}</td>
           <td className="px-6 py-4 text-sm text-gray-700">{row.description || '-'}</td>
           <td className="px-6 py-4">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              row.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-gray-50 text-gray-600 border border-gray-100'
-            }`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-gray-50 text-gray-600 border border-gray-100'
+              }`}>
               {row.isActive ? 'Active' : 'Inactive'}
             </span>
           </td>
@@ -483,9 +486,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
           <td className="px-6 py-4 text-sm font-medium text-eco-900">{row.name}</td>
           <td className="px-6 py-4 text-sm text-gray-700">{row.description || '-'}</td>
           <td className="px-6 py-4">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              row.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-gray-50 text-gray-600 border border-gray-100'
-            }`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-gray-50 text-gray-600 border border-gray-100'
+              }`}>
               {row.isActive ? 'Active' : 'Inactive'}
             </span>
           </td>
@@ -504,9 +506,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
           <td className="px-6 py-4 text-sm text-gray-700">{brandName}</td>
           <td className="px-6 py-4 text-sm text-gray-700">{categoryName}</td>
           <td className="px-6 py-4">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              row.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-gray-50 text-gray-600 border border-gray-100'
-            }`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-gray-50 text-gray-600 border border-gray-100'
+              }`}>
               {row.isActive ? 'Active' : 'Inactive'}
             </span>
           </td>
@@ -520,21 +521,21 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
 
   const ActionButtons = ({ row }: { row: any }) => (
     <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-      <button 
+      <button
         onClick={() => handleOpenView(row)}
         className="p-2 text-eco-600 hover:bg-eco-50 rounded-lg transition-colors"
         title="View Details"
       >
         <Eye size={16} />
       </button>
-      <button 
+      <button
         onClick={() => handleOpenEdit(row)}
         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
         title="Edit"
       >
         <Edit2 size={16} />
       </button>
-      <button 
+      <button
         onClick={() => handleDelete(row.id)}
         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         title="Delete"
@@ -546,14 +547,14 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
 
   return (
     <div className="space-y-6">
-      
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-display font-bold text-eco-950 capitalize">{config.title}</h2>
           <p className="text-eco-600 mt-1">{config.description}</p>
         </div>
-        <button 
+        <button
           onClick={handleOpenCreate}
           className="flex items-center gap-2 px-5 py-2.5 bg-eco-900 text-white rounded-xl font-medium shadow-lg hover:bg-eco-800 transition-all hover:scale-105 active:scale-95"
         >
@@ -565,8 +566,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
       {/* Toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center z-10">
         <div className="relative w-full sm:w-96">
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder={`Search ${type}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -574,9 +575,9 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
           />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         </div>
-        
+
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button 
+          <button
             onClick={fetchData}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-sm font-medium"
           >
@@ -611,7 +612,7 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
                 <div className="p-12 text-center text-gray-500 min-h-[200px] flex items-center justify-center">No items found.</div>
               )}
             </div>
-            
+
             {/* Pagination */}
             {filteredData.length > 0 && (
               <div className="px-6 py-4 border-t border-gray-100 text-sm text-gray-500">
@@ -627,374 +628,374 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
         <div className="fixed inset-0 md:left-72 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-[3px] transition-opacity" onClick={() => setIsModalOpen(false)}></div>
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/5 overflow-hidden animate-fade-in-up max-h-[90vh] flex flex-col">
-            
+
             {/* Header - Fixed */}
             <div className="px-8 py-6 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between shrink-0">
-               <div className="flex items-center gap-3">
-                 <div>
-                   <h3 className="text-xl font-display font-bold text-eco-900">
-                     {modalMode === 'create' ? 'Create New' : modalMode === 'edit' ? 'Edit' : 'View'} {type === 'categories' ? 'Category' : type === 'brands' ? 'Brand' : 'Model'}
-                   </h3>
-                   <p className="text-sm text-gray-500 mt-1">
-                     {modalMode === 'view' ? 'Viewing record details.' : 'Fill in the details below.'}
-                   </p>
-                 </div>
-               </div>
-               <div className="flex items-center gap-2">
-                 {modalMode === 'view' && (
-                   <button 
-                     onClick={() => setModalMode('edit')}
-                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                     title="Edit Record"
-                   >
-                     <Edit2 size={18} />
-                   </button>
-                 )}
-                 <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
-                   <X size={20} />
-                 </button>
-               </div>
+              <div className="flex items-center gap-3">
+                <div>
+                  <h3 className="text-xl font-display font-bold text-eco-900">
+                    {modalMode === 'create' ? 'Create New' : modalMode === 'edit' ? 'Edit' : 'View'} {type === 'categories' ? 'Category' : type === 'brands' ? 'Brand' : 'Model'}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {modalMode === 'view' ? 'Viewing record details.' : 'Fill in the details below.'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {modalMode === 'view' && (
+                  <button
+                    onClick={() => setModalMode('edit')}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                    title="Edit Record"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                )}
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Form Body - Scrollable */}
             <div className="flex-1 overflow-y-auto">
-              <form onSubmit={handleSave} className="p-8 space-y-5"  id="resource-form">
-              
-              {/* Conditional Fields based on Type */}
-              {type === 'categories' && (
-                <>
-                  <FormField 
-                    label="Category Code" 
-                    value={currentItem.code} 
-                    field="code"
-                    helpText="Unique code for the category (max 50 characters)"
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                  <FormField 
-                    label="Category Name" 
-                    value={currentItem.name} 
-                    field="name" 
-                    helpText="Enter the device category name (max 100 characters)"
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                  <FormField 
-                    label="Description" 
-                    value={currentItem.description} 
-                    field="description" 
-                    type="textarea"
-                    required={false}
-                    helpText="Brief description of this category (max 500 characters)"
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                  <FormField 
-                    label="Active Status" 
-                    value={currentItem.isActive} 
-                    field="isActive" 
-                    options={[
-                      { value: true, label: 'Active' },
-                      { value: false, label: 'Inactive' }
-                    ]}
-                    required={false}
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                </>
-              )}
+              <form onSubmit={handleSave} className="p-8 space-y-5" id="resource-form">
 
-              {type === 'brands' && (
-                <>
-                  <FormField 
-                    label="Brand Code" 
-                    value={currentItem.code} 
-                    field="code"
-                    helpText="Unique code for the brand (max 50 characters)"
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                  <FormField 
-                    label="Brand Name" 
-                    value={currentItem.name} 
-                    field="name"
-                    helpText="Enter the manufacturer/brand name (max 100 characters)"
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                  <FormField 
-                    label="Description" 
-                    value={currentItem.description} 
-                    field="description" 
-                    type="textarea"
-                    required={false}
-                    helpText="Provide details about this brand (max 500 characters)"
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                  <FormField 
-                    label="Active Status" 
-                    value={currentItem.isActive} 
-                    field="isActive" 
-                    options={[
-                      { value: true, label: 'Active' },
-                      { value: false, label: 'Inactive' }
-                    ]}
-                    required={false}
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                </>
-              )}
+                {/* Conditional Fields based on Type */}
+                {type === 'categories' && (
+                  <>
+                    <FormField
+                      label="Category Code"
+                      value={currentItem.code}
+                      field="code"
+                      helpText="Unique code for the category (max 50 characters)"
+                      modalMode={modalMode}
+                      currentItem={currentItem}
+                      setCurrentItem={setCurrentItem}
+                    />
+                    <FormField
+                      label="Category Name"
+                      value={currentItem.name}
+                      field="name"
+                      helpText="Enter the device category name (max 100 characters)"
+                      modalMode={modalMode}
+                      currentItem={currentItem}
+                      setCurrentItem={setCurrentItem}
+                    />
+                    <FormField
+                      label="Description"
+                      value={currentItem.description}
+                      field="description"
+                      type="textarea"
+                      required={false}
+                      helpText="Brief description of this category (max 500 characters)"
+                      modalMode={modalMode}
+                      currentItem={currentItem}
+                      setCurrentItem={setCurrentItem}
+                    />
+                    <FormField
+                      label="Active Status"
+                      value={currentItem.isActive}
+                      field="isActive"
+                      options={[
+                        { value: true, label: 'Active' },
+                        { value: false, label: 'Inactive' }
+                      ]}
+                      required={false}
+                      modalMode={modalMode}
+                      currentItem={currentItem}
+                      setCurrentItem={setCurrentItem}
+                    />
+                  </>
+                )}
 
-              {type === 'models' && (
-                <>
-                  <FormField 
-                    label="Model Name" 
-                    value={currentItem.modelName} 
-                    field="modelName"
-                    helpText="Enter the device model name (max 100 characters)"
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField 
-                      label="Brand" 
-                      value={currentItem.brandId} 
-                      field="brandId" 
-                      options={brands.map(b => ({ value: b.id, label: b.name }))}
-                      helpText="Select the brand"
+                {type === 'brands' && (
+                  <>
+                    <FormField
+                      label="Brand Code"
+                      value={currentItem.code}
+                      field="code"
+                      helpText="Unique code for the brand (max 50 characters)"
                       modalMode={modalMode}
                       currentItem={currentItem}
                       setCurrentItem={setCurrentItem}
                     />
-                    <FormField 
-                      label="Category" 
-                      value={currentItem.categoryId} 
-                      field="categoryId" 
-                      options={categories.map(c => ({ value: c.id, label: c.name }))}
-                      helpText="Select the category"
+                    <FormField
+                      label="Brand Name"
+                      value={currentItem.name}
+                      field="name"
+                      helpText="Enter the manufacturer/brand name (max 100 characters)"
                       modalMode={modalMode}
                       currentItem={currentItem}
                       setCurrentItem={setCurrentItem}
                     />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField 
-                      label="Release Year" 
-                      value={currentItem.releaseYear} 
-                      field="releaseYear" 
-                      type="number"
+                    <FormField
+                      label="Description"
+                      value={currentItem.description}
+                      field="description"
+                      type="textarea"
                       required={false}
-                      helpText="Year of release"
+                      helpText="Provide details about this brand (max 500 characters)"
                       modalMode={modalMode}
                       currentItem={currentItem}
                       setCurrentItem={setCurrentItem}
                     />
-                    <FormField 
-                      label="Avg Weight (grams)" 
-                      value={currentItem.avgWeightGrams} 
-                      field="avgWeightGrams" 
-                      type="number"
+                    <FormField
+                      label="Active Status"
+                      value={currentItem.isActive}
+                      field="isActive"
+                      options={[
+                        { value: true, label: 'Active' },
+                        { value: false, label: 'Inactive' }
+                      ]}
                       required={false}
-                      helpText="Average weight in grams"
                       modalMode={modalMode}
                       currentItem={currentItem}
                       setCurrentItem={setCurrentItem}
                     />
-                  </div>
-                  
-                  <div className="border-t pt-4 mt-4">
-                    <h4 className="text-sm font-bold text-gray-700 mb-3">Material Composition (Optional)</h4>
+                  </>
+                )}
+
+                {type === 'models' && (
+                  <>
+                    <FormField
+                      label="Model Name"
+                      value={currentItem.modelName}
+                      field="modelName"
+                      helpText="Enter the device model name (max 100 characters)"
+                      modalMode={modalMode}
+                      currentItem={currentItem}
+                      setCurrentItem={setCurrentItem}
+                    />
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField 
-                        label="Gold (mg)" 
-                        value={currentItem.goldMg} 
-                        field="goldMg" 
-                        type="number"
-                        required={false}
-                        helpText="Gold content in milligrams"
+                      <FormField
+                        label="Brand"
+                        value={currentItem.brandId}
+                        field="brandId"
+                        options={brands.map(b => ({ value: b.id, label: b.name }))}
+                        helpText="Select the brand"
                         modalMode={modalMode}
                         currentItem={currentItem}
                         setCurrentItem={setCurrentItem}
                       />
-                      <FormField 
-                        label="Silver (mg)" 
-                        value={currentItem.silverMg} 
-                        field="silverMg" 
-                        type="number"
-                        required={false}
-                        helpText="Silver content in milligrams"
-                        modalMode={modalMode}
-                        currentItem={currentItem}
-                        setCurrentItem={setCurrentItem}
-                      />
-                      <FormField 
-                        label="Copper (g)" 
-                        value={currentItem.copperG} 
-                        field="copperG" 
-                        type="number"
-                        required={false}
-                        helpText="Copper content in grams"
-                        modalMode={modalMode}
-                        currentItem={currentItem}
-                        setCurrentItem={setCurrentItem}
-                      />
-                      <FormField 
-                        label="Palladium (mg)" 
-                        value={currentItem.palladiumMg} 
-                        field="palladiumMg" 
-                        type="number"
-                        required={false}
-                        helpText="Palladium content in milligrams"
+                      <FormField
+                        label="Category"
+                        value={currentItem.categoryId}
+                        field="categoryId"
+                        options={categories.map(c => ({ value: c.id, label: c.name }))}
+                        helpText="Select the category"
                         modalMode={modalMode}
                         currentItem={currentItem}
                         setCurrentItem={setCurrentItem}
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField 
-                      label="Recyclability Score" 
-                      value={currentItem.recyclabilityScore} 
-                      field="recyclabilityScore" 
-                      type="number"
-                      required={false}
-                      helpText="Score from 0-100"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                    <FormField 
-                      label="Base Points" 
-                      value={currentItem.basePoints} 
-                      field="basePoints" 
-                      type="number"
-                      required={false}
-                      helpText="Base reward points"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                  </div>
-
-                  <FormField 
-                    label="Active Status" 
-                    value={currentItem.isActive} 
-                    field="isActive" 
-                    options={[
-                      { value: true, label: 'Active' },
-                      { value: false, label: 'Inactive' }
-                    ]}
-                    required={false}
-                    modalMode={modalMode}
-                    currentItem={currentItem}
-                    setCurrentItem={setCurrentItem}
-                  />
-                </>
-              )}
-
-              {/* Linked Items Section - Only show in view mode for categories and brands */}
-              {modalMode === 'view' && (type === 'categories' || type === 'brands') && (
-                <div className="border-t pt-6 mt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                      <Link2 size={16} className="text-eco-600" />
-                      Linked {type === 'categories' ? 'Brands' : 'Categories'}
-                      <span className="ml-2 px-2 py-0.5 bg-eco-100 text-eco-700 rounded-full text-xs font-medium">
-                        {linkedItems.length}
-                      </span>
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={handleOpenLinkModal}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-eco-600 text-white rounded-lg text-xs font-medium hover:bg-eco-700 transition-colors shadow-sm"
-                    >
-                      <Plus size={14} />
-                      Add Link
-                    </button>
-                  </div>
-
-                  {loadingLinks ? (
-                    <div className="flex items-center justify-center py-12 bg-gray-50 rounded-xl">
-                      <Loader2 className="animate-spin text-eco-600" size={24} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        label="Release Year"
+                        value={currentItem.releaseYear}
+                        field="releaseYear"
+                        type="number"
+                        required={false}
+                        helpText="Year of release"
+                        modalMode={modalMode}
+                        currentItem={currentItem}
+                        setCurrentItem={setCurrentItem}
+                      />
+                      <FormField
+                        label="Avg Weight (grams)"
+                        value={currentItem.avgWeightGrams}
+                        field="avgWeightGrams"
+                        type="number"
+                        required={false}
+                        helpText="Average weight in grams"
+                        modalMode={modalMode}
+                        currentItem={currentItem}
+                        setCurrentItem={setCurrentItem}
+                      />
                     </div>
-                  ) : linkedItems.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl">
-                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Link2 size={20} className="text-gray-400" />
+
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-sm font-bold text-gray-700 mb-3">Material Composition (Optional)</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          label="Gold (mg)"
+                          value={currentItem.goldMg}
+                          field="goldMg"
+                          type="number"
+                          required={false}
+                          helpText="Gold content in milligrams"
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
+                        <FormField
+                          label="Silver (mg)"
+                          value={currentItem.silverMg}
+                          field="silverMg"
+                          type="number"
+                          required={false}
+                          helpText="Silver content in milligrams"
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
+                        <FormField
+                          label="Copper (g)"
+                          value={currentItem.copperG}
+                          field="copperG"
+                          type="number"
+                          required={false}
+                          helpText="Copper content in grams"
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
+                        <FormField
+                          label="Palladium (mg)"
+                          value={currentItem.palladiumMg}
+                          field="palladiumMg"
+                          type="number"
+                          required={false}
+                          helpText="Palladium content in milligrams"
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
                       </div>
-                      <p className="text-gray-500 text-sm font-medium">No {type === 'categories' ? 'brands' : 'categories'} linked yet</p>
-                      <p className="text-gray-400 text-xs mt-1">Click "Add Link" to create associations</p>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-2">
-                      {linkedItems.map((link: any) => {
-                        const displayItem = type === 'categories' ? link.brand : link.category;
-                        return (
-                          <div
-                            key={link.id}
-                            className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-xl hover:shadow-sm transition-all group"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-eco-100 to-eco-50 rounded-xl flex items-center justify-center shadow-sm">
-                                {type === 'categories' ? 
-                                  <Tag size={18} className="text-eco-600" /> : 
-                                  <Layers size={18} className="text-eco-600" />
-                                }
-                              </div>
-                              <div>
-                                <div className="text-sm font-semibold text-gray-900">{displayItem?.name}</div>
-                                <div className="text-xs text-gray-500 font-mono">{displayItem?.code}</div>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteLink(link.id)}
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                              title="Remove link"
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        label="Recyclability Score"
+                        value={currentItem.recyclabilityScore}
+                        field="recyclabilityScore"
+                        type="number"
+                        required={false}
+                        helpText="Score from 0-100"
+                        modalMode={modalMode}
+                        currentItem={currentItem}
+                        setCurrentItem={setCurrentItem}
+                      />
+                      <FormField
+                        label="Base Points"
+                        value={currentItem.basePoints}
+                        field="basePoints"
+                        type="number"
+                        required={false}
+                        helpText="Base reward points"
+                        modalMode={modalMode}
+                        currentItem={currentItem}
+                        setCurrentItem={setCurrentItem}
+                      />
+                    </div>
+
+                    <FormField
+                      label="Active Status"
+                      value={currentItem.isActive}
+                      field="isActive"
+                      options={[
+                        { value: true, label: 'Active' },
+                        { value: false, label: 'Inactive' }
+                      ]}
+                      required={false}
+                      modalMode={modalMode}
+                      currentItem={currentItem}
+                      setCurrentItem={setCurrentItem}
+                    />
+                  </>
+                )}
+
+                {/* Linked Items Section - Only show in view mode for categories and brands */}
+                {modalMode === 'view' && (type === 'categories' || type === 'brands') && (
+                  <div className="border-t pt-6 mt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                        <Link2 size={16} className="text-eco-600" />
+                        Linked {type === 'categories' ? 'Brands' : 'Categories'}
+                        <span className="ml-2 px-2 py-0.5 bg-eco-100 text-eco-700 rounded-full text-xs font-medium">
+                          {linkedItems.length}
+                        </span>
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={handleOpenLinkModal}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-eco-600 text-white rounded-lg text-xs font-medium hover:bg-eco-700 transition-colors shadow-sm"
+                      >
+                        <Plus size={14} />
+                        Add Link
+                      </button>
+                    </div>
+
+                    {loadingLinks ? (
+                      <div className="flex items-center justify-center py-12 bg-gray-50 rounded-xl">
+                        <Loader2 className="animate-spin text-eco-600" size={24} />
+                      </div>
+                    ) : linkedItems.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-50 rounded-xl">
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Link2 size={20} className="text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 text-sm font-medium">No {type === 'categories' ? 'brands' : 'categories'} linked yet</p>
+                        <p className="text-gray-400 text-xs mt-1">Click "Add Link" to create associations</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2">
+                        {linkedItems.map((link: any) => {
+                          const displayItem = type === 'categories' ? link.brand : link.category;
+                          return (
+                            <div
+                              key={link.id}
+                              className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-xl hover:shadow-sm transition-all group"
                             >
-                              <XCircle size={18} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-eco-100 to-eco-50 rounded-xl flex items-center justify-center shadow-sm">
+                                  {type === 'categories' ?
+                                    <Tag size={18} className="text-eco-600" /> :
+                                    <Layers size={18} className="text-eco-600" />
+                                  }
+                                </div>
+                                <div>
+                                  <div className="text-sm font-semibold text-gray-900">{displayItem?.name}</div>
+                                  <div className="text-xs text-gray-500 font-mono">{displayItem?.code}</div>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteLink(link.id)}
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                title="Remove link"
+                              >
+                                <XCircle size={18} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </form>
             </div>
 
             {/* Footer Buttons - Fixed */}
             <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex gap-3 shrink-0">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+              >
+                {modalMode === 'view' ? 'Close' : 'Cancel'}
+              </button>
+              {modalMode !== 'view' && (
+                <button
+                  type="submit"
+                  form="resource-form"
+                  className="flex-1 py-3 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 transition-colors flex items-center justify-center gap-2 shadow-lg"
                 >
-                  {modalMode === 'view' ? 'Close' : 'Cancel'}
+                  <Save size={18} />
+                  {modalMode === 'create' ? 'Create Item' : 'Save Changes'}
                 </button>
-                {modalMode !== 'view' && (
-                  <button 
-                    type="submit"
-                    form="resource-form"
-                    className="flex-1 py-3 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 transition-colors flex items-center justify-center gap-2 shadow-lg"
-                  >
-                    <Save size={18} />
-                    {modalMode === 'create' ? 'Create Item' : 'Save Changes'}
-                  </button>
-                )}
+              )}
             </div>
 
           </div>
