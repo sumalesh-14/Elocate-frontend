@@ -10,7 +10,8 @@ import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { getUserName, getEmail, getPhoneNumber } from '../../sign-in/auth';
-import { deviceCategoriesApi } from '@/lib/admin-api';
+import { deviceCategoriesApi, deviceModelsApi } from '@/lib/admin-api';
+import { categoryBrandApi } from '@/lib/category-brand-api';
 
 // --- Types ---
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -20,7 +21,10 @@ type ServiceType = 'Pickup' | 'Dropoff';
 
 interface FormData {
     deviceType: DeviceType | null;
+    categoryId: string;
+    brandId: string;
     brand: string;
+    modelId: string;
     model: string;
     condition: Condition | null;
     quantity: number;
@@ -40,7 +44,10 @@ const RecycleRequestForm: React.FC = () => {
 
     const INITIAL_DATA: FormData = {
         deviceType: null,
+        categoryId: '',
+        brandId: '',
         brand: '',
+        modelId: '',
         model: '',
         condition: null,
         quantity: 1,
@@ -58,13 +65,16 @@ const RecycleRequestForm: React.FC = () => {
     const [formData, setFormData] = useState<FormData>(INITIAL_DATA);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
+    const [brands, setBrands] = useState<any[]>([]);
+    const [models, setModels] = useState<any[]>([]);
     const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+    const [isLoadingBrands, setIsLoadingBrands] = useState(false);
+    const [isLoadingModels, setIsLoadingModels] = useState(false);
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const response = await deviceCategoriesApi.getAll();
-                // Filter active categories and map to UI structure
                 const activeCategories = response.data.content || response.data;
                 setCategories(Array.isArray(activeCategories) ? activeCategories : []);
             } catch (error) {
@@ -76,6 +86,54 @@ const RecycleRequestForm: React.FC = () => {
         };
         fetchCategories();
     }, []);
+
+    // Fetch brands when categoryId changes
+    useEffect(() => {
+        const fetchBrands = async () => {
+            if (!formData.categoryId) {
+                setBrands([]);
+                return;
+            }
+            setIsLoadingBrands(true);
+            try {
+                const response = await categoryBrandApi.getBrandsByCategory(formData.categoryId, 0, 100);
+                const brandsList = response.data.content || response.data;
+                setBrands(Array.isArray(brandsList) ? brandsList : []);
+            } catch (error) {
+                console.error("Error fetching brands:", error);
+                showToast('Failed to load brands for this category.', 'error');
+            } finally {
+                setIsLoadingBrands(false);
+            }
+        };
+        fetchBrands();
+    }, [formData.categoryId]);
+
+    // Fetch models when brandId changes
+    useEffect(() => {
+        const fetchModels = async () => {
+            if (!formData.brandId || !formData.categoryId) {
+                setModels([]);
+                return;
+            }
+            setIsLoadingModels(true);
+            try {
+                const response = await deviceModelsApi.getAll({
+                    categoryId: formData.categoryId,
+                    brandId: formData.brandId,
+                    size: 100
+                });
+                const modelsList = response.data.content || response.data;
+                setModels(Array.isArray(modelsList) ? modelsList : []);
+            } catch (error) {
+                console.error("Error fetching models:", error);
+                showToast('Failed to load models for this brand.', 'error');
+            } finally {
+                setIsLoadingModels(false);
+            }
+        };
+        fetchModels();
+    }, [formData.brandId, formData.categoryId]);
 
     const handleNext = () => {
         if (currentStep < 5) setCurrentStep((prev) => (prev + 1) as Step);
@@ -240,7 +298,15 @@ const RecycleRequestForm: React.FC = () => {
                         return (
                             <button
                                 key={cat.id}
-                                onClick={() => updateField('deviceType', cat.name)}
+                                onClick={() => {
+                                    updateField('deviceType', cat.name);
+                                    updateField('categoryId', cat.id);
+                                    // Reset dependent fields
+                                    updateField('brandId', '');
+                                    updateField('brand', '');
+                                    updateField('modelId', '');
+                                    updateField('model', '');
+                                }}
                                 className={`
                   p-6 rounded-2xl border-2 text-left transition-all hover:shadow-xl flex items-center gap-5 group/btn
                   ${isSelected
@@ -276,26 +342,59 @@ const RecycleRequestForm: React.FC = () => {
 
         return (
             <div className="space-y-8 animate-fade-in-up">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-eco-950">
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-gray-700">Device Brand</label>
-                        <input
-                            type="text"
-                            value={formData.brand}
-                            onChange={(e) => updateField('brand', e.target.value)}
-                            placeholder="e.g., Lenovo, Dell, Sony"
-                            className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 placeholder-emerald-800/30"
-                        />
+                        <div className="relative group">
+                            <select
+                                value={formData.brandId}
+                                onChange={(e) => {
+                                    const id = e.target.value;
+                                    const brandName = brands.find(b => b.brand.id === id)?.brand.name || '';
+                                    updateField('brandId', id);
+                                    updateField('brand', brandName);
+                                    // Reset model
+                                    updateField('modelId', '');
+                                    updateField('model', '');
+                                }}
+                                disabled={isLoadingBrands || !formData.categoryId}
+                                className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            >
+                                <option value="">{isLoadingBrands ? "Loading Brands..." : "Select Brand"}</option>
+                                {brands.map((b) => (
+                                    <option key={b.brand.id} value={b.brand.id}>{b.brand.name}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
+                                <ArrowRight size={16} className="rotate-90" />
+                            </div>
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-gray-700">Exact Model</label>
-                        <input
-                            type="text"
-                            value={formData.model}
-                            onChange={(e) => updateField('model', e.target.value)}
-                            placeholder="e.g., ThinkPad X1 Carbon"
-                            className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 placeholder-emerald-800/30"
-                        />
+                        <div className="relative group">
+                            <select
+                                value={formData.modelId}
+                                onChange={(e) => {
+                                    const id = e.target.value;
+                                    const modelName = models.find(m => m.id === id)?.modelName || '';
+                                    updateField('modelId', id);
+                                    updateField('model', modelName);
+                                }}
+                                disabled={isLoadingModels || !formData.brandId}
+                                className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            >
+                                <option value="">
+                                    {!formData.brandId ? "Select brand first" : (isLoadingModels ? "Loading Models..." : "Select Model")}
+                                </option>
+                                {models.map((m) => (
+                                    <option key={m.id} value={m.id}>{m.modelName}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
+                                <ArrowRight size={16} className="rotate-90" />
+                            </div>
+                        </div>
                     </div>
                 </div>
 

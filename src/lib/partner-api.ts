@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = '/api/v1';
 
 export interface PartnerOnboardingRequest {
   registrationNumber: string;
@@ -66,10 +66,10 @@ export const partnerApi = {
       page: page.toString(),
       size: size.toString(),
     });
-    
+
     if (search) params.append('search', search);
     if (isVerified !== undefined) params.append('isVerified', isVerified.toString());
-    
+
     const response = await axios.get(`${API_BASE_URL}/partners?${params.toString()}`);
     return response.data;
   },

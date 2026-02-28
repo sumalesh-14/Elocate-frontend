@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
  * API client for category-brand associations
  */
 export const categoryBrandApiClient = axios.create({
-    baseURL: "/",
+    baseURL: "/api/v1",
     headers: {
         "Content-Type": "application/json",
     },
@@ -58,7 +58,7 @@ const getAuthHeaders = () => {
 export const categoryBrandApi = {
     // Get all associations
     getAll: async (page = 0, size = 10) => {
-        const response = await categoryBrandApiClient.get("/api/category-brands", {
+        const response = await categoryBrandApiClient.get("/category-brands", {
             params: { page, size },
             headers: getAuthHeaders(),
         });
@@ -67,7 +67,7 @@ export const categoryBrandApi = {
 
     // Get brands for a specific category
     getBrandsByCategory: async (categoryId: string, page = 0, size = 10) => {
-        const response = await categoryBrandApiClient.get(`/api/category-brands/category/${categoryId}`, {
+        const response = await categoryBrandApiClient.get(`/category-brands/category/${categoryId}`, {
             params: { page, size },
             headers: getAuthHeaders(),
         });
@@ -76,7 +76,7 @@ export const categoryBrandApi = {
 
     // Get categories for a specific brand
     getCategoriesByBrand: async (brandId: string, page = 0, size = 10) => {
-        const response = await categoryBrandApiClient.get(`/api/category-brands/brand/${brandId}`, {
+        const response = await categoryBrandApiClient.get(`/category-brands/brand/${brandId}`, {
             params: { page, size },
             headers: getAuthHeaders(),
         });
@@ -85,7 +85,7 @@ export const categoryBrandApi = {
 
     // Create new association
     create: async (data: { categoryId: string; brandId: string; isActive?: boolean }) => {
-        const response = await categoryBrandApiClient.post("/api/category-brands", data, {
+        const response = await categoryBrandApiClient.post("/category-brands", data, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -93,7 +93,7 @@ export const categoryBrandApi = {
 
     // Delete association
     delete: async (id: string) => {
-        const response = await categoryBrandApiClient.delete(`/api/category-brands/${id}`, {
+        const response = await categoryBrandApiClient.delete(`/category-brands/${id}`, {
             headers: getAuthHeaders(),
         });
         return response;

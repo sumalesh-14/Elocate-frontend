@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
  * Centralized axios instance for admin API calls
  */
 export const adminApiClient = axios.create({
-    baseURL: "/", // Local Next.js API routes
+    baseURL: "/api/v1", // Local Next.js API routes
     headers: {
         "Content-Type": "application/json",
     },
@@ -57,7 +57,7 @@ const getAuthHeaders = () => {
  */
 export const deviceCategoriesApi = {
     getAll: async () => {
-        const response = await adminApiClient.get("/api/device-categories", {
+        const response = await adminApiClient.get("/device-categories", {
             headers: getAuthHeaders(),
         });
         return response;
@@ -71,7 +71,7 @@ export const deviceCategoriesApi = {
     },
 
     create: async (categoryData: any) => {
-        const response = await adminApiClient.post("/api/device-categories", categoryData, {
+        const response = await adminApiClient.post("/device-categories", categoryData, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -97,7 +97,7 @@ export const deviceCategoriesApi = {
  */
 export const deviceBrandsApi = {
     getAll: async () => {
-        const response = await adminApiClient.get("/api/device-brands", {
+        const response = await adminApiClient.get("/device-brands", {
             headers: getAuthHeaders(),
         });
         return response;
@@ -111,7 +111,7 @@ export const deviceBrandsApi = {
     },
 
     create: async (brandData: any) => {
-        const response = await adminApiClient.post("/api/device-brands", brandData, {
+        const response = await adminApiClient.post("/device-brands", brandData, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -137,7 +137,7 @@ export const deviceBrandsApi = {
  */
 export const deviceModelsApi = {
     getAll: async (params?: { page?: number; size?: number; search?: string; isActive?: boolean; categoryId?: string; brandId?: string }) => {
-        const response = await adminApiClient.get("/api/device-models", {
+        const response = await adminApiClient.get("/device-models", {
             params,
             headers: getAuthHeaders(),
         });
@@ -152,7 +152,7 @@ export const deviceModelsApi = {
     },
 
     create: async (modelData: any) => {
-        const response = await adminApiClient.post("/api/device-models", modelData, {
+        const response = await adminApiClient.post("/device-models", modelData, {
             headers: getAuthHeaders(),
         });
         return response;
