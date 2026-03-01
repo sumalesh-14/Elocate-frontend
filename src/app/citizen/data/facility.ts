@@ -1,5 +1,6 @@
 export const facility = [
   {
+    id: "f1111111-1111-1111-1111-111111111111",
     name: "101 INNOVATIONS PRIVATE LIMITED",
     capacity: 100,
     lon: 77.59008,
@@ -10,6 +11,7 @@ export const facility = [
     address: "1st floor, Maruthi Nagar, Madiwala, Bangalore, Karnataka"
   },
   {
+    id: "f2222222-2222-2222-2222-222222222222",
     name: "3i Medical Imaging Pvt Ltd",
     capacity: 80,
     lon: 80.27019,
@@ -20,6 +22,7 @@ export const facility = [
     address: "New No. 1 Thirumalai Nagar, Perungudi, Chennai, Tamil Nadu"
   },
   {
+    id: "f3333333-3333-3333-3333-333333333333",
     name: "3M INDIA LIMITED",
     capacity: 150,
     lon: 77.59008,
@@ -30,6 +33,7 @@ export const facility = [
     address: "PLOT NO 48-51, EPIP, Whitefield, Bangalore, Karnataka"
   },
   {
+    id: "f4444444-4444-4444-4444-444444444444",
     name: "3S INDIA RECYCLERS PRIVATE LIMITED",
     capacity: 90,
     lon: 76.50741,
@@ -40,6 +44,7 @@ export const facility = [
     address: "37/4000 A, Edappally, Ernakulam, Kerala"
   },
   {
+    id: "f5555555-5555-5555-5555-555555555555",
     name: "3 STAR ELECTRONICS",
     capacity: 70,
     lon: 79.90708,

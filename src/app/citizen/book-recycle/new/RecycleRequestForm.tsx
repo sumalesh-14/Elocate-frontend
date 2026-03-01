@@ -12,10 +12,15 @@ import Image from 'next/image';
 import { getUserName, getEmail, getPhoneNumber } from '../../sign-in/auth';
 import { deviceCategoriesApi, deviceModelsApi } from '@/lib/admin-api';
 import { categoryBrandApi } from '@/lib/category-brand-api';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { calculateDistance } from '@/lib/utils/calculateLocation';
+import { fetchFacilities } from '@/lib/utils/facilityApi';
+import getLocation from '@/lib/utils/getLocation';
 
 // --- Types ---
 type Step = 1 | 2 | 3 | 4 | 5;
-type DeviceType = string; // Changed from hardcoded union to string
+type DeviceType = string;
 type Condition = 'Working' | 'Minor Issues' | 'Broken' | 'Parts Only';
 type ServiceType = 'Pickup' | 'Dropoff';
 
@@ -36,7 +41,551 @@ interface FormData {
     contactName: string;
     contactEmail: string;
     contactPhone: string;
+    facilityId: string;
+    facilityName: string;
+    facilityAddress: string;
+    facilityLat: number | null;
+    facilityLon: number | null;
 }
+
+// --- Prop Types for Sub-components ---
+interface StepProps {
+    formData: FormData;
+    updateField: (field: keyof FormData, value: any) => void;
+}
+
+interface Step1Props extends StepProps {
+    isLoadingCategories: boolean;
+    categories: any[];
+}
+
+interface Step2Props extends StepProps {
+    isLoadingBrands: boolean;
+    brands: any[];
+    isLoadingModels: boolean;
+    models: any[];
+}
+
+// --- Sub-components ---
+
+const Step1_DeviceType: React.FC<Step1Props> = ({ formData, updateField, isLoadingCategories, categories }) => {
+    const getIconForCategory = (name: string) => {
+        const n = name.toLowerCase();
+        if (n.includes('laptop')) return Laptop;
+        if (n.includes('smartphone') || n.includes('mobile') || n.includes('phone')) return Smartphone;
+        if (n.includes('printer')) return Printer;
+        if (n.includes('television') || n.includes('tv')) return Tv;
+        if (n.includes('audio') || n.includes('speaker') || n.includes('headphone')) return Headphones;
+        if (n.includes('wearable') || n.includes('watch')) return Watch;
+        if (n.includes('peripheral') || n.includes('keyboard') || n.includes('mouse')) return Keyboard;
+        return HardDrive;
+    };
+
+    if (isLoadingCategories) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+                <div className="w-16 h-16 bg-eco-100 rounded-full mb-4 flex items-center justify-center">
+                    <Package className="text-eco-400" size={32} />
+                </div>
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Fetching categories...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-8 animate-fade-in-up">
+            <div className="bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-8 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-eco-600 shadow-md group-hover:scale-110 transition-transform">
+                    <Upload size={24} />
+                </div>
+                <h3 className="font-bold text-eco-900 text-lg">Snap & Identify</h3>
+                <p className="text-sm text-eco-600 mt-1 max-w-xs mx-auto font-medium">Coming soon: Upload a photo and our AI will automatically detect your device.</p>
+            </div>
+
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-100"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                    <span className="px-4 bg-white text-gray-400 font-bold tracking-widest uppercase italic">Or select category manually</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                {categories.map((cat) => {
+                    const Icon = getIconForCategory(cat.name);
+                    const isSelected = formData.deviceType === cat.name;
+                    return (
+                        <button
+                            key={cat.id}
+                            onClick={() => {
+                                updateField('deviceType', cat.name);
+                                updateField('categoryId', cat.id);
+                                updateField('brandId', '');
+                                updateField('brand', '');
+                                updateField('modelId', '');
+                                updateField('model', '');
+                            }}
+                            className={`p-6 rounded-2xl border-2 text-left transition-all hover:shadow-xl flex items-center gap-5 group/btn ${isSelected ? 'border-eco-500 bg-eco-50/50 shadow-md' : 'border-slate-50 bg-slate-50/30 hover:bg-emerald-50/80 hover:border-emerald-200'}`}
+                        >
+                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all shrink-0 ${isSelected ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}>
+                                <Icon size={24} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className={`font-bold text-lg truncate ${isSelected ? 'text-eco-950' : 'text-gray-900'}`}>{cat.name}</div>
+                                <div className="text-xs text-gray-400 mt-0.5 font-medium truncate">{cat.description || 'Misc Electronics'}</div>
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+const Step2_DeviceDetails: React.FC<Step2Props> = ({ formData, updateField, isLoadingBrands, brands, isLoadingModels, models }) => {
+    const conditions: { val: Condition; label: string; desc: string }[] = [
+        { val: 'Working', label: 'Pristine / Working', desc: 'Fully functional, no damage' },
+        { val: 'Minor Issues', label: 'Fair / Minor Issues', desc: 'Working with cosmetic wear' },
+        { val: 'Broken', label: 'Broken / Damaged', desc: 'Powers on but part functionality' },
+        { val: 'Parts Only', label: 'Scrap / Parts', desc: 'Does not power on, non-functional' },
+    ];
+
+    return (
+        <div className="space-y-8 animate-fade-in-up">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-eco-950">
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Device Brand</label>
+                    <div className="relative group">
+                        <select
+                            value={formData.brandId}
+                            onChange={(e) => {
+                                const id = e.target.value;
+                                const brandFound = brands.find(b => (b.brand?.id || b.id) === id);
+                                const brandName = brandFound?.brand?.name || brandFound?.name || '';
+                                updateField('brandId', id);
+                                updateField('brand', brandName);
+                                updateField('modelId', '');
+                                updateField('model', '');
+                            }}
+                            disabled={isLoadingBrands || !formData.categoryId}
+                            className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                            <option value="">{isLoadingBrands ? "Loading Brands..." : "Select Brand"}</option>
+                            {brands.map((b) => (
+                                <option key={b.brand?.id || b.id} value={b.brand?.id || b.id}>{b.brand?.name || b.name}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
+                            <ArrowRight size={16} className="rotate-90" />
+                        </div>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Exact Model</label>
+                    <div className="relative group">
+                        <select
+                            value={formData.modelId}
+                            onChange={(e) => {
+                                const id = e.target.value;
+                                const modelName = models.find(m => m.id === id)?.modelName || '';
+                                updateField('modelId', id);
+                                updateField('model', modelName);
+                            }}
+                            disabled={isLoadingModels || !formData.brandId}
+                            className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                            <option value="">
+                                {!formData.brandId ? "Select brand first" : (isLoadingModels ? "Loading Models..." : "Select Model")}
+                            </option>
+                            {models.map((m) => (
+                                <option key={m.id} value={m.id}>{m.modelName}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
+                            <ArrowRight size={16} className="rotate-90" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-3">
+                <label className="text-sm font-bold text-gray-700">Device Condition</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {conditions.map((cond) => (
+                        <button
+                            key={cond.val}
+                            onClick={() => updateField('condition', cond.val)}
+                            className={`p-5 rounded-2xl border-2 text-left transition-all hover:shadow-md ${formData.condition === cond.val ? 'border-eco-500 bg-eco-50 shadow-sm' : 'border-slate-50 bg-slate-50/40 hover:bg-emerald-50/80 hover:border-emerald-200 hover:scale-[1.01]'}`}
+                        >
+                            <div className={`font-bold ${formData.condition === cond.val ? 'text-eco-900' : 'text-gray-900'}`}>{cond.label}</div>
+                            <div className="text-xs text-gray-400 mt-1 font-medium">{cond.desc}</div>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl">
+                <div>
+                    <h4 className="font-bold text-gray-900">Total Quantity</h4>
+                    <p className="text-xs text-gray-500">How many units of this type?</p>
+                </div>
+                <div className="flex items-center gap-6">
+                    <button onClick={() => updateField('quantity', Math.max(1, formData.quantity - 1))} className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow font-bold text-gray-600 text-xl">-</button>
+                    <span className="text-3xl font-display font-bold text-eco-950 w-8 text-center leading-none">{formData.quantity}</span>
+                    <button onClick={() => updateField('quantity', formData.quantity + 1)} className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow font-bold text-gray-600 text-xl">+</button>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Detailed Notes <span className="text-gray-400 font-normal ml-1">(Highly Recommended)</span></label>
+                <textarea
+                    value={formData.notes}
+                    onChange={(e) => updateField('notes', e.target.value)}
+                    placeholder="Tell us about the damage, missing parts, or special handling..."
+                    rows={4}
+                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all resize-none text-gray-900 bg-gray-50/30"
+                />
+            </div>
+        </div>
+    );
+};
+
+const Step3_ServiceType: React.FC<StepProps> = ({ formData, updateField }) => {
+    const [facilities, setFacilities] = useState<any[]>([]);
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [mapLoading, setMapLoading] = useState(false);
+    const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
+    const mapContainerRef = React.useRef<HTMLDivElement>(null);
+    const mapRef = React.useRef<mapboxgl.Map | null>(null);
+
+    useEffect(() => {
+        if (formData.serviceType === 'Dropoff' && mapContainerRef.current) {
+            const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+            if (!mapboxToken) {
+                console.warn("Mapbox token is missing!");
+                return;
+            }
+            mapboxgl.accessToken = mapboxToken;
+            setMapLoading(true);
+
+            const initMap = async () => {
+                try {
+                    const loc = await getLocation();
+                    let center: [number, number] = (loc && loc.coordinates) ? loc.coordinates : [75.7139, 19.7515];
+
+                    if (formData.facilityLat && formData.facilityLon) {
+                        center = [formData.facilityLon, formData.facilityLat];
+                    }
+
+                    if (!mapContainerRef.current) return;
+
+                    if (!mapRef.current) {
+                        const map = new mapboxgl.Map({
+                            container: mapContainerRef.current,
+                            style: 'mapbox://styles/mapbox/streets-v11',
+                            center: center,
+                            zoom: formData.facilityId ? 15 : 12,
+                        });
+                        mapRef.current = map;
+                        map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+                    }
+
+                    const map = mapRef.current;
+
+                    // Clear existing markers
+                    markers.forEach(m => m.remove());
+                    const newMarkers: mapboxgl.Marker[] = [];
+
+                    const result = await fetchFacilities(center[1], center[0], 500, page, 5);
+                    const withDistance = result.content.map((f: any) => ({
+                        ...f,
+                        distance: f.distance || calculateDistance(center[1], center[0], f.lat, f.lon)
+                    }));
+
+                    setFacilities(withDistance);
+                    setTotalPages(result.totalPages);
+
+                    withDistance.forEach((f: any) => {
+                        const marker = new mapboxgl.Marker({
+                            color: f.verified ? "#10b981" : "#f97316"
+                        })
+                            .setLngLat([f.lon, f.lat])
+                            .addTo(map);
+
+                        marker.getElement().addEventListener('click', () => {
+                            updateField('facilityId', f.id || f.name);
+                            updateField('facilityName', f.name);
+                            updateField('facilityAddress', f.address);
+                            updateField('facilityLat', f.lat);
+                            updateField('facilityLon', f.lon);
+                            map.flyTo({ center: [f.lon, f.lat], zoom: 15 });
+                        });
+                        newMarkers.push(marker);
+                    });
+                    setMarkers(newMarkers);
+
+                } catch (err) {
+                    console.error("Map initialization failed:", err);
+                } finally {
+                    setMapLoading(false);
+                }
+            };
+
+            initMap();
+        }
+    }, [formData.serviceType, page]);
+
+    useEffect(() => {
+        return () => {
+            mapRef.current?.remove();
+            mapRef.current = null;
+        };
+    }, []);
+
+    return (
+        <div className="space-y-8 animate-fade-in-up">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button onClick={() => updateField('serviceType', 'Pickup')} className={`p-8 rounded-[2rem] border-2 text-left transition-all hover:shadow-xl group relative overflow-hidden ${formData.serviceType === 'Pickup' ? 'border-eco-500 bg-eco-50 shadow-md' : 'border-slate-50 bg-slate-50/30 hover:border-eco-200'}`}>
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all ${formData.serviceType === 'Pickup' ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 shadow-sm'}`}><Truck size={32} /></div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Home Pickup</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed font-medium">Free concierge collection from your doorstep. Zero effort required.</p>
+                    {formData.serviceType === 'Pickup' && (
+                        <div className="absolute top-6 right-6 w-8 h-8 bg-eco-500 rounded-full flex items-center justify-center text-white shadow-lg animate-bounce-slow"><Check size={18} /></div>
+                    )}
+                </button>
+                <button onClick={() => updateField('serviceType', 'Dropoff')} className={`p-8 rounded-[2rem] border-2 text-left transition-all hover:shadow-xl group relative overflow-hidden ${formData.serviceType === 'Dropoff' ? 'border-eco-500 bg-eco-50 shadow-md' : 'border-slate-50 bg-slate-50/40 hover:bg-emerald-50/80 hover:border-emerald-200 hover:scale-[1.01]'}`}>
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all ${formData.serviceType === 'Dropoff' ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 shadow-sm'}`}><Package size={32} /></div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Drop-off</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed font-medium">Bring it to our nearest center anytime. Best for single small items.</p>
+                    {formData.serviceType === 'Dropoff' && (
+                        <div className="absolute top-6 right-6 w-8 h-8 bg-eco-500 rounded-full flex items-center justify-center text-white shadow-lg animate-bounce-slow"><Check size={18} /></div>
+                    )}
+                </button>
+            </div>
+
+            {formData.serviceType === 'Pickup' && (
+                <div className="pt-8 border-t border-gray-100 animate-slide-up">
+                    <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2"><Calendar size={20} className="text-eco-500" />Select Date & Time</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            <label className="text-sm font-bold text-gray-700">Preferred Date</label>
+                            <div className="relative group">
+                                <input type="date" value={formData.pickupDate} onChange={(e) => updateField('pickupDate', e.target.value)} className="w-full pl-14 pr-5 py-5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-gray-50/50" />
+                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-500" size={24} />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-sm font-bold text-gray-700">Best Time Slot</label>
+                            <div className="relative group">
+                                <select value={formData.pickupTime} onChange={(e) => updateField('pickupTime', e.target.value)} className="w-full pl-14 pr-8 py-5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all appearance-none bg-gray-50/50 text-gray-900 cursor-pointer font-medium">
+                                    <option value="">Select a slot...</option>
+                                    <option value="09:00 AM - 11:00 AM">Morning (09:00 - 11:00)</option>
+                                    <option value="11:00 AM - 01:00 PM">Late Morning (11:00 - 13:00)</option>
+                                    <option value="01:00 PM - 03:00 PM">Afternoon (13:00 - 15:00)</option>
+                                    <option value="03:00 PM - 05:00 PM">Evening (15:00 - 17:00)</option>
+                                </select>
+                                <Clock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-500" size={24} />
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"><ArrowRight size={16} className="rotate-90" /></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {formData.serviceType === 'Dropoff' && (
+                <div className="pt-8 border-t border-gray-100 animate-slide-up">
+                    <div className="flex flex-col md:flex-row gap-8">
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin size={20} className="text-eco-500" />Select Drop-off Facility</h3>
+                            <div className="mb-6 h-[400px] rounded-3xl overflow-hidden border-2 border-slate-100 shadow-inner relative">
+                                {mapLoading && (
+                                    <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-md flex items-center justify-center">
+                                        <div className="flex flex-col items-center">
+                                            <div className="w-10 h-10 border-4 border-eco-500 border-t-transparent rounded-full animate-spin"></div>
+                                            <p className="mt-2 text-sm font-bold text-eco-900">Locating facilities...</p>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={mapContainerRef} className="w-full h-full" />
+                            </div>
+                        </div>
+                        <div className="md:w-1/3 flex flex-col h-[400px]">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Nearby</h4>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        disabled={page === 0}
+                                        onClick={() => setPage(p => Math.max(0, p - 1))}
+                                        className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30"
+                                    >
+                                        <ArrowLeft size={14} />
+                                    </button>
+                                    <span className="text-[10px] font-bold text-gray-500">{page + 1} / {totalPages}</span>
+                                    <button
+                                        disabled={page >= totalPages - 1}
+                                        onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                                        className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30"
+                                    >
+                                        <ArrowRight size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                {facilities.length === 0 && !mapLoading && (
+                                    <div className="text-center py-10">
+                                        <p className="text-xs text-gray-400 font-medium">No facilities found in this area.</p>
+                                    </div>
+                                )}
+                                {facilities.map((f: any) => (
+                                    <div key={f.id || f.name} onClick={() => {
+                                        updateField('facilityId', f.id || f.name);
+                                        updateField('facilityName', f.name);
+                                        updateField('facilityAddress', f.address);
+                                        updateField('facilityLat', f.lat);
+                                        updateField('facilityLon', f.lon);
+                                        if (mapRef.current) mapRef.current.flyTo({ center: [f.lon, f.lat], zoom: 15 });
+                                    }} className={`p-4 rounded-2xl cursor-pointer transition-all border-2 ${formData.facilityId === (f.id || f.name) ? 'border-eco-500 bg-eco-50 shadow-md' : 'border-slate-50 bg-slate-50/50 hover:border-eco-200'}`}>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <h5 className="font-bold text-eco-950 text-sm leading-tight">{f.name}</h5>
+                                            {f.verified && <Check className="text-eco-500" size={14} />}
+                                        </div>
+                                        <p className="text-[11px] text-gray-400 line-clamp-1 mb-2 font-medium">{f.address}</p>
+                                        <div className="flex items-center justify-between text-[11px] font-bold">
+                                            <span className="text-eco-700">{f.distance ? `${f.distance.toFixed(1)} km` : 'Near you'}</span>
+                                            <span className={`${f.verified ? 'text-emerald-600' : 'text-orange-500'}`}>{f.verified ? 'Verified' : 'Unverified'}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    {formData.facilityId && (
+                        <div className="mt-6 p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 animate-slide-up flex items-center justify-between">
+                            <div className="flex-1 mr-4">
+                                <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mb-1 leading-none">Selected Destination</div>
+                                <h4 className="text-xl font-bold text-eco-950 truncate">{formData.facilityName}</h4>
+                                <p className="text-sm text-eco-800/80 font-medium truncate">{formData.facilityAddress}</p>
+                            </div>
+                            <div className="hidden md:flex bg-white p-3 rounded-2xl shadow-sm items-center gap-3 shrink-0">
+                                <div className="w-10 h-10 bg-eco-500 rounded-xl flex items-center justify-center text-white"><Check size={20} /></div>
+                                <div className="text-xs font-bold text-eco-900">Confirmed</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const Step4_Address: React.FC<StepProps> = ({ formData, updateField }) => {
+    return (
+        <div className="space-y-8 animate-fade-in-up">
+            <div className="space-y-3">
+                <label className="text-sm font-bold text-gray-700">Complete Pickup Address</label>
+                <div className="relative group">
+                    <input type="text" value={formData.address} onChange={(e) => updateField('address', e.target.value)} placeholder="Unit, Floor, Building, Street, Area" className="w-full pl-14 pr-5 py-5 rounded-2xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 placeholder-emerald-800/30" />
+                    <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-400 group-focus-within:text-eco-600 transition-colors" size={24} />
+                    <button className="absolute right-5 top-1/2 -translate-y-1/2 text-eco-600 text-xs font-bold hover:underline">Use current location</button>
+                </div>
+            </div>
+            <div className="pt-8 border-t border-emerald-100">
+                <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2"><Smartphone size={20} className="text-eco-500" />Contact Verification</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-emerald-700/60 px-1">Full Name</label>
+                        <div className="px-5 py-4 rounded-xl bg-emerald-50/50 border border-emerald-100 text-eco-900 font-bold cursor-not-allowed">{formData.contactName}</div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-emerald-700/60 px-1">Email Profile</label>
+                        <div className="px-5 py-4 rounded-xl bg-emerald-50/50 border border-emerald-100 text-eco-900 font-bold cursor-not-allowed">{formData.contactEmail}</div>
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                        <label className="text-sm font-bold text-emerald-700 px-1">Primary Phone <span className="text-tech-lime font-bold ml-2">(Verified)</span></label>
+                        <div className="flex items-center gap-4">
+                            <div className="flex-1 px-5 py-4 rounded-xl bg-emerald-50/50 border border-emerald-100 text-eco-900 font-bold">{formData.contactPhone}</div>
+                            <button className="px-4 py-4 rounded-xl border border-emerald-200 text-xs font-bold text-eco-600 hover:bg-emerald-50 transition-colors">Change</button>
+                        </div>
+                    </div>
+                </div>
+                <p className="mt-6 p-4 bg-emerald-50 rounded-xl text-xs text-eco-800 leading-relaxed font-bold">Tip: Our agent will call this number if they can't find your location. Please keep your phone reachable on the pickup day.</p>
+            </div>
+        </div>
+    );
+};
+
+const Step5_Review: React.FC<StepProps> = ({ formData, updateField }) => {
+    return (
+        <div className="space-y-8 animate-fade-in-up">
+            <div className="relative bg-gradient-to-br from-eco-900 to-eco-800 rounded-[2.5rem] p-10 text-white overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 -mr-10 -mt-10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-tech-lime/10 -ml-10 -mb-10 rounded-full blur-2xl"></div>
+                <div className="relative z-10 flex flex-col md:flex-row gap-10 items-center justify-between">
+                    <div className="flex-1 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-tech-lime">
+                                {(formData.deviceType?.toLowerCase().includes('laptop')) && <Laptop size={24} />}
+                                {(formData.deviceType?.toLowerCase().includes('smartphone') || formData.deviceType?.toLowerCase().includes('phone')) && <Smartphone size={24} />}
+                                {(!formData.deviceType?.toLowerCase().includes('laptop') && !formData.deviceType?.toLowerCase().includes('phone') && !formData.deviceType?.toLowerCase().includes('smartphone')) && <Package size={24} />}
+                            </div>
+                            <h3 className="text-3xl font-display font-bold leading-none">{formData.brand} {formData.model}</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-4 pt-2">
+                            <div className="px-4 py-1.5 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">{formData.condition}</div>
+                            <div className="px-4 py-1.5 bg-tech-lime text-eco-950 rounded-full text-xs font-bold uppercase tracking-widest leading-none flex items-center">{formData.quantity} Units</div>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                        <div className="text-tech-lime text-sm font-bold flex items-center gap-2"><Truck size={16} /> Standard {formData.serviceType}</div>
+                        {formData.serviceType === 'Pickup' ? (
+                            <div className="text-right">
+                                <div className="text-3xl font-bold leading-tight">{formData.pickupDate}</div>
+                                <div className="text-white/60 text-sm font-medium">{formData.pickupTime}</div>
+                            </div>
+                        ) : (
+                            <div className="text-right">
+                                <div className="text-3xl font-bold leading-tight line-clamp-1">{formData.facilityName || 'Select Facility'}</div>
+                                <div className="text-white/60 text-sm font-medium uppercase tracking-widest bg-white/10 px-3 py-1 rounded-lg inline-block mt-2">Ready for Drop-off</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div className="mt-10 pt-8 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 text-white">
+                    <div>
+                        <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">{formData.serviceType === 'Pickup' ? 'Pickup Origin' : 'Drop-off Destination'}</h4>
+                        <p className="text-sm font-medium leading-relaxed max-w-xs">{formData.serviceType === 'Pickup' ? formData.address : formData.facilityAddress}</p>
+                    </div>
+                    {formData.notes ? (
+                        <div>
+                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">Handling Notes</h4>
+                            <p className="text-sm font-medium leading-relaxed line-clamp-2 italic text-white/80">"{formData.notes}"</p>
+                        </div>
+                    ) : formData.serviceType === 'Dropoff' && (
+                        <div>
+                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">Facility ID</h4>
+                            <p className="text-sm font-medium leading-relaxed text-white/80">{formData.facilityId}</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="p-8 border border-eco-100 rounded-[2rem] bg-gray-50/30">
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Terms & Disclosure</h4>
+                <div className="space-y-4">
+                    <div className="flex gap-4">
+                        <div className="w-6 h-6 rounded-full bg-eco-100 flex items-center justify-center text-eco-600 shrink-0 mt-0.5"><Check size={14} /></div>
+                        <p className="text-xs text-gray-600 font-medium leading-relaxed">I confirm that all data on the devices has been backed up. ELocate is not responsible for data loss during the secure destruction process.</p>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="w-6 h-6 rounded-full bg-eco-100 flex items-center justify-center text-eco-600 shrink-0 mt-0.5"><Check size={14} /></div>
+                        <p className="text-xs text-gray-600 font-medium leading-relaxed">I understand that a small handling fee may be deducted from the eco-score points if the device is found to be incompatible with recycled classification.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const RecycleRequestForm: React.FC = () => {
     const { showToast } = useToast();
@@ -59,6 +608,11 @@ const RecycleRequestForm: React.FC = () => {
         contactName: getUserName() || 'User',
         contactEmail: getEmail() || '',
         contactPhone: getPhoneNumber() || '',
+        facilityId: '',
+        facilityName: '',
+        facilityAddress: '',
+        facilityLat: null,
+        facilityLon: null,
     };
 
     const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -70,6 +624,43 @@ const RecycleRequestForm: React.FC = () => {
     const [isLoadingCategories, setIsLoadingCategories] = useState(true);
     const [isLoadingBrands, setIsLoadingBrands] = useState(false);
     const [isLoadingModels, setIsLoadingModels] = useState(false);
+
+    const STORAGE_KEY = 'elocate_recycle_form_session';
+
+    // Load persisted state on mount
+    useEffect(() => {
+        const savedSession = localStorage.getItem(STORAGE_KEY);
+        if (savedSession) {
+            try {
+                const { step, data } = JSON.parse(savedSession);
+                if (data) {
+                    setFormData(prev => ({
+                        ...prev,
+                        ...data,
+                        // Always refresh auth-linked fields from current session
+                        contactName: getUserName() || data.contactName || 'User',
+                        contactEmail: getEmail() || data.contactEmail || '',
+                        contactPhone: getPhoneNumber() || data.contactPhone || '',
+                    }));
+                }
+                if (step && step >= 1 && step <= 5) {
+                    setCurrentStep(step as Step);
+                }
+            } catch (error) {
+                console.error("Failed to restore form session:", error);
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+    }, []);
+
+    // Persist state on change
+    useEffect(() => {
+        const sessionToSave = {
+            step: currentStep,
+            data: formData
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionToSave));
+    }, [currentStep, formData]);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -152,6 +743,10 @@ const RecycleRequestForm: React.FC = () => {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
         setIsSubmitting(false);
+
+        // Clear persisted state on successful submission
+        localStorage.removeItem(STORAGE_KEY);
+
         showToast('Recycle request submitted successfully!\nYour eco-score will be updated soon.', 'success');
         router.push('/citizen/book-recycle/requests');
     };
@@ -245,444 +840,6 @@ const RecycleRequestForm: React.FC = () => {
         );
     };
 
-    // --- Step Components ---
-
-    const Step1_DeviceType = () => {
-        const getIconForCategory = (name: string) => {
-            const n = name.toLowerCase();
-            if (n.includes('laptop')) return Laptop;
-            if (n.includes('smartphone') || n.includes('mobile') || n.includes('phone')) return Smartphone;
-            if (n.includes('printer')) return Printer;
-            if (n.includes('television') || n.includes('tv')) return Tv;
-            if (n.includes('audio') || n.includes('speaker') || n.includes('headphone')) return Headphones;
-            if (n.includes('wearable') || n.includes('watch')) return Watch;
-            if (n.includes('peripheral') || n.includes('keyboard') || n.includes('mouse')) return Keyboard;
-            return HardDrive;
-        };
-
-        if (isLoadingCategories) {
-            return (
-                <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-                    <div className="w-16 h-16 bg-eco-100 rounded-full mb-4 flex items-center justify-center">
-                        <Package className="text-eco-400" size={32} />
-                    </div>
-                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Fetching categories...</p>
-                </div>
-            );
-        }
-
-        return (
-            <div className="space-y-8 animate-fade-in-up">
-                {/* Photo Upload Option Placeholder */}
-                <div className="bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-8 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-eco-600 shadow-md group-hover:scale-110 transition-transform">
-                        <Upload size={24} />
-                    </div>
-                    <h3 className="font-bold text-eco-900 text-lg">Snap & Identify</h3>
-                    <p className="text-sm text-eco-600 mt-1 max-w-xs mx-auto font-medium">Coming soon: Upload a photo and our AI will automatically detect your device.</p>
-                </div>
-
-                <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-100"></div>
-                    </div>
-                    <div className="relative flex justify-center text-xs">
-                        <span className="px-4 bg-white text-gray-400 font-bold tracking-widest uppercase italic">Or select category manually</span>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    {categories.map((cat) => {
-                        const Icon = getIconForCategory(cat.name);
-                        const isSelected = formData.deviceType === cat.name;
-                        return (
-                            <button
-                                key={cat.id}
-                                onClick={() => {
-                                    updateField('deviceType', cat.name);
-                                    updateField('categoryId', cat.id);
-                                    // Reset dependent fields
-                                    updateField('brandId', '');
-                                    updateField('brand', '');
-                                    updateField('modelId', '');
-                                    updateField('model', '');
-                                }}
-                                className={`
-                  p-6 rounded-2xl border-2 text-left transition-all hover:shadow-xl flex items-center gap-5 group/btn
-                  ${isSelected
-                                        ? 'border-eco-500 bg-eco-50/50 shadow-md'
-                                        : 'border-slate-50 bg-slate-50/30 hover:bg-emerald-50/80 hover:border-emerald-200'}
-                `}
-                            >
-                                <div className={`
-                  w-14 h-14 rounded-xl flex items-center justify-center transition-all shrink-0
-                  ${isSelected ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}
-                `}>
-                                    <Icon size={24} />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <div className={`font-bold text-lg truncate ${isSelected ? 'text-eco-950' : 'text-gray-900'}`}>{cat.name}</div>
-                                    <div className="text-xs text-gray-400 mt-0.5 font-medium truncate">{cat.description || 'Misc Electronics'}</div>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-        );
-    };
-
-    const Step2_DeviceDetails = () => {
-        const conditions: { val: Condition; label: string; desc: string }[] = [
-            { val: 'Working', label: 'Pristine / Working', desc: 'Fully functional, no damage' },
-            { val: 'Minor Issues', label: 'Fair / Minor Issues', desc: 'Working with cosmetic wear' },
-            { val: 'Broken', label: 'Broken / Damaged', desc: 'Powers on but part functionality' },
-            { val: 'Parts Only', label: 'Scrap / Parts', desc: 'Does not power on, non-functional' },
-        ];
-
-        return (
-            <div className="space-y-8 animate-fade-in-up">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-eco-950">
-                    <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">Device Brand</label>
-                        <div className="relative group">
-                            <select
-                                value={formData.brandId}
-                                onChange={(e) => {
-                                    const id = e.target.value;
-                                    const brandName = brands.find(b => b.brand.id === id)?.brand.name || '';
-                                    updateField('brandId', id);
-                                    updateField('brand', brandName);
-                                    // Reset model
-                                    updateField('modelId', '');
-                                    updateField('model', '');
-                                }}
-                                disabled={isLoadingBrands || !formData.categoryId}
-                                className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                            >
-                                <option value="">{isLoadingBrands ? "Loading Brands..." : "Select Brand"}</option>
-                                {brands.map((b) => (
-                                    <option key={b.brand.id} value={b.brand.id}>{b.brand.name}</option>
-                                ))}
-                            </select>
-                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
-                                <ArrowRight size={16} className="rotate-90" />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">Exact Model</label>
-                        <div className="relative group">
-                            <select
-                                value={formData.modelId}
-                                onChange={(e) => {
-                                    const id = e.target.value;
-                                    const modelName = models.find(m => m.id === id)?.modelName || '';
-                                    updateField('modelId', id);
-                                    updateField('model', modelName);
-                                }}
-                                disabled={isLoadingModels || !formData.brandId}
-                                className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                            >
-                                <option value="">
-                                    {!formData.brandId ? "Select brand first" : (isLoadingModels ? "Loading Models..." : "Select Model")}
-                                </option>
-                                {models.map((m) => (
-                                    <option key={m.id} value={m.id}>{m.modelName}</option>
-                                ))}
-                            </select>
-                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
-                                <ArrowRight size={16} className="rotate-90" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <label className="text-sm font-bold text-gray-700">Device Condition</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {conditions.map((cond) => (
-                            <button
-                                key={cond.val}
-                                onClick={() => updateField('condition', cond.val)}
-                                className={`
-                  p-5 rounded-2xl border-2 text-left transition-all hover:shadow-md
-                  ${formData.condition === cond.val
-                                        ? 'border-eco-500 bg-eco-50 shadow-sm'
-                                        : 'border-slate-50 bg-slate-50/40 hover:bg-emerald-50/80 hover:border-emerald-200 hover:scale-[1.01]'}
-                `}
-                            >
-                                <div className={`font-bold ${formData.condition === cond.val ? 'text-eco-900' : 'text-gray-900'}`}>{cond.label}</div>
-                                <div className="text-xs text-gray-400 mt-1 font-medium">{cond.desc}</div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl">
-                    <div>
-                        <h4 className="font-bold text-gray-900">Total Quantity</h4>
-                        <p className="text-xs text-gray-500">How many units of this type?</p>
-                    </div>
-                    <div className="flex items-center gap-6">
-                        <button
-                            onClick={() => updateField('quantity', Math.max(1, formData.quantity - 1))}
-                            className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow font-bold text-gray-600 text-xl"
-                        >
-                            -
-                        </button>
-                        <span className="text-3xl font-display font-bold text-eco-950 w-8 text-center leading-none">{formData.quantity}</span>
-                        <button
-                            onClick={() => updateField('quantity', formData.quantity + 1)}
-                            className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow font-bold text-gray-600 text-xl"
-                        >
-                            +
-                        </button>
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Detailed Notes <span className="text-gray-400 font-normal ml-1">(Highly Recommended)</span></label>
-                    <textarea
-                        value={formData.notes}
-                        onChange={(e) => updateField('notes', e.target.value)}
-                        placeholder="Tell us about the damage, missing parts, or special handling..."
-                        rows={4}
-                        className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all resize-none text-gray-900 bg-gray-50/30"
-                    />
-                </div>
-            </div>
-        );
-    };
-
-    const Step3_ServiceType = () => {
-        return (
-            <div className="space-y-8 animate-fade-in-up">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <button
-                        onClick={() => updateField('serviceType', 'Pickup')}
-                        className={`
-              p-8 rounded-[2rem] border-2 text-left transition-all hover:shadow-xl group relative overflow-hidden
-              ${formData.serviceType === 'Pickup'
-                                ? 'border-eco-500 bg-eco-50 shadow-md'
-                                : 'border-slate-50 bg-slate-50/30 hover:border-eco-200'}
-            `}
-                    >
-                        <div className={`
-              w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all
-              ${formData.serviceType === 'Pickup' ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 shadow-sm'}
-            `}>
-                            <Truck size={32} />
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Home Pickup</h3>
-                        <p className="text-gray-500 text-sm leading-relaxed font-medium">Free concierge collection from your doorstep. Zero effort required.</p>
-                        {formData.serviceType === 'Pickup' && (
-                            <div className="absolute top-6 right-6 w-8 h-8 bg-eco-500 rounded-full flex items-center justify-center text-white shadow-lg animate-bounce-slow">
-                                <Check size={18} />
-                            </div>
-                        )}
-                    </button>
-
-                    <button
-                        onClick={() => updateField('serviceType', 'Dropoff')}
-                        className={`
-              p-8 rounded-[2rem] border-2 text-left transition-all hover:shadow-xl group relative overflow-hidden
-              ${formData.serviceType === 'Dropoff'
-                                ? 'border-eco-500 bg-eco-50 shadow-md'
-                                : 'border-slate-50 bg-slate-50/40 hover:bg-emerald-50/80 hover:border-emerald-200 hover:scale-[1.01]'}
-            `}
-                    >
-                        <div className={`
-              w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all
-              ${formData.serviceType === 'Dropoff' ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 shadow-sm'}
-            `}>
-                            <Package size={32} />
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Drop-off</h3>
-                        <p className="text-gray-500 text-sm leading-relaxed font-medium">Bring it to our nearest center anytime. Best for single small items.</p>
-                        {formData.serviceType === 'Dropoff' && (
-                            <div className="absolute top-6 right-6 w-8 h-8 bg-eco-500 rounded-full flex items-center justify-center text-white shadow-lg animate-bounce-slow">
-                                <Check size={18} />
-                            </div>
-                        )}
-                    </button>
-                </div>
-
-                {formData.serviceType === 'Pickup' && (
-                    <div className="pt-8 border-t border-gray-100 animate-slide-up">
-                        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <Calendar size={20} className="text-eco-500" />
-                            Select Date & Time
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-3">
-                                <label className="text-sm font-bold text-gray-700">Preferred Date</label>
-                                <div className="relative group">
-                                    <input
-                                        type="date"
-                                        value={formData.pickupDate}
-                                        onChange={(e) => updateField('pickupDate', e.target.value)}
-                                        className="w-full pl-14 pr-5 py-5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-gray-50/50"
-                                    />
-                                    <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-500" size={24} />
-                                </div>
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-sm font-bold text-gray-700">Best Time Slot</label>
-                                <div className="relative group">
-                                    <select
-                                        value={formData.pickupTime}
-                                        onChange={(e) => updateField('pickupTime', e.target.value)}
-                                        className="w-full pl-14 pr-8 py-5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all appearance-none bg-gray-50/50 text-gray-900 cursor-pointer font-medium"
-                                    >
-                                        <option value="">Select a slot...</option>
-                                        <option value="09:00 AM - 11:00 AM">Morning (09:00 - 11:00)</option>
-                                        <option value="11:00 AM - 01:00 PM">Late Morning (11:00 - 13:00)</option>
-                                        <option value="01:00 PM - 03:00 PM">Afternoon (13:00 - 15:00)</option>
-                                        <option value="03:00 PM - 05:00 PM">Evening (15:00 - 17:00)</option>
-                                    </select>
-                                    <Clock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-500" size={24} />
-                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                                        <ArrowRight size={16} className="rotate-90" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <p className="mt-4 text-xs text-gray-400 font-medium">Note: We generally collect items within 48 hours of scheduled time.</p>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const Step4_Address = () => {
-        return (
-            <div className="space-y-8 animate-fade-in-up">
-                <div className="space-y-3">
-                    <label className="text-sm font-bold text-gray-700">Complete Pickup Address</label>
-                    <div className="relative group">
-                        <input
-                            type="text"
-                            value={formData.address}
-                            onChange={(e) => updateField('address', e.target.value)}
-                            placeholder="Unit, Floor, Building, Street, Area"
-                            className="w-full pl-14 pr-5 py-5 rounded-2xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 placeholder-emerald-800/30"
-                        />
-                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-400 group-focus-within:text-eco-600 transition-colors" size={24} />
-                        <button className="absolute right-5 top-1/2 -translate-y-1/2 text-eco-600 text-xs font-bold hover:underline">
-                            Use current location
-                        </button>
-                    </div>
-                </div>
-
-                <div className="pt-8 border-t border-emerald-100">
-                    <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <Smartphone size={20} className="text-eco-500" />
-                        Contact Verification
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-emerald-700/60 px-1">Full Name</label>
-                            <div className="px-5 py-4 rounded-xl bg-emerald-50/50 border border-emerald-100 text-eco-900 font-bold cursor-not-allowed">
-                                {formData.contactName}
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-emerald-700/60 px-1">Email Profile</label>
-                            <div className="px-5 py-4 rounded-xl bg-emerald-50/50 border border-emerald-100 text-eco-900 font-bold cursor-not-allowed">
-                                {formData.contactEmail}
-                            </div>
-                        </div>
-                        <div className="md:col-span-2 space-y-2">
-                            <label className="text-sm font-bold text-emerald-700 px-1">Primary Phone <span className="text-tech-lime font-bold ml-2">(Verified)</span></label>
-                            <div className="flex items-center gap-4">
-                                <div className="flex-1 px-5 py-4 rounded-xl bg-emerald-50/50 border border-emerald-100 text-eco-900 font-bold">
-                                    {formData.contactPhone}
-                                </div>
-                                <button className="px-4 py-4 rounded-xl border border-emerald-200 text-xs font-bold text-eco-600 hover:bg-emerald-50 transition-colors">
-                                    Change
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <p className="mt-6 p-4 bg-emerald-50 rounded-xl text-xs text-eco-800 leading-relaxed font-bold">
-                        Tip: Our agent will call this number if they can't find your location. Please keep your phone reachable on the pickup day.
-                    </p>
-                </div>
-            </div>
-        );
-    };
-
-    const Step5_Review = () => {
-        return (
-            <div className="space-y-8 animate-fade-in-up">
-                <div className="relative bg-gradient-to-br from-eco-900 to-eco-800 rounded-[2.5rem] p-10 text-white overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 -mr-10 -mt-10 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-tech-lime/10 -ml-10 -mb-10 rounded-full blur-2xl"></div>
-
-                    <div className="relative z-10 flex flex-col md:flex-row gap-10 items-center justify-between">
-                        <div className="flex-1 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-tech-lime">
-                                    {(formData.deviceType?.toLowerCase().includes('laptop')) && <Laptop size={24} />}
-                                    {(formData.deviceType?.toLowerCase().includes('smartphone') || formData.deviceType?.toLowerCase().includes('phone')) && <Smartphone size={24} />}
-                                    {(!formData.deviceType?.toLowerCase().includes('laptop') && !formData.deviceType?.toLowerCase().includes('phone') && !formData.deviceType?.toLowerCase().includes('smartphone')) && <Package size={24} />}
-                                </div>
-                                <h3 className="text-3xl font-display font-bold leading-none">{formData.brand} {formData.model}</h3>
-                            </div>
-                            <div className="flex flex-wrap gap-4 pt-2">
-                                <div className="px-4 py-1.5 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">{formData.condition}</div>
-                                <div className="px-4 py-1.5 bg-tech-lime text-eco-950 rounded-full text-xs font-bold uppercase tracking-widest leading-none flex items-center">{formData.quantity} Units</div>
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2 shrink-0">
-                            <div className="text-tech-lime text-sm font-bold flex items-center gap-2">
-                                <Truck size={16} /> Standard {formData.serviceType}
-                            </div>
-                            {formData.serviceType === 'Pickup' && (
-                                <div className="text-right">
-                                    <div className="text-3xl font-bold leading-tight">{formData.pickupDate}</div>
-                                    <div className="text-white/60 text-sm font-medium">{formData.pickupTime}</div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="mt-10 pt-8 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 text-white">
-                        <div>
-                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">Pickup Origin</h4>
-                            <p className="text-sm font-medium leading-relaxed max-w-xs">{formData.address}</p>
-                        </div>
-                        {formData.notes && (
-                            <div>
-                                <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">Handling Notes</h4>
-                                <p className="text-sm font-medium leading-relaxed line-clamp-2 italic text-white/80">"{formData.notes}"</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="p-8 border border-eco-100 rounded-[2rem] bg-gray-50/30">
-                    <h4 className="text-lg font-bold text-gray-900 mb-4">Terms & Disclosure</h4>
-                    <div className="space-y-4">
-                        <div className="flex gap-4">
-                            <div className="w-6 h-6 rounded-full bg-eco-100 flex items-center justify-center text-eco-600 shrink-0 mt-0.5">
-                                <Check size={14} />
-                            </div>
-                            <p className="text-xs text-gray-600 font-medium leading-relaxed">I confirm that all data on the devices has been backed up. ELocate is not responsible for data loss during the secure destruction process.</p>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="w-6 h-6 rounded-full bg-eco-100 flex items-center justify-center text-eco-600 shrink-0 mt-0.5">
-                                <Check size={14} />
-                            </div>
-                            <p className="text-xs text-gray-600 font-medium leading-relaxed">I understand that a small handling fee may be deducted from the eco-score points if the device is found to be incompatible with recycled classification.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     // --- Main Render ---
 
     return (
@@ -735,13 +892,12 @@ const RecycleRequestForm: React.FC = () => {
                             </h2>
                         </div>
 
-                        {/* Step Content */}
                         <div className="flex-1">
-                            {currentStep === 1 && <Step1_DeviceType />}
-                            {currentStep === 2 && <Step2_DeviceDetails />}
-                            {currentStep === 3 && <Step3_ServiceType />}
-                            {currentStep === 4 && <Step4_Address />}
-                            {currentStep === 5 && <Step5_Review />}
+                            {currentStep === 1 && <Step1_DeviceType formData={formData} updateField={updateField} isLoadingCategories={isLoadingCategories} categories={categories} />}
+                            {currentStep === 2 && <Step2_DeviceDetails formData={formData} updateField={updateField} isLoadingBrands={isLoadingBrands} brands={brands} isLoadingModels={isLoadingModels} models={models} />}
+                            {currentStep === 3 && <Step3_ServiceType formData={formData} updateField={updateField} />}
+                            {currentStep === 4 && <Step4_Address formData={formData} updateField={updateField} />}
+                            {currentStep === 5 && <Step5_Review formData={formData} updateField={updateField} />}
                         </div>
 
                         {/* Navigation Buttons */}
@@ -762,9 +918,10 @@ const RecycleRequestForm: React.FC = () => {
                                     onClick={handleNext}
                                     disabled={
                                         (currentStep === 1 && !formData.deviceType) ||
-                                        (currentStep === 2 && (!formData.brand || !formData.model || !formData.condition)) ||
+                                        (currentStep === 2 && (!formData.brandId || !formData.modelId || !formData.condition)) ||
                                         (currentStep === 3 && !formData.serviceType) ||
                                         (currentStep === 3 && formData.serviceType === 'Pickup' && (!formData.pickupDate || !formData.pickupTime)) ||
+                                        (currentStep === 3 && formData.serviceType === 'Dropoff' && !formData.facilityId) ||
                                         (currentStep === 4 && !formData.address)
                                     }
                                     className="px-12 py-5 bg-eco-950 text-white rounded-2xl font-bold hover:bg-black shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3 disabled:opacity-30 disabled:pointer-events-none"

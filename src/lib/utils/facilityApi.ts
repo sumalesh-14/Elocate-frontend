@@ -5,6 +5,7 @@
 import { facility as staticFacilityData } from '@/app/citizen/data/facility';
 
 interface Facility {
+    id: string;
     address: string;
     name: string;
     capacity: number;
@@ -18,35 +19,69 @@ interface Facility {
 /**
  * Fetches facilities from the elocate server API
  * Falls back to static data if API is unavailable
- * @returns Promise with array of facilities
  */
-export async function fetchFacilities(): Promise<Facility[]> {
+export async function fetchFacilities(
+    lat?: number,
+    lon?: number,
+    distance: number = 500,
+    page: number = 0,
+    size: number = 5
+): Promise<{ content: Facility[], totalPages: number, totalElements: number }> {
     try {
-        // Use environment variable or fallback to localhost for development
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-        const apiUrl = `${baseUrl}/api/v1/facility`;
+        let apiUrl = `${baseUrl}/api/v1/facility?page=${page}&size=${size}`;
+
+        if (lat !== undefined && lon !== undefined) {
+            apiUrl += `&userLatitude=${lat}&userLongitude=${lon}&distance=${distance}`;
+        }
 
         console.log('Attempting to fetch facilities from:', apiUrl);
 
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(apiUrl, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: headers,
         });
 
         if (!response.ok) {
-            console.warn(`API returned ${response.status}: ${response.statusText}. Falling back to static data.`);
-            return staticFacilityData as Facility[];
+            console.warn(`API returned ${response.status}. Falling back to static data.`);
+            return {
+                content: staticFacilityData.slice(page * size, (page + 1) * size) as Facility[],
+                totalPages: Math.ceil(staticFacilityData.length / size),
+                totalElements: staticFacilityData.length
+            };
         }
 
         const data = await response.json();
-        console.log('Successfully fetched facilities from API:', data.length, 'facilities');
-        return data;
+
+        // Handle both direct array (old) and Page object (new)
+        if (Array.isArray(data)) {
+            return {
+                content: data,
+                totalPages: 1,
+                totalElements: data.length
+            };
+        }
+
+        return {
+            content: data.content || [],
+            totalPages: data.totalPages || 1,
+            totalElements: data.totalElements || 0
+        };
     } catch (error) {
-        console.error('Error fetching facilities from API:', error);
-        console.log('Using static facility data as fallback');
-        // Return static data as fallback
-        return staticFacilityData as Facility[];
+        console.error('Error fetching facilities:', error);
+        return {
+            content: staticFacilityData.slice(page * size, (page + 1) * size) as Facility[],
+            totalPages: Math.ceil(staticFacilityData.length / size),
+            totalElements: staticFacilityData.length
+        };
     }
 }
