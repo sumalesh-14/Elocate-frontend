@@ -17,6 +17,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { calculateDistance } from '@/lib/utils/calculateLocation';
 import { fetchFacilities } from '@/lib/utils/facilityApi';
 import getLocation from '@/lib/utils/getLocation';
+import { analyzeDeviceImage, checkAnalyzerHealth } from '@/lib/image-analyzer-api';
 
 // --- Types ---
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -57,6 +58,8 @@ interface StepProps {
 interface Step1Props extends StepProps {
     isLoadingCategories: boolean;
     categories: any[];
+    onImageAnalyze: (file: File) => Promise<void>;
+    isAnalyzing: boolean;
 }
 
 interface Step2Props extends StepProps {
@@ -94,12 +97,36 @@ const Step1_DeviceType: React.FC<Step1Props> = ({ formData, updateField, isLoadi
 
     return (
         <div className="space-y-8 animate-fade-in-up">
-            <div className="bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-8 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm">
-                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-eco-600 shadow-md group-hover:scale-110 transition-transform">
-                    <Upload size={24} />
-                </div>
-                <h3 className="font-bold text-eco-900 text-lg">Snap & Identify</h3>
-                <p className="text-sm text-eco-600 mt-1 max-w-xs mx-auto font-medium">Coming soon: Upload a photo and our AI will automatically detect your device.</p>
+            <div
+                className={`bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-8 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm relative ${isAnalyzing ? 'opacity-50 pointer-events-none' : ''}`}
+                onClick={() => document.getElementById('device-image-upload')?.click()}
+            >
+                <input
+                    type="file"
+                    id="device-image-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) onImageAnalyze(file);
+                    }}
+                />
+
+                {isAnalyzing ? (
+                    <div className="flex flex-col items-center py-2">
+                        <div className="w-12 h-12 border-4 border-eco-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <h3 className="font-bold text-eco-900 text-lg">Analyzing Device...</h3>
+                        <p className="text-sm text-eco-600 mt-1 font-medium">Our AI is identifying your device</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-eco-600 shadow-md group-hover:scale-110 transition-transform">
+                            <Upload size={24} />
+                        </div>
+                        <h3 className="font-bold text-eco-900 text-lg">Snap & Identify</h3>
+                        <p className="text-sm text-eco-600 mt-1 max-w-xs mx-auto font-medium">Upload a photo and our AI will automatically detect your device.</p>
+                    </>
+                )}
             </div>
 
             <div className="relative">
@@ -618,6 +645,7 @@ const RecycleRequestForm: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<Step>(1);
     const [formData, setFormData] = useState<FormData>(INITIAL_DATA);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [brands, setBrands] = useState<any[]>([]);
     const [models, setModels] = useState<any[]>([]);
@@ -736,6 +764,48 @@ const RecycleRequestForm: React.FC = () => {
 
     const updateField = (field: keyof FormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleImageAnalyze = async (file: File) => {
+        setIsAnalyzing(true);
+        try {
+            const result = await analyzeDeviceImage(file);
+            if (result.success && result.data) {
+                const { category, brand, model, info_note } = result.data;
+
+                // Find matching category ID
+                const matchedCategory = categories.find(c =>
+                    c.name.toLowerCase() === category.toLowerCase() ||
+                    category.toLowerCase().includes(c.name.toLowerCase())
+                );
+
+                if (matchedCategory) {
+                    updateField('deviceType', matchedCategory.name);
+                    updateField('categoryId', matchedCategory.id);
+
+                    // The brand and model will be loaded by the useEffects
+                    // We can pre-set the names if we want, but IDs are more important
+                    // For now, let's set the names as notes if no exact match is found
+                    if (brand) updateField('brand', brand);
+                    if (model) updateField('model', model);
+
+                    if (info_note) {
+                        updateField('notes', `AI Identification: ${info_note}\n\n${formData.notes}`);
+                    }
+
+                    showToast(`Device identified as ${brand || ''} ${model || category}`, 'success');
+                } else {
+                    showToast(`AI identified this as a ${category}, but we couldn't match it to our categories.`, 'info');
+                }
+            } else {
+                showToast(result.error?.message || 'Failed to analyze image', 'error');
+            }
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            showToast('An error occurred during image analysis.', 'error');
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     const handleSubmit = async () => {
@@ -893,7 +963,16 @@ const RecycleRequestForm: React.FC = () => {
                         </div>
 
                         <div className="flex-1">
-                            {currentStep === 1 && <Step1_DeviceType formData={formData} updateField={updateField} isLoadingCategories={isLoadingCategories} categories={categories} />}
+                            {currentStep === 1 && (
+                                <Step1_DeviceType 
+                                    formData={formData} 
+                                    updateField={updateField} 
+                                    isLoadingCategories={isLoadingCategories} 
+                                    categories={categories}
+                                    onImageAnalyze={handleImageAnalyze}
+                                    isAnalyzing={isAnalyzing}
+                                />
+                            )}
                             {currentStep === 2 && <Step2_DeviceDetails formData={formData} updateField={updateField} isLoadingBrands={isLoadingBrands} brands={brands} isLoadingModels={isLoadingModels} models={models} />}
                             {currentStep === 3 && <Step3_ServiceType formData={formData} updateField={updateField} />}
                             {currentStep === 4 && <Step4_Address formData={formData} updateField={updateField} />}
