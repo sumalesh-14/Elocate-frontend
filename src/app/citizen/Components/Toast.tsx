@@ -35,7 +35,7 @@ const Toast: React.FC<ToastProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="fixed top-36 right-4 z-[9999]"
+                    className="fixed top-36 right-10 z-[9999]"
                 >
                     <div className="w-full max-w-lg">
                         <div className="bg-white border-l-4 border-[#22c55e] shadow-lg rounded-r-lg">

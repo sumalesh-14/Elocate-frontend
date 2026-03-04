@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Laptop, Smartphone, Printer, Tv, Headphones, Watch, Keyboard, HardDrive,
     ArrowRight,
     Search,
     ArrowLeft, Upload, Check, MapPin, Calendar, Clock, Truck, Package,
     ShieldCheck, HelpCircle, Info, Sparkles, Activity, Hammer, Cpu,
-    Square, CheckSquare, Eraser
+    Square, CheckSquare, Eraser, ChevronDown, Layers
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
@@ -97,6 +97,149 @@ interface Step4Props extends StepProps {
 
 // --- Sub-components ---
 
+const SearchableSelect: React.FC<{
+    label: string,
+    options: { id: string, name: string }[],
+    value: string,
+    onChange: (id: string, name: string) => void,
+    isLoading?: boolean,
+    disabled?: boolean,
+    placeholder: string
+}> = ({ label, options, value, onChange, isLoading, disabled, placeholder }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const filteredOptions = options.filter(opt =>
+        opt.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const selectedOption = options.find(opt => opt.id === value);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div className="space-y-2 relative" ref={dropdownRef}>
+            <label className="text-base font-bold text-gray-700">{label}</label>
+            <div
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+                className={`w-full px-5 py-4 rounded-xl border border-emerald-100 flex items-center justify-between cursor-pointer transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'bg-emerald-50/20 hover:border-eco-500'}`}
+            >
+                <span className={`font-medium truncate ${selectedOption ? 'text-gray-900 font-bold text-lg' : 'text-gray-400 text-base'}`}>
+                    {selectedOption ? selectedOption.name : (isLoading ? 'Loading...' : placeholder)}
+                </span>
+                <ChevronDown size={18} className={`text-emerald-600 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isOpen && (
+                <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden z-[110] animate-slide-in-top">
+                    <div className="p-4 border-b border-slate-50 bg-slate-50/30">
+                        <div className="relative pl-4">
+                            <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                            <input
+                                type="text"
+                                autoFocus
+                                placeholder="Quick search..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-base focus:border-eco-500 outline-none text-gray-900 font-medium"
+                            />
+                        </div>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                        {filteredOptions.length > 0 ? (
+                            filteredOptions.map(opt => (
+                                <div
+                                    key={opt.id}
+                                    onClick={() => {
+                                        onChange(opt.id, opt.name);
+                                        setIsOpen(false);
+                                        setSearchTerm('');
+                                    }}
+                                    className={`pl-11 pr-5 py-3.5 text-base font-bold cursor-pointer transition-colors ${opt.id === value ? 'bg-eco-50 text-eco-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    {opt.name}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="px-5 py-8 text-center text-slate-400 text-xs font-medium italic">
+                                No results match "{searchTerm}"
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const SelectionPath: React.FC<{ category?: string, brand?: string, model?: string }> = ({ category, brand, model }) => {
+    if (!category || !brand || !model) return null;
+
+    return (
+        <div className="relative mb-6 group animate-fade-in px-1 max-w-4xl mx-auto mt-4 text-left">
+            {/* simple glow */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-eco-400/10 to-emerald-400/10 rounded-[2rem] blur-lg opacity-0 group-hover:opacity-100 transition duration-700"></div>
+
+            <div className="relative bg-eco-50/70 backdrop-blur-sm border border-eco-100 shadow-xl rounded-[2rem] p-5 flex flex-col md:flex-row items-center gap-6">
+                {/* Compact Icon Badge */}
+                <div className="relative shrink-0">
+                    <div className="w-16 h-16 bg-gradient-to-br from-eco-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg transform group-hover:scale-105 transition-transform duration-500">
+                        <Package size={28} />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-7 h-7 bg-white shadow-md rounded-full flex items-center justify-center text-emerald-500 border border-emerald-50 translate-x-0.5 -translate-y-0.5">
+                        <Check size={14} strokeWidth={3} />
+                    </div>
+                </div>
+
+                {/* Compact Identity Info */}
+                <div className="flex-1 min-w-0 text-center md:text-left">
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/60 rounded-full text-[8px] font-bold text-eco-600 uppercase tracking-widest mb-2 border border-eco-100/50">
+                        <ShieldCheck size={9} /> SECURED
+                    </div>
+
+                    <div className="flex flex-col gap-0.5 mb-2">
+                        <h4 className="text-[10px] font-extrabold text-slate-400 tracking-widest leading-none uppercase">{brand}</h4>
+                        <h3 className="text-2xl lg:text-3xl font-display font-black text-gray-900 tracking-tight leading-tight uppercase">
+                            {model}
+                        </h3>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white/80 rounded-lg border border-gray-100 shadow-sm">
+                            <Layers size={11} className="text-eco-500" />
+                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{category}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Technical Readout Pane - Sized Down */}
+                <div className="hidden lg:flex flex-col justify-center px-6 py-4 bg-white/30 rounded-2xl border border-white/50 space-y-1.5 shrink-0">
+                    <div className="flex justify-between gap-6 items-center">
+                        <span className="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">ID_HASH</span>
+                        <span className="text-[8px] font-mono font-bold text-eco-600">#{model.replace(/\s+/g, '').substring(0, 4).toUpperCase()}</span>
+                    </div>
+                    <div className="flex justify-between gap-6 items-center">
+                        <span className="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">STATUS</span>
+                        <span className="text-[8px] font-mono font-bold text-emerald-600">LOCKED</span>
+                    </div>
+                    <div className="w-24 bg-slate-200 h-1 rounded-full overflow-hidden mt-1">
+                        <div className="bg-emerald-500 h-full w-[100%]"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const Step1_DeviceType: React.FC<Step1Props> = ({
     formData,
     updateField,
@@ -124,6 +267,7 @@ const Step1_DeviceType: React.FC<Step1Props> = ({
 
     return (
         <div className="space-y-4 animate-fade-in-up">
+            <SelectionPath category={formData.deviceType || undefined} />
             <div
                 className={`bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-6 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm relative ${isAnalyzing ? 'opacity-50 pointer-events-none' : ''}`}
                 onClick={() => document.getElementById('device-image-upload')?.click()}
@@ -249,60 +393,45 @@ const Step2_DeviceDetails: React.FC<Step2Props> = ({ formData, updateField, isLo
 
     return (
         <div className="space-y-4 animate-fade-in-up">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-eco-950">
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Device Brand</label>
-                    <div className="relative group">
-                        <select
-                            value={formData.brandId}
-                            onChange={(e) => {
-                                const id = e.target.value;
-                                const brandFound = brands.find(b => (b.brand?.id || b.id) === id);
-                                const brandName = brandFound?.brand?.name || brandFound?.name || '';
-                                updateField('brandId', id);
-                                updateField('brand', brandName);
-                                updateField('modelId', '');
-                                updateField('model', '');
-                            }}
-                            disabled={isLoadingBrands || !formData.categoryId}
-                            className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                        >
-                            <option value="">{isLoadingBrands ? "Loading Brands..." : "Select Brand"}</option>
-                            {brands.map((b) => (
-                                <option key={b.brand?.id || b.id} value={b.brand?.id || b.id}>{b.brand?.name || b.name}</option>
-                            ))}
-                        </select>
-                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
-                            <ArrowRight size={16} className="rotate-90" />
-                        </div>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Exact Model</label>
-                    <div className="relative group">
-                        <select
-                            value={formData.modelId}
-                            onChange={(e) => {
-                                const id = e.target.value;
-                                const modelName = models.find(m => m.id === id)?.modelName || '';
-                                updateField('modelId', id);
-                                updateField('model', modelName);
-                            }}
-                            disabled={isLoadingModels || !formData.brandId}
-                            className="w-full px-5 py-4 rounded-xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                        >
-                            <option value="">
-                                {!formData.brandId ? "Select brand first" : (isLoadingModels ? "Loading Models..." : "Select Model")}
-                            </option>
-                            {models.map((m) => (
-                                <option key={m.id} value={m.id}>{m.modelName}</option>
-                            ))}
-                        </select>
-                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
-                            <ArrowRight size={16} className="rotate-90" />
-                        </div>
-                    </div>
-                </div>
+            <SelectionPath
+                category={formData.deviceType || undefined}
+                brand={formData.brand || undefined}
+                model={formData.model || undefined}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SearchableSelect
+                    label="Device Brand"
+                    placeholder="Select Brand"
+                    options={brands.map(b => ({
+                        id: b.brand?.id || b.id,
+                        name: b.brand?.name || b.name
+                    }))}
+                    value={formData.brandId}
+                    isLoading={isLoadingBrands}
+                    disabled={isLoadingBrands || !formData.categoryId}
+                    onChange={(id, name) => {
+                        updateField('brandId', id);
+                        updateField('brand', name);
+                        updateField('modelId', '');
+                        updateField('model', '');
+                    }}
+                />
+
+                <SearchableSelect
+                    label="Exact Model"
+                    placeholder={!formData.brandId ? "Select brand first" : "Select Model"}
+                    options={models.map(m => ({
+                        id: m.id,
+                        name: m.modelName
+                    }))}
+                    value={formData.modelId}
+                    isLoading={isLoadingModels}
+                    disabled={isLoadingModels || !formData.brandId}
+                    onChange={(id, name) => {
+                        updateField('modelId', id);
+                        updateField('model', name);
+                    }}
+                />
             </div>
 
             <div className="space-y-3">
@@ -1008,6 +1137,17 @@ const RecycleRequestForm: React.FC = () => {
         fetchModels();
     }, [formData.brandId, formData.categoryId]);
 
+    const isNextDisabled = (
+        (currentStep === 1 && !formData.deviceType) ||
+        (currentStep === 2 && (!formData.brandId || !formData.modelId || !formData.condition)) ||
+        (currentStep === 3 && !formData.serviceType) ||
+        (currentStep === 3 && formData.serviceType === 'Pickup' && (!formData.pickupDate || !formData.pickupTime)) ||
+        (currentStep === 3 && formData.serviceType === 'Dropoff' && !formData.facilityId) ||
+        (currentStep === 4 && !formData.address)
+    );
+
+    const isSubmitDisabled = isSubmitting || !formData.checklist?.backup || !formData.checklist?.accounts || !formData.checklist?.factoryReset;
+
     const handleNext = () => {
         if (currentStep < 5) setCurrentStep((prev) => (prev + 1) as Step);
     };
@@ -1247,17 +1387,54 @@ const RecycleRequestForm: React.FC = () => {
                         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-sky-50 rounded-full -z-10 blur-3xl opacity-50"></div>
 
                         {/* Step Dynamic Header */}
-                        <div className="mb-6">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-eco-50 rounded-full text-[10px] font-bold text-eco-700 uppercase tracking-[0.2em] mb-4">
-                                Step {currentStep} <ArrowRight size={10} className="mx-1" /> Phase {currentStep === 5 ? 'Review' : 'Inputs'}
+                        <div className="mb-6 flex justify-between items-start">
+                            <div>
+                                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-eco-50 rounded-full text-[10px] font-bold text-eco-700 uppercase tracking-[0.2em] mb-4">
+                                    Step {currentStep} <ArrowRight size={10} className="mx-1" /> Phase {currentStep === 5 ? 'Review' : 'Inputs'}
+                                </div>
+                                <h2 className="text-3xl lg:text-4xl font-display font-bold text-gray-900">
+                                    {currentStep === 1 && 'What are we recycling?'}
+                                    {currentStep === 2 && 'Give us the details'}
+                                    {currentStep === 3 && 'Pick a convenient slot'}
+                                    {currentStep === 4 && 'Delivery & Logistics'}
+                                    {currentStep === 5 && 'Verify Information'}
+                                </h2>
                             </div>
-                            <h2 className="text-3xl lg:text-4xl font-display font-bold text-gray-900">
-                                {currentStep === 1 && 'What are we recycling?'}
-                                {currentStep === 2 && 'Give us the details'}
-                                {currentStep === 3 && 'Pick a convenient slot'}
-                                {currentStep === 4 && 'Delivery & Logistics'}
-                                {currentStep === 5 && 'Verify Information'}
-                            </h2>
+
+                            {/* Top Navigation Buttons */}
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleBack}
+                                    disabled={currentStep === 1 || isSubmitting}
+                                    className={`
+                                        px-6 py-3 rounded-2xl font-bold text-gray-400 hover:text-eco-600 hover:bg-eco-50 transition-all flex items-center gap-2 border border-transparent hover:border-eco-100
+                                        ${currentStep === 1 ? 'opacity-0 pointer-events-none' : ''}
+                                    `}
+                                >
+                                    <ArrowLeft size={18} />
+                                    <span className="text-sm uppercase tracking-widest leading-none">Back</span>
+                                </button>
+
+                                {currentStep < 5 ? (
+                                    <button
+                                        onClick={handleNext}
+                                        disabled={isNextDisabled}
+                                        className="px-8 py-3.5 bg-eco-950 text-white rounded-2xl font-bold hover:bg-black shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-3 disabled:opacity-30 disabled:pointer-events-none"
+                                    >
+                                        <span className="text-sm uppercase tracking-widest leading-none">Continue</span>
+                                        <ArrowRight size={18} />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={isSubmitDisabled}
+                                        className="px-8 py-3.5 bg-emerald-500 text-white rounded-2xl font-bold hover:bg-emerald-600 shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-3 disabled:opacity-70 disabled:pointer-events-none"
+                                    >
+                                        <span className="text-sm uppercase tracking-widest leading-none">{isSubmitting ? '...' : 'Submit'}</span>
+                                        <Check size={18} strokeWidth={3} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="flex-1">
@@ -1296,9 +1473,9 @@ const RecycleRequestForm: React.FC = () => {
                                 onClick={handleBack}
                                 disabled={currentStep === 1 || isSubmitting}
                                 className={`
-                        px-8 py-4 rounded-2xl font-bold text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-all flex items-center gap-2
-                        ${currentStep === 1 ? 'opacity-0 pointer-events-none' : ''}
-                        `}
+                                    px-8 py-4 rounded-2xl font-bold text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-all flex items-center gap-2
+                                    ${currentStep === 1 ? 'opacity-0 pointer-events-none' : ''}
+                                `}
                             >
                                 <ArrowLeft size={20} /> <span className="text-lg">Go Back</span>
                             </button>
@@ -1306,14 +1483,7 @@ const RecycleRequestForm: React.FC = () => {
                             {currentStep < 5 ? (
                                 <button
                                     onClick={handleNext}
-                                    disabled={
-                                        (currentStep === 1 && !formData.deviceType) ||
-                                        (currentStep === 2 && (!formData.brandId || !formData.modelId || !formData.condition)) ||
-                                        (currentStep === 3 && !formData.serviceType) ||
-                                        (currentStep === 3 && formData.serviceType === 'Pickup' && (!formData.pickupDate || !formData.pickupTime)) ||
-                                        (currentStep === 3 && formData.serviceType === 'Dropoff' && !formData.facilityId) ||
-                                        (currentStep === 4 && !formData.address)
-                                    }
+                                    disabled={isNextDisabled}
                                     className="px-12 py-5 bg-eco-950 text-white rounded-2xl font-bold hover:bg-black shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3 disabled:opacity-30 disabled:pointer-events-none"
                                 >
                                     <span className="text-lg">Continue</span> <ArrowRight size={20} />
@@ -1321,7 +1491,7 @@ const RecycleRequestForm: React.FC = () => {
                             ) : (
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={isSubmitting || !formData.checklist?.backup || !formData.checklist?.accounts || !formData.checklist?.factoryReset}
+                                    disabled={isSubmitDisabled}
                                     className="px-12 py-5 bg-emerald-500 text-white rounded-2xl font-bold hover:bg-emerald-600 shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3 disabled:opacity-70 disabled:pointer-events-none"
                                 >
                                     {isSubmitting ? (

@@ -120,9 +120,8 @@ const FacilityMap: React.FC = () => {
       const loadFacilities = async () => {
         try {
           setIsLoading(true);
-          const facilities = await fetchFacilities();
-
-          const sortedFacilities = facilities
+          const result = await fetchFacilities();
+          const sortedFacilities = result.content
             .map((facility) => ({
               ...facility,
               distance: calculateDistance(

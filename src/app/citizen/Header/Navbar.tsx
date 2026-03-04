@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ClientIonIcon from "@/components/ClientIonIcon";
@@ -25,6 +25,7 @@ const Header = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [toastConfig, setToastConfig] = useState({ isOpen: false, title: '', message: '' });
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const handleLocationClick = () => {
         // Show toast requesting location access
@@ -148,6 +149,27 @@ const Header = () => {
         };
     }, [isDashboardRoute]);
 
+    // Close dropdown on route change
+    useEffect(() => {
+        setIsDropdownOpen(false);
+    }, [pathname]);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        if (isDropdownOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isDropdownOpen]);
+
     const user = getUser();
     const displayName = user?.username || user?.fullName || user?.email || "User";
 
@@ -216,7 +238,7 @@ const Header = () => {
                         </button>
 
                         {(mounted && user) ? (
-                            <div className="relative group">
+                            <div className="relative" ref={dropdownRef}>
                                 <button
                                     className="flex items-center gap-3 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all duration-300"
                                     onClick={handleToggleDropdown}
@@ -237,13 +259,21 @@ const Header = () => {
                                             <p className="text-xs text-slate-400 truncate mt-0.5">{getEmail() || 'Citizen Account'}</p>
                                         </div>
                                         <div className="p-2">
-                                            <Link href="/citizen/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all duration-200 group/item">
+                                            <Link
+                                                href="/citizen/profile"
+                                                onClick={() => setIsDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all duration-200 group/item"
+                                            >
                                                 <div className="p-2 bg-slate-50 group-hover/item:bg-white rounded-lg transition-colors">
                                                     <FiUser className="text-slate-400 group-hover/item:text-emerald-500" size={18} />
                                                 </div>
                                                 <span>Profile Settings</span>
                                             </Link>
-                                            <Link href="/citizen/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all duration-200 group/item">
+                                            <Link
+                                                href="/citizen/dashboard"
+                                                onClick={() => setIsDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all duration-200 group/item"
+                                            >
                                                 <div className="p-2 bg-slate-50 group-hover/item:bg-white rounded-lg transition-colors">
                                                     <LayoutDashboard className="text-slate-400 group-hover/item:text-emerald-500" size={18} />
                                                 </div>

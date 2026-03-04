@@ -217,6 +217,12 @@ export const userProfileApi = {
             headers: getAuthHeaders(),
         });
         return response;
+    },
+    update: async (data: any) => {
+        const response = await adminApiClient.put("/profile", data, {
+            headers: getAuthHeaders(),
+        });
+        return response;
     }
 };
 

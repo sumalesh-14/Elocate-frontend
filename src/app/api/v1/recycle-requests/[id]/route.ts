@@ -4,11 +4,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const authHeader = request.headers.get("Authorization");
-        const id = params.id;
+        const { id } = await params;
 
         const response = await fetch(`${API_BASE_URL}/api/v1/recycle-requests/${id}`, {
             method: "GET",
