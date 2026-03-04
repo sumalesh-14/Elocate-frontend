@@ -1,9 +1,23 @@
 /**
  * API client for the Image Device Identification Service (Python Microservice).
+ *
+ * ─── MOCK MODE ────────────────────────────────────────────────────────────────
+ * Set USE_MOCK = true  →  cycles through all realistic scenarios locally.
+ * Set USE_MOCK = false →  hits the real Python microservice.
+ * ──────────────────────────────────────────────────────────────────────────────
  */
 
-const IMAGE_ANALYZER_URL = process.env.NEXT_PUBLIC_IMAGE_ANALYZER_URL || 'https://elocate-python-production.up.railway.app';
-const IMAGE_ANALYZER_API_KEY = process.env.NEXT_PUBLIC_IMAGE_ANALYZER_API_KEY || 'XBZLmUDmGb0TxCGwkjPoHPAIuXPYTy0i5iOQ5HOR3Pk';
+// ✅ Toggle mock mode here
+const USE_MOCK = true;
+
+const IMAGE_ANALYZER_URL =
+    process.env.NEXT_PUBLIC_IMAGE_ANALYZER_URL ||
+    'https://elocate-python-production.up.railway.app';
+const IMAGE_ANALYZER_API_KEY =
+    process.env.NEXT_PUBLIC_IMAGE_ANALYZER_API_KEY ||
+    'XBZLmUDmGb0TxCGwkjPoHPAIuXPYTy0i5iOQ5HOR3Pk';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AnalysisResult {
     success: boolean;
@@ -15,6 +29,7 @@ export interface AnalysisResult {
         model: string | null;
         deviceType: string;
         confidenceScore: number;
+        accuracy: number;
         attributes: Record<string, any>;
         info_note: string | null;
         severity: 'low' | 'medium' | 'high' | 'critical';
@@ -23,6 +38,15 @@ export interface AnalysisResult {
         contains_hazardous_materials: boolean;
         hazardous_materials_info: string | null;
         lowConfidence: boolean;
+        model_uncertainty_reason: string | null;
+        // Database matching fields
+        category_id: string | null;
+        brand_id: string | null;
+        model_id: string | null;
+        category_match_score: number | null;
+        brand_match_score: number | null;
+        model_match_score: number | null;
+        database_status: 'success' | 'partial_success' | 'failure' | 'unavailable';
     } | null;
     error: {
         code: string;
@@ -30,25 +54,246 @@ export interface AnalysisResult {
     } | null;
 }
 
+// ─── Mock Scenarios ───────────────────────────────────────────────────────────
+
 /**
- * Analyzes a device image using the Python microservice.
+ * Each call to analyzeDeviceImage (in mock mode) cycles to the next scenario.
+ *
+ * Scenarios:
+ *  0 – High confidence, full DB match (Smartphone, Apple iPhone 15 Pro)
+ *  1 – Medium confidence, partial DB match (Laptop, Dell XPS 15)
+ *  2 – Low confidence, no DB match (Tablet, Samsung – model uncertain)
+ *  3 – High confidence, hazardous + precious metals (Printer, HP LaserJet)
+ *  4 – High confidence, critical severity (Battery Pack – swollen)
+ *  5 – API failure / network error
+ */
+let _mockScenarioIndex = 0;
+
+const MOCK_SCENARIOS: AnalysisResult[] = [
+    // ── Scenario 0: Full success, high confidence ──────────────────────────
+    {
+        success: true,
+        timestamp: new Date().toISOString(),
+        processingTimeMs: 843,
+        data: {
+            category: 'Laptop',
+            brand: 'Apple',
+            model: 'MacBook Pro 16 (M4)',
+            deviceType: 'Laptop Computer',
+            confidenceScore: 0.94,
+            accuracy: 0.92,
+            attributes: { color: 'Space Black', storage: '1TB', condition_hint: 'Good' },
+            info_note: 'Device appears to be in good working condition.',
+            severity: 'low',
+            contains_precious_metals: true,
+            precious_metals_info: 'Contains gold, silver, and palladium in circuit board.',
+            contains_hazardous_materials: false,
+            hazardous_materials_info: null,
+            lowConfidence: false,
+            model_uncertainty_reason: null,
+            // ⚠️ Replace these IDs with real UUIDs from your DB if you want "Use This" to pre-fill dropdowns
+            category_id: 'd91afb88-740a-4232-8f6c-ce26188aaac7',
+            brand_id: 'a1c320c7-9c8d-4b63-8638-1c6ee64e3b74',
+            model_id: '754d5a16-6d13-4478-97aa-9072cf6d2c9b',
+            category_match_score: 0.97,
+            brand_match_score: 0.95,
+            model_match_score: 0.91,
+            database_status: 'success',
+        },
+        error: null,
+    },
+
+    // ── Scenario 1: Medium confidence, partial DB match ────────────────────
+    {
+        success: true,
+        timestamp: new Date().toISOString(),
+        processingTimeMs: 1124,
+        data: {
+            category: 'Laptop',
+            brand: 'Apple',
+            model: 'MacBook Pro 16 (M4)',
+            deviceType: 'Laptop Computer',
+            confidenceScore: 0.61,
+            accuracy: 0.58,
+            attributes: { screen_size: '16"', keyboard_visible: true },
+            info_note: 'Could be M3 or M4 variant — angle makes it hard to distinguish.',
+            severity: 'medium',
+            contains_precious_metals: true,
+            precious_metals_info: 'Trace gold in CPU sockets and RAM connectors.',
+            contains_hazardous_materials: false,
+            hazardous_materials_info: null,
+            lowConfidence: false,
+            model_uncertainty_reason: 'Device angle obscures the model sticker. Year variant unclear.',
+            category_id: 'd91afb88-740a-4232-8f6c-ce26188aaac7',
+            brand_id: 'a1c320c7-9c8d-4b63-8638-1c6ee64e3b74',
+            model_id: '754d5a16-6d13-4478-97aa-9072cf6d2c9b',
+            category_match_score: 0.88,
+            brand_match_score: 0.79,
+            model_match_score: null,
+            database_status: 'partial_success',
+        },
+        error: null,
+    },
+
+    // ── Scenario 2: Low confidence, no DB match ────────────────────────────
+    {
+        success: true,
+        timestamp: new Date().toISOString(),
+        processingTimeMs: 672,
+        data: {
+            category: 'Laptop',
+            brand: 'Apple',
+            model: 'MacBook Pro 16 (M4)',
+            deviceType: 'Laptop Computer',
+            confidenceScore: 0.34,
+            accuracy: 0.31,
+            attributes: { screen_visible: true, trackpad_detected: false },
+            info_note: 'Image quality is low. Please try a clearer, well-lit photo from the front.',
+            severity: 'low',
+            contains_precious_metals: false,
+            precious_metals_info: null,
+            contains_hazardous_materials: false,
+            hazardous_materials_info: null,
+            lowConfidence: true,
+            model_uncertainty_reason: 'Image is blurry and lighting is poor. Cannot identify exact model series.',
+            category_id: 'd91afb88-740a-4232-8f6c-ce26188aaac7',
+            brand_id: 'a1c320c7-9c8d-4b63-8638-1c6ee64e3b74',
+            model_id: '754d5a16-6d13-4478-97aa-9072cf6d2c9b',
+            category_match_score: 0.45,
+            brand_match_score: 0.38,
+            model_match_score: null,
+            database_status: 'failure',
+        },
+        error: null,
+    },
+
+    // ── Scenario 3: High confidence, hazardous + precious metals ───────────
+    {
+        success: true,
+        timestamp: new Date().toISOString(),
+        processingTimeMs: 988,
+        data: {
+            category: 'Laptop',
+            brand: 'Apple',
+            model: 'MacBook Pro 16 (M4)',
+            deviceType: 'Laptop Computer',
+            confidenceScore: 0.87,
+            accuracy: 0.85,
+            attributes: { battery_swelling: true, screen_cracked: false },
+            info_note: 'Please handle with care. Battery seems damaged.',
+            severity: 'high',
+            contains_precious_metals: true,
+            precious_metals_info: 'Small amounts of gold in circuit board connectors.',
+            contains_hazardous_materials: true,
+            hazardous_materials_info: 'Battery pack swelling detected.',
+            lowConfidence: false,
+            model_uncertainty_reason: null,
+            category_id: 'd91afb88-740a-4232-8f6c-ce26188aaac7',
+            brand_id: 'a1c320c7-9c8d-4b63-8638-1c6ee64e3b74',
+            model_id: '754d5a16-6d13-4478-97aa-9072cf6d2c9b',
+            category_match_score: 0.93,
+            brand_match_score: 0.91,
+            model_match_score: 0.84,
+            database_status: 'success',
+        },
+        error: null,
+    },
+
+    // ── Scenario 4: Critical severity (swollen battery) ───────────────────
+    {
+        success: true,
+        timestamp: new Date().toISOString(),
+        processingTimeMs: 756,
+        data: {
+            category: 'Laptop',
+            brand: 'Apple',
+            model: 'MacBook Pro 16 (M4)',
+            deviceType: 'Laptop Computer',
+            confidenceScore: 0.82,
+            accuracy: 0.79,
+            attributes: { case_bulging: true, screen_cracked: true },
+            info_note: 'Bottom cover appears to be bulging — possible battery swelling. Handle with extreme care. Do NOT attempt to puncture or charge.',
+            severity: 'critical',
+            contains_precious_metals: true,
+            precious_metals_info: 'Gold and palladium in board connectors.',
+            contains_hazardous_materials: true,
+            hazardous_materials_info: 'Swollen Li-ion battery: risk of fire or explosion if punctured or exposed to heat.',
+            lowConfidence: false,
+            model_uncertainty_reason: null,
+            category_id: 'd91afb88-740a-4232-8f6c-ce26188aaac7',
+            brand_id: 'a1c320c7-9c8d-4b63-8638-1c6ee64e3b74',
+            model_id: '754d5a16-6d13-4478-97aa-9072cf6d2c9b',
+            category_match_score: 0.89,
+            brand_match_score: 0.83,
+            model_match_score: 0.76,
+            database_status: 'success',
+        },
+        error: null,
+    },
+
+    // ── Scenario 5: API / Network failure ─────────────────────────────────
+    {
+        success: false,
+        timestamp: new Date().toISOString(),
+        processingTimeMs: 0,
+        data: null,
+        error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message: 'Mock: AI analysis service is temporarily unavailable. Please try again later.',
+        },
+    },
+];
+
+// ─── Mock Helper ──────────────────────────────────────────────────────────────
+
+async function mockAnalyzeDeviceImage(_file: File): Promise<AnalysisResult> {
+    // Simulate realistic network delay (800ms – 1.8s)
+    const delay = 800 + Math.random() * 1000;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    const scenario = MOCK_SCENARIOS[_mockScenarioIndex % MOCK_SCENARIOS.length];
+    _mockScenarioIndex++;
+
+    console.info(
+        `[MOCK AI] Scenario ${(_mockScenarioIndex - 1) % MOCK_SCENARIOS.length}: ` +
+        `${scenario.success ? `${scenario.data?.brand} ${scenario.data?.model} (${Math.round((scenario.data?.confidenceScore ?? 0) * 100)}% conf)` : `ERROR – ${scenario.error?.code}`}`
+    );
+
+    // Return a fresh copy with updated timestamp
+    return {
+        ...scenario,
+        timestamp: new Date().toISOString(),
+        processingTimeMs: Math.round(delay),
+    };
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Analyzes a device image.
+ * Delegates to mock or real implementation based on USE_MOCK flag.
  */
 export async function analyzeDeviceImage(file: File): Promise<AnalysisResult> {
+    if (USE_MOCK) {
+        return mockAnalyzeDeviceImage(file);
+    }
+
+    // ── Real implementation ────────────────────────────────────────────────
     const formData = new FormData();
     formData.append('file', file);
 
     try {
         const response = await fetch(`${IMAGE_ANALYZER_URL}/api/v1/analyze`, {
             method: 'POST',
-            headers: {
-                'X-API-Key': IMAGE_ANALYZER_API_KEY,
-            },
+            headers: { 'X-API-Key': IMAGE_ANALYZER_API_KEY },
             body: formData,
         });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error?.message || `Analysis failed with status ${response.status}`);
+            throw new Error(
+                errorData.error?.message || `Analysis failed with status ${response.status}`
+            );
         }
 
         return await response.json();
@@ -61,7 +306,10 @@ export async function analyzeDeviceImage(file: File): Promise<AnalysisResult> {
             data: null,
             error: {
                 code: 'NETWORK_ERROR',
-                message: error instanceof Error ? error.message : 'Failed to connect to image analysis service',
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to connect to image analysis service',
             },
         };
     }
@@ -71,11 +319,13 @@ export async function analyzeDeviceImage(file: File): Promise<AnalysisResult> {
  * Checks if the image analysis service is healthy.
  */
 export async function checkAnalyzerHealth(): Promise<boolean> {
+    if (USE_MOCK) return true;
+
     try {
         const response = await fetch(`${IMAGE_ANALYZER_URL}/health`);
         const data = await response.json();
         return response.ok && (data.status === 'healthy' || data.status === 'degraded');
-    } catch (error) {
+    } catch {
         return false;
     }
 }

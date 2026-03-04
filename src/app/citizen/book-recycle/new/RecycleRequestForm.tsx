@@ -7,7 +7,8 @@ import {
     Search,
     ArrowLeft, Upload, Check, MapPin, Calendar, Clock, Truck, Package,
     ShieldCheck, HelpCircle, Info, Sparkles, Activity, Hammer, Cpu,
-    Square, CheckSquare, Eraser, ChevronDown, Layers
+    Square, CheckSquare, Eraser, ChevronDown, Layers, AlertTriangle,
+    ChevronUp, Zap, X, RefreshCw, Bot, Star, Shield, Flame
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
@@ -20,7 +21,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { calculateDistance } from '@/lib/utils/calculateLocation';
 import { fetchFacilities } from '@/lib/utils/facilityApi';
 import getLocation from '@/lib/utils/getLocation';
-import { analyzeDeviceImage, checkAnalyzerHealth } from '@/lib/image-analyzer-api';
+import { analyzeDeviceImage, checkAnalyzerHealth, AnalysisResult } from '@/lib/image-analyzer-api';
 import SuccessModal from '@/app/citizen/Components/SuccessModal';
 
 // --- Types ---
@@ -80,6 +81,10 @@ interface Step1Props extends StepProps {
     onPageChange: (newPage: number) => void;
     categorySearch: string;
     onSearchChange: (val: string) => void;
+    aiResult: AnalysisResult | null;
+    onUseAiResult: () => void;
+    onDismissAiResult: () => void;
+    aiFilledByAnalysis: boolean;
 }
 
 interface Step2Props extends StepProps {
@@ -87,6 +92,7 @@ interface Step2Props extends StepProps {
     brands: any[];
     isLoadingModels: boolean;
     models: any[];
+    aiFilledByAnalysis: boolean;
 }
 
 interface Step4Props extends StepProps {
@@ -96,6 +102,173 @@ interface Step4Props extends StepProps {
 }
 
 // --- Sub-components ---
+
+/**
+ * Circular confidence score ring indicator.
+ */
+const ConfidenceRing: React.FC<{ score: number }> = ({ score }) => {
+    const pct = Math.round(score * 100);
+    const radius = 26;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (pct / 100) * circumference;
+    const color = pct >= 70 ? '#10b981' : pct >= 40 ? '#f59e0b' : '#ef4444';
+    const label = pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low';
+
+    return (
+        <div className="flex flex-col items-center gap-1">
+            <div className="relative w-16 h-16">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
+                    <circle cx="32" cy="32" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="6" />
+                    <circle
+                        cx="32" cy="32" r={radius}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth="6"
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                    />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-black" style={{ color }}>{pct}%</span>
+                </div>
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color }}>{label}</span>
+        </div>
+    );
+};
+
+/**
+ * AI result card shown after image analysis completes.
+ * User chooses to "Use This" or "Try Again".
+ */
+const AiResultCard: React.FC<{
+    result: AnalysisResult;
+    onUse: () => void;
+    onDismiss: () => void;
+}> = ({ result, onUse, onDismiss }) => {
+    const d = result.data!;
+    const severityColors: Record<string, string> = {
+        low: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+        medium: 'text-amber-600 bg-amber-50 border-amber-100',
+        high: 'text-orange-600 bg-orange-50 border-orange-100',
+        critical: 'text-red-600 bg-red-50 border-red-100',
+    };
+
+    return (
+        <div className="animate-fade-in-up">
+            <div className="relative bg-gradient-to-br from-slate-900 via-eco-950 to-slate-900 rounded-[2rem] p-6 overflow-hidden border border-eco-800/30 shadow-2xl">
+                {/* Background glows */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-eco-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl -ml-10 -mb-10"></div>
+
+                {/* Header row */}
+                <div className="relative z-10 flex items-start justify-between gap-4 mb-5">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-eco-500/20 rounded-xl flex items-center justify-center text-eco-400 border border-eco-500/20">
+                            <Bot size={20} />
+                        </div>
+                        <div>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-eco-500/20 rounded-full text-[9px] font-black uppercase tracking-widest text-eco-300 border border-eco-500/20 mb-1">
+                                <Zap size={8} /> AI Identified
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-medium leading-none">
+                                {result.processingTimeMs}ms · {d.database_status === 'success' ? '✓ DB matched' : d.database_status === 'partial_success' ? '⚡ Partial match' : '○ No DB match'}
+                            </p>
+                        </div>
+                    </div>
+                    <ConfidenceRing score={d.confidenceScore} />
+                </div>
+
+                {/* Device info */}
+                <div className="relative z-10 mb-4">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{d.category} · {d.deviceType}</div>
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{d.brand || 'Unknown Brand'}</div>
+                    <div className="text-2xl font-display font-black text-white leading-tight">{d.model || 'Unknown Model'}</div>
+                </div>
+
+                {/* Badges row */}
+                <div className="relative z-10 flex flex-wrap gap-2 mb-4">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${severityColors[d.severity]}`}>
+                        <Shield size={9} /> {d.severity} risk
+                    </span>
+                    {d.contains_hazardous_materials && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-100">
+                            <Flame size={9} /> Hazardous
+                        </span>
+                    )}
+                    {d.contains_precious_metals && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-100">
+                            <Star size={9} /> Precious Metals
+                        </span>
+                    )}
+                    {d.lowConfidence && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-800/50 border border-slate-700">
+                            Low Confidence
+                        </span>
+                    )}
+                </div>
+
+                {/* Model uncertainty reason */}
+                {d.model_uncertainty_reason && (
+                    <div className="relative z-10 flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-4">
+                        <AlertTriangle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                        <div>
+                            <div className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-0.5">Why uncertain?</div>
+                            <p className="text-[11px] text-amber-200/80 leading-snug font-medium">{d.model_uncertainty_reason}</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Info note */}
+                {d.info_note && (
+                    <div className="relative z-10 flex items-start gap-2 p-3 bg-white/5 rounded-xl mb-4 border border-white/5">
+                        <Info size={12} className="text-slate-400 shrink-0 mt-0.5" />
+                        <p className="text-[11px] text-slate-300/80 leading-snug italic">{d.info_note}</p>
+                    </div>
+                )}
+
+                {/* DB match indicators */}
+                {d.database_status !== 'unavailable' && (
+                    <div className="relative z-10 grid grid-cols-3 gap-2 mb-5">
+                        {[{ label: 'Category', score: d.category_match_score }, { label: 'Brand', score: d.brand_match_score }, { label: 'Model', score: d.model_match_score }].map(item => (
+                            <div key={item.label} className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">{item.label}</div>
+                                {item.score !== null ? (
+                                    <>
+                                        <div className="w-full h-1 bg-slate-700 rounded-full overflow-hidden">
+                                            <div className="h-full bg-eco-500 rounded-full transition-all" style={{ width: `${Math.round(item.score * 100)}%` }}></div>
+                                        </div>
+                                        <div className="text-[9px] font-bold text-slate-400 mt-1">{Math.round(item.score * 100)}% match</div>
+                                    </>
+                                ) : (
+                                    <div className="text-[9px] font-bold text-slate-600">—</div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* CTA Buttons */}
+                <div className="relative z-10 flex gap-3">
+                    <button
+                        onClick={onUse}
+                        className="flex-1 py-3.5 bg-eco-500 hover:bg-eco-400 text-white rounded-xl font-black text-sm uppercase tracking-widest transition-all hover:-translate-y-0.5 shadow-lg shadow-eco-500/30 flex items-center justify-center gap-2"
+                    >
+                        <Check size={16} strokeWidth={3} /> Use This
+                    </button>
+                    <button
+                        onClick={onDismiss}
+                        className="px-5 py-3.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl font-black text-sm uppercase tracking-widest transition-all border border-white/10 flex items-center justify-center gap-2"
+                    >
+                        <RefreshCw size={14} /> Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const SearchableSelect: React.FC<{
     label: string,
@@ -251,8 +424,14 @@ const Step1_DeviceType: React.FC<Step1Props> = ({
     categoryTotalPages,
     onPageChange,
     categorySearch,
-    onSearchChange
+    onSearchChange,
+    aiResult,
+    onUseAiResult,
+    onDismissAiResult,
+    aiFilledByAnalysis,
 }) => {
+    // Category accordion open/close
+    const [categoryGridOpen, setCategoryGridOpen] = useState(!formData.deviceType && !aiResult);
     const getIconForCategory = (name: string) => {
         const n = name.toLowerCase();
         if (n.includes('laptop')) return Laptop;
@@ -266,124 +445,223 @@ const Step1_DeviceType: React.FC<Step1Props> = ({
     };
 
     return (
-        <div className="space-y-4 animate-fade-in-up">
+        <div className="space-y-5 animate-fade-in-up">
             <SelectionPath category={formData.deviceType || undefined} />
-            <div
-                className={`bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-6 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm relative ${isAnalyzing ? 'opacity-50 pointer-events-none' : ''}`}
-                onClick={() => document.getElementById('device-image-upload')?.click()}
-            >
-                <input
-                    type="file"
-                    id="device-image-upload"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) onImageAnalyze(file);
+
+            {/* ── Identification Overview ── */}
+            {!aiResult && !formData.deviceType && (
+                <div className="flex items-start gap-3 px-4 py-3 max-w-lg mx-auto mb-4 animate-fade-in bg-red-50/80 hover:bg-red-50 border border-red-100/80 rounded-2xl text-red-600 shadow-sm transition-colors">
+                    <Info size={20} className="shrink-0 mt-0.5 text-red-500" />
+                    <p className="text-sm font-semibold leading-relaxed text-red-700/90">
+                        You can use our intelligent AI for automatic image analysis, or simply choose to enter your device details manually below.
+                    </p>
+                </div>
+            )}
+
+            {/* ── AI Upload Zone ── */}
+            {!aiResult && (
+                <div
+                    className={`bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-6 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm relative ${isAnalyzing ? 'opacity-60 pointer-events-none' : ''}`}
+                    onClick={() => document.getElementById('device-image-upload')?.click()}
+                >
+                    <input
+                        type="file"
+                        id="device-image-upload"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) onImageAnalyze(file);
+                        }}
+                    />
+                    {isAnalyzing ? (
+                        <div className="flex flex-col items-center py-4">
+                            <div className="relative mb-4">
+                                <div className="w-14 h-14 border-4 border-eco-500 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Bot size={18} className="text-eco-500" />
+                                </div>
+                            </div>
+                            <h3 className="font-black text-eco-900 text-lg uppercase tracking-wide">AI Analyzing...</h3>
+                            <p className="text-sm text-eco-600 mt-1 font-medium">Scanning device features and matching database</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-eco-600 shadow-md group-hover:scale-110 transition-transform">
+                                <Upload size={24} />
+                            </div>
+                            <h3 className="font-black text-eco-900 text-lg">Snap &amp; Identify with AI</h3>
+                            <p className="text-sm text-eco-600 mt-1.5 max-w-xs mx-auto font-medium">Upload a photo and our AI will detect brand, model, and auto-fill the form.</p>
+                            <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-eco-500/10 rounded-full text-[10px] font-black uppercase tracking-widest text-eco-700">
+                                <Zap size={10} /> Powered by Gemini Vision
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
+
+            {/* ── AI Result Card ── */}
+            {aiResult && aiResult.data && (
+                <AiResultCard
+                    result={aiResult}
+                    onUse={onUseAiResult}
+                    onDismiss={onDismissAiResult}
+                />
+            )}
+
+            {/* ── Re-upload trigger when result is shown ── */}
+            {aiResult && (
+                <button
+                    onClick={() => {
+                        onDismissAiResult();
+                        setTimeout(() => document.getElementById('device-image-upload-2')?.click(), 100);
                     }}
-                />
+                    className="w-full py-3 border-2 border-dashed border-eco-200 rounded-2xl text-center text-sm font-bold text-eco-600 hover:bg-eco-50 hover:border-eco-400 transition-all flex items-center justify-center gap-2"
+                >
+                    <RefreshCw size={14} /> Retake / Upload Different Image
+                    <input type="file" id="device-image-upload-2" className="hidden" accept="image/*"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) onImageAnalyze(f); }}
+                    />
+                </button>
+            )}
 
-                {isAnalyzing ? (
-                    <div className="flex flex-col items-center py-2">
-                        <div className="w-12 h-12 border-4 border-eco-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <h3 className="font-bold text-eco-900 text-lg">Analyzing Device...</h3>
-                        <p className="text-sm text-eco-600 mt-1 font-medium">Our AI is identifying your device</p>
-                    </div>
-                ) : (
-                    <>
-                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-eco-600 shadow-md group-hover:scale-110 transition-transform">
-                            <Upload size={24} />
-                        </div>
-                        <h3 className="font-bold text-eco-900 text-lg">Snap & Identify</h3>
-                        <p className="text-sm text-eco-600 mt-1 max-w-xs mx-auto font-medium">Upload a photo and our AI will automatically detect your device.</p>
-                    </>
-                )}
+            {/* ── Separator ── */}
+            <div className="relative flex items-center">
+                <div className="flex-1 border-t border-gray-100"></div>
+                <span className="px-4 text-gray-400 font-bold tracking-widest uppercase text-xs italic">Or select category manually</span>
+                <div className="flex-1 border-t border-gray-100"></div>
             </div>
 
-            <div className="relative flex items-center justify-between">
-                <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-100"></div>
+            {/* ── Selected Category Chip (when already selected) ── */}
+            {formData.deviceType && (
+                <div className="flex items-center gap-3 px-1">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-eco-50 border border-eco-200 rounded-xl">
+                        <Check size={14} className="text-eco-600" />
+                        <span className="text-sm font-black text-eco-900">{formData.deviceType}</span>
+                    </div>
+                    <button
+                        onClick={() => {
+                            updateField('deviceType', null);
+                            updateField('categoryId', '');
+                            setCategoryGridOpen(true);
+                        }}
+                        className="text-[11px] font-bold text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1"
+                    >
+                        <X size={12} /> Change
+                    </button>
                 </div>
-                <div className="relative flex justify-center text-xs w-full">
-                    <span className="px-4 bg-white text-gray-400 font-bold tracking-widest uppercase italic">Or select category manually</span>
+            )}
+
+            {/* ── Category Accordion Toggle ── */}
+            <button
+                onClick={() => setCategoryGridOpen(o => !o)}
+                className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border-2 font-bold transition-all ${categoryGridOpen
+                    ? 'border-eco-300 bg-eco-50 text-eco-900'
+                    : 'border-slate-100 bg-slate-50/50 text-gray-600 hover:border-eco-200 hover:bg-eco-50/50'
+                    }`}
+            >
+                <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${categoryGridOpen ? 'bg-eco-500 text-white' : 'bg-white text-gray-400 border border-gray-100'
+                        }`}>
+                        <Package size={16} />
+                    </div>
+                    <span className="text-sm uppercase tracking-widest">
+                        {categoryGridOpen ? 'Hide Categories' : `Browse Categories`}
+                    </span>
+                    {!isLoadingCategories && (
+                        <span className="text-[10px] font-black text-gray-400">({categories.length} shown)</span>
+                    )}
                 </div>
+                {categoryGridOpen ? <ChevronUp size={18} className="text-eco-600" /> : <ChevronDown size={18} className="text-gray-400" />}
+            </button>
 
-                {/* Categories Pagination */}
-                {categoryTotalPages > 1 && !isLoadingCategories && (
-                    <div className="relative z-10 flex items-center gap-2 bg-white pl-4">
-                        <button
-                            disabled={categoryPage === 0}
-                            onClick={() => onPageChange(categoryPage - 1)}
-                            className="p-1.5 rounded-lg border border-gray-200 hover:bg-eco-50 hover:border-eco-200 disabled:opacity-30 transition-colors"
-                        >
-                            <ArrowLeft size={14} />
-                        </button>
-                        <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">{categoryPage + 1} / {categoryTotalPages}</span>
-                        <button
-                            disabled={categoryPage >= categoryTotalPages - 1}
-                            onClick={() => onPageChange(categoryPage + 1)}
-                            className="p-1.5 rounded-lg border border-gray-200 hover:bg-eco-50 hover:border-eco-200 disabled:opacity-30 transition-colors"
-                        >
-                            <ArrowRight size={14} />
-                        </button>
+            {/* ── Category Grid (accordion content) ── */}
+            {categoryGridOpen && (
+                <div className="space-y-4 animate-fade-in-up">
+                    {/* Search */}
+                    <div className="relative group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-600 transition-colors" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search categories (e.g. Laptop, Phone...)"
+                            value={categorySearch}
+                            onChange={(e) => onSearchChange(e.target.value)}
+                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-eco-500 transition-all text-gray-900 font-bold placeholder:text-gray-300 placeholder:font-medium"
+                        />
                     </div>
-                )}
-            </div>
 
-            {/* Category Search */}
-            <div className="relative group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-600 transition-colors" size={18} />
-                <input
-                    type="text"
-                    placeholder="Search categories (e.g. Laptop, Phone...)"
-                    value={categorySearch}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-eco-500 transition-all text-gray-900 font-bold placeholder:text-gray-300 placeholder:font-medium"
-                />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 h-auto content-start overflow-hidden relative">
-                {isLoadingCategories ? (
-                    <div className="col-span-2 flex flex-col items-center justify-center py-20 animate-pulse">
-                        <div className="w-16 h-16 bg-eco-100 rounded-full mb-4 flex items-center justify-center">
-                            <Package className="text-eco-400" size={32} />
-                        </div>
-                        <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Fetching categories...</p>
-                    </div>
-                ) : (
-                    categories.map((cat) => {
-                        const Icon = getIconForCategory(cat.name);
-                        const isSelected = formData.deviceType === cat.name;
-                        return (
+                    {/* Pagination (above grid) */}
+                    {categoryTotalPages > 1 && !isLoadingCategories && (
+                        <div className="flex items-center justify-end gap-2">
                             <button
-                                key={cat.id}
-                                onClick={() => {
-                                    updateField('deviceType', cat.name);
-                                    updateField('categoryId', cat.id);
-                                    updateField('brandId', '');
-                                    updateField('brand', '');
-                                    updateField('modelId', '');
-                                    updateField('model', '');
-                                }}
-                                className={`p-6 rounded-2xl border-2 text-left transition-all hover:shadow-xl flex items-center gap-5 group/btn ${isSelected ? 'border-eco-500 bg-eco-50/50 shadow-md' : 'border-slate-50 bg-slate-50/30 hover:bg-emerald-50/80 hover:border-emerald-200'}`}
+                                disabled={categoryPage === 0}
+                                onClick={() => onPageChange(categoryPage - 1)}
+                                className="p-1.5 rounded-lg border border-gray-200 hover:bg-eco-50 hover:border-eco-200 disabled:opacity-30 transition-colors"
                             >
-                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all shrink-0 ${isSelected ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}>
-                                    <Icon size={24} />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <div className={`font-bold text-lg truncate ${isSelected ? 'text-eco-950' : 'text-gray-900'}`}>{cat.name}</div>
-                                    <div className="text-xs text-gray-400 mt-0.5 font-medium truncate">{cat.description || 'Misc Electronics'}</div>
-                                </div>
+                                <ArrowLeft size={14} />
                             </button>
-                        );
-                    })
-                )}
-            </div>
+                            <span className="text-[10px] font-bold text-gray-500">{categoryPage + 1} / {categoryTotalPages}</span>
+                            <button
+                                disabled={categoryPage >= categoryTotalPages - 1}
+                                onClick={() => onPageChange(categoryPage + 1)}
+                                className="p-1.5 rounded-lg border border-gray-200 hover:bg-eco-50 hover:border-eco-200 disabled:opacity-30 transition-colors"
+                            >
+                                <ArrowRight size={14} />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {isLoadingCategories ? (
+                            <div className="col-span-2 flex flex-col items-center justify-center py-16 animate-pulse">
+                                <div className="w-14 h-14 bg-eco-100 rounded-full mb-3 flex items-center justify-center">
+                                    <Package className="text-eco-400" size={28} />
+                                </div>
+                                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Fetching categories...</p>
+                            </div>
+                        ) : (
+                            categories.map((cat) => {
+                                const Icon = getIconForCategory(cat.name);
+                                const isSelected = formData.deviceType === cat.name;
+                                return (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => {
+                                            updateField('deviceType', cat.name);
+                                            updateField('categoryId', cat.id);
+                                            updateField('brandId', '');
+                                            updateField('brand', '');
+                                            updateField('modelId', '');
+                                            updateField('model', '');
+                                            setCategoryGridOpen(false);
+                                        }}
+                                        className={`p-5 rounded-2xl border-2 text-left transition-all hover:shadow-xl flex items-center gap-4 ${isSelected
+                                            ? 'border-eco-500 bg-eco-50/50 shadow-md'
+                                            : 'border-slate-50 bg-slate-50/30 hover:bg-emerald-50/80 hover:border-emerald-200'
+                                            }`}
+                                    >
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shrink-0 ${isSelected ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'
+                                            }`}>
+                                            <Icon size={22} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className={`font-bold text-base truncate ${isSelected ? 'text-eco-950' : 'text-gray-900'}`}>{cat.name}</div>
+                                            <div className="text-xs text-gray-400 mt-0.5 font-medium truncate">{cat.description || 'Misc Electronics'}</div>
+                                        </div>
+                                        {isSelected && <Check size={16} className="text-eco-500 shrink-0" />}
+                                    </button>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
-const Step2_DeviceDetails: React.FC<Step2Props> = ({ formData, updateField, isLoadingBrands, brands, isLoadingModels, models }) => {
+const Step2_DeviceDetails: React.FC<Step2Props> = ({ formData, updateField, isLoadingBrands, brands, isLoadingModels, models, aiFilledByAnalysis }) => {
     const conditions: { val: Condition; label: string; desc: string; icon: React.ReactNode }[] = [
         { val: 'Working', label: 'Pristine / Working', desc: 'Fully functional, no damage', icon: <Sparkles size={20} /> },
         { val: 'Minor Issues', label: 'Fair / Minor Issues', desc: 'Working with cosmetic wear', icon: <Activity size={20} /> },
@@ -398,6 +676,21 @@ const Step2_DeviceDetails: React.FC<Step2Props> = ({ formData, updateField, isLo
                 brand={formData.brand || undefined}
                 model={formData.model || undefined}
             />
+
+            {/* AI pre-fill notice */}
+            {aiFilledByAnalysis && (
+                <div className="flex items-center gap-3 px-5 py-3.5 bg-gradient-to-r from-eco-50 to-emerald-50 border border-eco-100 rounded-2xl">
+                    <div className="w-8 h-8 bg-eco-500 rounded-lg flex items-center justify-center text-white shrink-0">
+                        <Bot size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="text-[9px] font-black text-eco-700 uppercase tracking-widest">AI Pre-filled</div>
+                        <p className="text-xs font-bold text-eco-800">Brand &amp; model were auto-detected. Verify below or change if needed.</p>
+                    </div>
+                    <Sparkles size={16} className="text-eco-400 shrink-0" />
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SearchableSelect
                     label="Device Brand"
@@ -1001,6 +1294,9 @@ const RecycleRequestForm: React.FC = () => {
     const [isLoadingModels, setIsLoadingModels] = useState(false);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [useProfileAddress, setUseProfileAddress] = useState(true);
+    // AI analysis state
+    const [aiResult, setAiResult] = useState<AnalysisResult | null>(null);
+    const [aiFilledByAnalysis, setAiFilledByAnalysis] = useState(false);
 
     const STORAGE_KEY = 'elocate_recycle_form_session';
 
@@ -1162,37 +1458,16 @@ const RecycleRequestForm: React.FC = () => {
 
     const handleImageAnalyze = async (file: File) => {
         setIsAnalyzing(true);
+        // Clear any previous AI result
+        setAiResult(null);
         try {
             const result = await analyzeDeviceImage(file);
             if (result.success && result.data) {
-                const { category, brand, model, info_note } = result.data;
-
-                // Find matching category ID
-                const matchedCategory = categories.find(c =>
-                    c.name.toLowerCase() === category.toLowerCase() ||
-                    category.toLowerCase().includes(c.name.toLowerCase())
-                );
-
-                if (matchedCategory) {
-                    updateField('deviceType', matchedCategory.name);
-                    updateField('categoryId', matchedCategory.id);
-
-                    // The brand and model will be loaded by the useEffects
-                    // We can pre-set the names if we want, but IDs are more important
-                    // For now, let's set the names as notes if no exact match is found
-                    if (brand) updateField('brand', brand);
-                    if (model) updateField('model', model);
-
-                    if (info_note) {
-                        updateField('notes', `AI Identification: ${info_note}\n\n${formData.notes}`);
-                    }
-
-                    showToast(`Device identified as ${brand || ''} ${model || category}`, 'success');
-                } else {
-                    showToast(`AI identified this as a ${category}, but we couldn't match it to our categories.`, 'info');
-                }
+                // Don't auto-apply — show the result card for user confirmation
+                setAiResult(result);
+                showToast('AI analysis complete. Review the result below.', 'success');
             } else {
-                showToast(result.error?.message || 'Failed to analyze image', 'error');
+                showToast(result.error?.message || 'Failed to analyze image. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Analysis failed:', error);
@@ -1200,6 +1475,49 @@ const RecycleRequestForm: React.FC = () => {
         } finally {
             setIsAnalyzing(false);
         }
+    };
+
+    /**
+     * Called when user confirms "Use This" on the AI Result Card.
+     * Applies all DB IDs and names from the analysis response to form state.
+     */
+    const handleUseAiResult = () => {
+        if (!aiResult?.data) return;
+        const d = aiResult.data;
+
+        // Try to match category from our loaded list first
+        const matchedCategory = categories.find(c =>
+            c.name.toLowerCase() === (d.category || '').toLowerCase() ||
+            (d.category || '').toLowerCase().includes(c.name.toLowerCase())
+        );
+
+        // Use DB category ID if available, else fall back to name match
+        const categoryId = d.category_id || matchedCategory?.id || '';
+        const categoryName = matchedCategory?.name || d.category || '';
+
+        updateField('deviceType', categoryName);
+        updateField('categoryId', categoryId);
+
+        if (d.brand_id) updateField('brandId', d.brand_id);
+        if (d.brand) updateField('brand', d.brand);
+
+        if (d.model_id) updateField('modelId', d.model_id);
+        if (d.model) updateField('model', d.model);
+
+        if (d.info_note) {
+            updateField('notes', `AI: ${d.info_note}\n\n${formData.notes}`.trim());
+        }
+
+        setAiFilledByAnalysis(true);
+        setAiResult(null);
+        showToast(`Applied: ${d.brand || ''} ${d.model || d.category}`, 'success');
+    };
+
+    /**
+     * Called when user clicks "Try Again" on the AI Result Card.
+     */
+    const handleDismissAiResult = () => {
+        setAiResult(null);
     };
 
     const handleSubmit = async () => {
@@ -1451,9 +1769,13 @@ const RecycleRequestForm: React.FC = () => {
                                     onPageChange={(page) => setCategoryPage(page)}
                                     categorySearch={categorySearch}
                                     onSearchChange={(val) => setCategorySearch(val)}
+                                    aiResult={aiResult}
+                                    onUseAiResult={handleUseAiResult}
+                                    onDismissAiResult={handleDismissAiResult}
+                                    aiFilledByAnalysis={aiFilledByAnalysis}
                                 />
                             )}
-                            {currentStep === 2 && <Step2_DeviceDetails formData={formData} updateField={updateField} isLoadingBrands={isLoadingBrands} brands={brands} isLoadingModels={isLoadingModels} models={models} />}
+                            {currentStep === 2 && <Step2_DeviceDetails formData={formData} updateField={updateField} isLoadingBrands={isLoadingBrands} brands={brands} isLoadingModels={isLoadingModels} models={models} aiFilledByAnalysis={aiFilledByAnalysis} />}
                             {currentStep === 3 && <Step3_ServiceType formData={formData} updateField={updateField} />}
                             {currentStep === 4 && (
                                 <Step4_Address
