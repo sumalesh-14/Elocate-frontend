@@ -2,58 +2,105 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+    LayoutDashboard,
+    Package,
+    Users,
+    Settings,
+    Truck,
+    Calendar,
+    BarChart2,
+    AlertTriangle,
+    ChevronRight,
+} from "lucide-react";
 
-const DashboardSidebar = () => {
+interface DashboardSidebarProps {
+    onNavigate?: () => void;
+}
+
+const navGroups = [
+    {
+        title: "Overview",
+        items: [
+            { name: "Dashboard", path: "/intermediary", icon: LayoutDashboard },
+        ],
+    },
+    {
+        title: "Operations",
+        items: [
+            { name: "Collections", path: "/intermediary/collections", icon: Package },
+            { name: "Assign Drivers", path: "/intermediary/assign-drivers", icon: Truck },
+            { name: "Schedule", path: "/intermediary/schedule", icon: Calendar },
+        ],
+    },
+    {
+        title: "Management",
+        items: [
+            { name: "Clients", path: "/intermediary/clients", icon: Users },
+            { name: "Reports", path: "/intermediary/reports", icon: BarChart2 },
+            { name: "Settings", path: "/intermediary/settings", icon: Settings },
+        ],
+    },
+];
+
+const DashboardSidebar = ({ onNavigate }: DashboardSidebarProps) => {
     const pathname = usePathname();
 
-    const navItems = [
-        {
-            name: "Dashboard",
-            path: "/intermediary",
-            icon: "📊",
-        },
-        {
-            name: "Collections",
-            path: "/intermediary/collections",
-            icon: "📦",
-        },
-        {
-            name: "Clients",
-            path: "/intermediary/clients",
-            icon: "👥",
-        },
-        {
-            name: "Settings",
-            path: "/intermediary/settings",
-            icon: "⚙️",
-        },
-        {
-            name: "Assign Drivers",
-            path: "/intermediary/assign-drivers",
-            icon: "🚚",
-        },
-    ];
-
     return (
-        <aside className="sidebar">
-            <nav className="sidebar-nav">
-                {navItems.map((item) => (
-                    <Link
-                        key={item.path}
-                        href={item.path}
-                        className={`nav-item ${pathname === item.path ? "active" : ""}`}
-                    >
-                        <span className="nav-icon">{item.icon}</span>
-                        <span className="nav-text">{item.name}</span>
-                    </Link>
-                ))}
-            </nav>
+        <nav className="p-4 space-y-8">
+            <style>{`
+        .sidebar-nav-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-nav-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 20px; }
+        .sidebar-nav-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+      `}</style>
 
-            <div className="sidebar-footer">
-                <p className="version">Version 1.0.0</p>
-            </div>
-        </aside>
+            {navGroups.map((group, idx) => (
+                <div key={idx}>
+                    <h3 className="px-4 text-[11px] font-bold text-eco-500 uppercase tracking-widest mb-3 opacity-80">
+                        {group.title}
+                    </h3>
+                    <div className="space-y-1.5">
+                        {group.items.map((item) => {
+                            const Icon = item.icon;
+                            // Exact match for dashboard root, prefix match for sub-routes
+                            const isActive =
+                                item.path === "/intermediary"
+                                    ? pathname === "/intermediary" || pathname === "/intermediary/dashboard"
+                                    : pathname === item.path;
+
+                            return (
+                                <Link
+                                    key={item.path}
+                                    href={item.path}
+                                    onClick={onNavigate}
+                                    className={`
+                    w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group relative
+                    ${isActive
+                                            ? "bg-gradient-to-r from-tech-lime to-emerald-400 text-eco-900 font-semibold shadow-lg"
+                                            : "text-eco-300 hover:bg-white/5 hover:text-white"}
+                  `}
+                                >
+                                    <div className="flex items-center gap-3 relative z-10">
+                                        <Icon
+                                            size={18}
+                                            className={
+                                                isActive
+                                                    ? "text-eco-900"
+                                                    : "text-eco-400 group-hover:text-tech-lime transition-colors"
+                                            }
+                                        />
+                                        <span className="text-sm">{item.name}</span>
+                                    </div>
+                                    {isActive && <ChevronRight size={16} className="text-eco-900 opacity-70" />}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+        </nav>
     );
-}
+};
 
 export default DashboardSidebar;
