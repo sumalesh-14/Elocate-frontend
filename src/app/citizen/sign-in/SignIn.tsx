@@ -10,6 +10,7 @@ import ClientIonIcon from "@/components/ClientIonIcon";
 import logo from "../../../assets/ELocate-s.png";
 import bannerImage from "../../../assets/ewaste_login_banner.png";
 import { authApi } from "@/lib/auth";
+import { userProfileApi } from "@/lib/admin-api";
 
 const Signin: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -62,6 +63,17 @@ const Signin: React.FC = () => {
         if (user.username) {
           setUserName(user.username);
         }
+
+        // Merge existing address/wallet from login response into user object
+        const extendedUser = {
+          ...user,
+          address: data.address,
+          wallet: data.wallet
+        };
+        setUser(extendedUser);
+        localStorage.setItem("user", JSON.stringify(extendedUser));
+        console.log("User profile with address/wallet loaded:", extendedUser);
+
         // Handle role specific logic if needed
       }
 

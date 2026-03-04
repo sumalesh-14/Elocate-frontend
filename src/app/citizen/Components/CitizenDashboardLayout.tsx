@@ -44,11 +44,11 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 flex font-sans overflow-hidden h-screen">
+        <div className="min-h-screen bg-slate-50 flex font-sans">
 
             {/* Sidebar */}
             <aside className={`
-        fixed md:sticky top-[80px] left-0 z-40 h-[calc(100vh-80px)] w-80 bg-gradient-to-b from-white to-emerald-50/30 border-r border-emerald-100 text-gray-800 transition-transform duration-300 shadow-sm flex flex-col
+        fixed md:sticky top-24 left-0 z-40 md:h-[calc(100vh-96px)] w-80 bg-gradient-to-b from-white to-emerald-50/30 border-r border-emerald-100 text-gray-800 transition-transform duration-300 shadow-sm flex flex-col
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
 
@@ -82,13 +82,12 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
 
             </aside>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-white">
+            <div className="flex-1 flex flex-col min-w-0 bg-white">
                 {/* Space for the fixed navbar */}
-                <div className="h-[80px] shrink-0"></div>
+                <div className="h-24 shrink-0"></div>
 
                 {/* Dynamic Page Content */}
-                <main className="flex-1 p-6 lg:p-10 overflow-y-auto scroll-smooth bg-white">
+                <main className="flex-1 p-6 lg:p-10 scroll-smooth bg-white">
                     <div className="w-full pb-10 px-2">
                         {children}
                     </div>

@@ -4,15 +4,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export async function GET(request: Request) {
     try {
-        const { searchParams } = new URL(request.url);
         const authHeader = request.headers.get("Authorization");
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/device-categories?${searchParams.toString()}`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/profile`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 ...(authHeader && { "Authorization": authHeader }),
-            }
+            },
         });
 
         const data = await response.json();
@@ -21,9 +20,9 @@ export async function GET(request: Request) {
             return NextResponse.json(data, { status: response.status });
         }
 
-        return NextResponse.json(data, { status: 200 });
+        return NextResponse.json(data);
     } catch (error: any) {
-        console.error("Get Device Categories Proxy Error:", error);
+        console.error("Profile Proxy GET Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error", message: error.message },
             { status: 500 }
@@ -31,13 +30,13 @@ export async function GET(request: Request) {
     }
 }
 
-export async function POST(request: Request) {
+export async function PUT(request: Request) {
     try {
         const authHeader = request.headers.get("Authorization");
         const body = await request.json();
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/device-categories`, {
-            method: "POST",
+        const response = await fetch(`${API_BASE_URL}/api/v1/profile`, {
+            method: "PUT",
             headers: {
                 "Content-Type": "application/json",
                 ...(authHeader && { "Authorization": authHeader }),
@@ -51,9 +50,9 @@ export async function POST(request: Request) {
             return NextResponse.json(data, { status: response.status });
         }
 
-        return NextResponse.json(data, { status: 200 });
+        return NextResponse.json(data);
     } catch (error: any) {
-        console.error("Create Device Category Proxy Error:", error);
+        console.error("Profile Proxy PUT Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error", message: error.message },
             { status: 500 }

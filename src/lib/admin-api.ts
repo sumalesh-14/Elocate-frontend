@@ -56,8 +56,9 @@ const getAuthHeaders = () => {
  * Device Categories API
  */
 export const deviceCategoriesApi = {
-    getAll: async () => {
+    getAll: async (params?: { page?: number; size?: number; search?: string }) => {
         const response = await adminApiClient.get("/device-categories", {
+            params,
             headers: getAuthHeaders(),
         });
         return response;
@@ -172,3 +173,50 @@ export const deviceModelsApi = {
         return response;
     },
 };
+
+/**
+ * Recycle Requests API
+ */
+export const recycleRequestApi = {
+    create: async (userId: string, data: any) => {
+        const response = await adminApiClient.post("/recycle-requests", data, {
+            params: { userId },
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+
+    getById: async (id: string) => {
+        const response = await adminApiClient.get(`/recycle-requests/${id}`, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+
+    updateFulfillmentStatus: async (id: string, data: { newStatus: string; changedBy: string }) => {
+        const response = await adminApiClient.put(`/recycle-requests/${id}/fulfillment-status`, data, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+
+    getStatusHistory: async (id: string) => {
+        const response = await adminApiClient.get(`/recycle-requests/${id}/status-history`, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    }
+};
+
+/**
+ * User Profile API
+ */
+export const userProfileApi = {
+    get: async () => {
+        const response = await adminApiClient.get("/profile", {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    }
+};
+

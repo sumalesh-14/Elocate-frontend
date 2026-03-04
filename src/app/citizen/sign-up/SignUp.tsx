@@ -9,6 +9,7 @@ import ClientIonIcon from "@/components/ClientIonIcon";
 import logoSm from "../../../assets/elocate-sm.png";
 import registerImage from "../../../assets/register.jpg";
 import { authApi } from "@/lib/auth";
+import { userProfileApi } from "@/lib/admin-api";
 import { setEmail, setPhoneNumber, setRefreshToken, setToken, setUser, setUserID, setUserName, setfullname } from "../sign-in/auth";
 
 const SignUp: React.FC = () => {

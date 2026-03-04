@@ -3,14 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import {
     Laptop, Smartphone, Printer, Tv, Headphones, Watch, Keyboard, HardDrive,
-    ArrowRight, ArrowLeft, Upload, Check, MapPin, Calendar, Clock, Truck, Package,
-    ShieldCheck, HelpCircle, Info
+    ArrowRight,
+    Search,
+    ArrowLeft, Upload, Check, MapPin, Calendar, Clock, Truck, Package,
+    ShieldCheck, HelpCircle, Info, Sparkles, Activity, Hammer, Cpu,
+    Square, CheckSquare, Eraser
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { getUserName, getEmail, getPhoneNumber } from '../../sign-in/auth';
-import { deviceCategoriesApi, deviceModelsApi } from '@/lib/admin-api';
+import { deviceCategoriesApi, deviceModelsApi, recycleRequestApi, userProfileApi } from '@/lib/admin-api';
+import { getUserName, getEmail, getPhoneNumber, getUserID } from '../../sign-in/auth';
 import { categoryBrandApi } from '@/lib/category-brand-api';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -18,6 +21,7 @@ import { calculateDistance } from '@/lib/utils/calculateLocation';
 import { fetchFacilities } from '@/lib/utils/facilityApi';
 import getLocation from '@/lib/utils/getLocation';
 import { analyzeDeviceImage, checkAnalyzerHealth } from '@/lib/image-analyzer-api';
+import SuccessModal from '@/app/citizen/Components/SuccessModal';
 
 // --- Types ---
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -47,6 +51,17 @@ interface FormData {
     facilityAddress: string;
     facilityLat: number | null;
     facilityLon: number | null;
+    pickupAddressId: string | null;
+    city: string;
+    state: string;
+    pincode: string;
+    latitude: number | null;
+    longitude: number | null;
+    checklist: {
+        backup: boolean;
+        accounts: boolean;
+        factoryReset: boolean;
+    };
 }
 
 // --- Prop Types for Sub-components ---
@@ -60,6 +75,11 @@ interface Step1Props extends StepProps {
     categories: any[];
     onImageAnalyze: (file: File) => Promise<void>;
     isAnalyzing: boolean;
+    categoryPage: number;
+    categoryTotalPages: number;
+    onPageChange: (newPage: number) => void;
+    categorySearch: string;
+    onSearchChange: (val: string) => void;
 }
 
 interface Step2Props extends StepProps {
@@ -69,9 +89,27 @@ interface Step2Props extends StepProps {
     models: any[];
 }
 
+interface Step4Props extends StepProps {
+    userProfile: any;
+    useProfileAddress: boolean;
+    setUseProfileAddress: (val: boolean) => void;
+}
+
 // --- Sub-components ---
 
-const Step1_DeviceType: React.FC<Step1Props> = ({ formData, updateField, isLoadingCategories, categories }) => {
+const Step1_DeviceType: React.FC<Step1Props> = ({
+    formData,
+    updateField,
+    isLoadingCategories,
+    categories,
+    onImageAnalyze,
+    isAnalyzing,
+    categoryPage,
+    categoryTotalPages,
+    onPageChange,
+    categorySearch,
+    onSearchChange
+}) => {
     const getIconForCategory = (name: string) => {
         const n = name.toLowerCase();
         if (n.includes('laptop')) return Laptop;
@@ -84,21 +122,10 @@ const Step1_DeviceType: React.FC<Step1Props> = ({ formData, updateField, isLoadi
         return HardDrive;
     };
 
-    if (isLoadingCategories) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-                <div className="w-16 h-16 bg-eco-100 rounded-full mb-4 flex items-center justify-center">
-                    <Package className="text-eco-400" size={32} />
-                </div>
-                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Fetching categories...</p>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-8 animate-fade-in-up">
+        <div className="space-y-4 animate-fade-in-up">
             <div
-                className={`bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-8 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm relative ${isAnalyzing ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-6 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm relative ${isAnalyzing ? 'opacity-50 pointer-events-none' : ''}`}
                 onClick={() => document.getElementById('device-image-upload')?.click()}
             >
                 <input
@@ -129,57 +156,99 @@ const Step1_DeviceType: React.FC<Step1Props> = ({ formData, updateField, isLoadi
                 )}
             </div>
 
-            <div className="relative">
+            <div className="relative flex items-center justify-between">
                 <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-100"></div>
                 </div>
-                <div className="relative flex justify-center text-xs">
+                <div className="relative flex justify-center text-xs w-full">
                     <span className="px-4 bg-white text-gray-400 font-bold tracking-widest uppercase italic">Or select category manually</span>
                 </div>
+
+                {/* Categories Pagination */}
+                {categoryTotalPages > 1 && !isLoadingCategories && (
+                    <div className="relative z-10 flex items-center gap-2 bg-white pl-4">
+                        <button
+                            disabled={categoryPage === 0}
+                            onClick={() => onPageChange(categoryPage - 1)}
+                            className="p-1.5 rounded-lg border border-gray-200 hover:bg-eco-50 hover:border-eco-200 disabled:opacity-30 transition-colors"
+                        >
+                            <ArrowLeft size={14} />
+                        </button>
+                        <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">{categoryPage + 1} / {categoryTotalPages}</span>
+                        <button
+                            disabled={categoryPage >= categoryTotalPages - 1}
+                            onClick={() => onPageChange(categoryPage + 1)}
+                            className="p-1.5 rounded-lg border border-gray-200 hover:bg-eco-50 hover:border-eco-200 disabled:opacity-30 transition-colors"
+                        >
+                            <ArrowRight size={14} />
+                        </button>
+                    </div>
+                )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                {categories.map((cat) => {
-                    const Icon = getIconForCategory(cat.name);
-                    const isSelected = formData.deviceType === cat.name;
-                    return (
-                        <button
-                            key={cat.id}
-                            onClick={() => {
-                                updateField('deviceType', cat.name);
-                                updateField('categoryId', cat.id);
-                                updateField('brandId', '');
-                                updateField('brand', '');
-                                updateField('modelId', '');
-                                updateField('model', '');
-                            }}
-                            className={`p-6 rounded-2xl border-2 text-left transition-all hover:shadow-xl flex items-center gap-5 group/btn ${isSelected ? 'border-eco-500 bg-eco-50/50 shadow-md' : 'border-slate-50 bg-slate-50/30 hover:bg-emerald-50/80 hover:border-emerald-200'}`}
-                        >
-                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all shrink-0 ${isSelected ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}>
-                                <Icon size={24} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <div className={`font-bold text-lg truncate ${isSelected ? 'text-eco-950' : 'text-gray-900'}`}>{cat.name}</div>
-                                <div className="text-xs text-gray-400 mt-0.5 font-medium truncate">{cat.description || 'Misc Electronics'}</div>
-                            </div>
-                        </button>
-                    );
-                })}
+            {/* Category Search */}
+            <div className="relative group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-600 transition-colors" size={18} />
+                <input
+                    type="text"
+                    placeholder="Search categories (e.g. Laptop, Phone...)"
+                    value={categorySearch}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-eco-500 transition-all text-gray-900 font-bold placeholder:text-gray-300 placeholder:font-medium"
+                />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 h-auto content-start overflow-hidden relative">
+                {isLoadingCategories ? (
+                    <div className="col-span-2 flex flex-col items-center justify-center py-20 animate-pulse">
+                        <div className="w-16 h-16 bg-eco-100 rounded-full mb-4 flex items-center justify-center">
+                            <Package className="text-eco-400" size={32} />
+                        </div>
+                        <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Fetching categories...</p>
+                    </div>
+                ) : (
+                    categories.map((cat) => {
+                        const Icon = getIconForCategory(cat.name);
+                        const isSelected = formData.deviceType === cat.name;
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => {
+                                    updateField('deviceType', cat.name);
+                                    updateField('categoryId', cat.id);
+                                    updateField('brandId', '');
+                                    updateField('brand', '');
+                                    updateField('modelId', '');
+                                    updateField('model', '');
+                                }}
+                                className={`p-6 rounded-2xl border-2 text-left transition-all hover:shadow-xl flex items-center gap-5 group/btn ${isSelected ? 'border-eco-500 bg-eco-50/50 shadow-md' : 'border-slate-50 bg-slate-50/30 hover:bg-emerald-50/80 hover:border-emerald-200'}`}
+                            >
+                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all shrink-0 ${isSelected ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}>
+                                    <Icon size={24} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className={`font-bold text-lg truncate ${isSelected ? 'text-eco-950' : 'text-gray-900'}`}>{cat.name}</div>
+                                    <div className="text-xs text-gray-400 mt-0.5 font-medium truncate">{cat.description || 'Misc Electronics'}</div>
+                                </div>
+                            </button>
+                        );
+                    })
+                )}
             </div>
         </div>
     );
 };
 
 const Step2_DeviceDetails: React.FC<Step2Props> = ({ formData, updateField, isLoadingBrands, brands, isLoadingModels, models }) => {
-    const conditions: { val: Condition; label: string; desc: string }[] = [
-        { val: 'Working', label: 'Pristine / Working', desc: 'Fully functional, no damage' },
-        { val: 'Minor Issues', label: 'Fair / Minor Issues', desc: 'Working with cosmetic wear' },
-        { val: 'Broken', label: 'Broken / Damaged', desc: 'Powers on but part functionality' },
-        { val: 'Parts Only', label: 'Scrap / Parts', desc: 'Does not power on, non-functional' },
+    const conditions: { val: Condition; label: string; desc: string; icon: React.ReactNode }[] = [
+        { val: 'Working', label: 'Pristine / Working', desc: 'Fully functional, no damage', icon: <Sparkles size={20} /> },
+        { val: 'Minor Issues', label: 'Fair / Minor Issues', desc: 'Working with cosmetic wear', icon: <Activity size={20} /> },
+        { val: 'Broken', label: 'Broken / Damaged', desc: 'Powers on but part functionality', icon: <Hammer size={20} /> },
+        { val: 'Parts Only', label: 'Scrap / Parts', desc: 'Does not power on, non-functional', icon: <Cpu size={20} /> },
     ];
 
     return (
-        <div className="space-y-8 animate-fade-in-up">
+        <div className="space-y-4 animate-fade-in-up">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-eco-950">
                 <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">Device Brand</label>
@@ -243,10 +312,15 @@ const Step2_DeviceDetails: React.FC<Step2Props> = ({ formData, updateField, isLo
                         <button
                             key={cond.val}
                             onClick={() => updateField('condition', cond.val)}
-                            className={`p-5 rounded-2xl border-2 text-left transition-all hover:shadow-md ${formData.condition === cond.val ? 'border-eco-500 bg-eco-50 shadow-sm' : 'border-slate-50 bg-slate-50/40 hover:bg-emerald-50/80 hover:border-emerald-200 hover:scale-[1.01]'}`}
+                            className={`p-5 rounded-2xl border-2 text-left transition-all hover:shadow-md flex gap-4 ${formData.condition === cond.val ? 'border-eco-500 bg-eco-50/50 shadow-sm' : 'border-slate-50 bg-slate-50/40 hover:bg-emerald-50/80 hover:border-emerald-200 hover:scale-[1.01]'}`}
                         >
-                            <div className={`font-bold ${formData.condition === cond.val ? 'text-eco-900' : 'text-gray-900'}`}>{cond.label}</div>
-                            <div className="text-xs text-gray-400 mt-1 font-medium">{cond.desc}</div>
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all ${formData.condition === cond.val ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-emerald-400 border border-emerald-50'}`}>
+                                {cond.icon}
+                            </div>
+                            <div className="min-w-0">
+                                <div className={`font-bold ${formData.condition === cond.val ? 'text-eco-900' : 'text-gray-900'}`}>{cond.label}</div>
+                                <div className="text-xs text-gray-400 mt-0.5 font-medium leading-tight">{cond.desc}</div>
+                            </div>
                         </button>
                     ))}
                 </div>
@@ -372,7 +446,7 @@ const Step3_ServiceType: React.FC<StepProps> = ({ formData, updateField }) => {
     }, []);
 
     return (
-        <div className="space-y-8 animate-fade-in-up">
+        <div className="space-y-4 animate-fade-in-up">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <button onClick={() => updateField('serviceType', 'Pickup')} className={`p-8 rounded-[2rem] border-2 text-left transition-all hover:shadow-xl group relative overflow-hidden ${formData.serviceType === 'Pickup' ? 'border-eco-500 bg-eco-50 shadow-md' : 'border-slate-50 bg-slate-50/30 hover:border-eco-200'}`}>
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all ${formData.serviceType === 'Pickup' ? 'bg-eco-500 text-white shadow-lg' : 'bg-white text-gray-400 shadow-sm'}`}><Truck size={32} /></div>
@@ -507,19 +581,112 @@ const Step3_ServiceType: React.FC<StepProps> = ({ formData, updateField }) => {
     );
 };
 
-const Step4_Address: React.FC<StepProps> = ({ formData, updateField }) => {
+const Step4_Address: React.FC<Step4Props> = ({ formData, updateField, userProfile, useProfileAddress, setUseProfileAddress }) => {
+
+    // Update form when profile address is toggled
+    useEffect(() => {
+        if (useProfileAddress && userProfile?.address) {
+            const addr = userProfile.address;
+            updateField('pickupAddressId', addr.id);
+            updateField('address', addr.address);
+            updateField('city', addr.city);
+            updateField('state', addr.state);
+            updateField('pincode', addr.pincode);
+            updateField('latitude', addr.latitude);
+            updateField('longitude', addr.longitude);
+        } else if (!useProfileAddress) {
+            updateField('pickupAddressId', null);
+        }
+    }, [useProfileAddress, userProfile]);
+
     return (
-        <div className="space-y-8 animate-fade-in-up">
-            <div className="space-y-3">
-                <label className="text-sm font-bold text-gray-700">Complete Pickup Address</label>
+        <div className="space-y-6 animate-fade-in-up">
+            {/* Profile Address Toggle */}
+            {userProfile?.address && (
+                <div className="p-6 bg-emerald-50/50 rounded-3xl border border-emerald-100/50">
+                    <button
+                        onClick={() => setUseProfileAddress(!useProfileAddress)}
+                        className="flex items-center gap-4 w-full text-left group"
+                    >
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${useProfileAddress ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-white text-emerald-400 border border-emerald-100'}`}>
+                            {useProfileAddress ? <CheckSquare size={24} /> : <Square size={24} />}
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-lg font-bold text-slate-800">Use Registered Address</h4>
+                            <p className="text-sm text-slate-500 font-medium">Auto-fill from your account profile</p>
+                        </div>
+                        {useProfileAddress && (
+                            <div className="px-4 py-2 bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-full">
+                                Selected
+                            </div>
+                        )}
+                    </button>
+
+                    {useProfileAddress && (
+                        <div className="mt-6 pt-6 border-t border-emerald-100/50 animate-slide-down">
+                            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-emerald-50">
+                                <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
+                                    <MapPin size={24} />
+                                </div>
+                                <div>
+                                    <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Registered Default</div>
+                                    <p className="text-base font-bold text-slate-700">{userProfile.address.address}</p>
+                                    <p className="text-sm text-slate-400 font-medium">{userProfile.address.city}, {userProfile.address.state} - {userProfile.address.pincode}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <div className={`space-y-4 transition-all duration-500 ${useProfileAddress && userProfile?.address ? 'opacity-40 grayscale pointer-events-none scale-[0.98]' : 'opacity-100'}`}>
+                <div className="flex items-center justify-between px-1">
+                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest">Manual Pickup Entrance</label>
+                    <div className="text-[10px] font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full uppercase tracking-widest">Override</div>
+                </div>
+
                 <div className="relative group">
-                    <input type="text" value={formData.address} onChange={(e) => updateField('address', e.target.value)} placeholder="Unit, Floor, Building, Street, Area" className="w-full pl-14 pr-5 py-5 rounded-2xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 placeholder-emerald-800/30" />
-                    <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-400 group-focus-within:text-eco-600 transition-colors" size={24} />
-                    <button className="absolute right-5 top-1/2 -translate-y-1/2 text-eco-600 text-xs font-bold hover:underline">Use current location</button>
+                    <input
+                        type="text"
+                        value={formData.address}
+                        onChange={(e) => updateField('address', e.target.value)}
+                        placeholder="Unit, Floor, Building, Street, Area"
+                        className="w-full pl-16 pr-5 py-5 rounded-2xl border border-emerald-100 focus:outline-none focus:ring-4 focus:ring-eco-500/10 focus:border-eco-500 transition-all text-gray-900 bg-emerald-50/20 placeholder-emerald-800/30 font-medium"
+                    />
+                    <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-400 group-focus-within:text-eco-600 transition-colors" size={24} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-emerald-700/60 uppercase tracking-widest px-1">City</label>
+                        <input
+                            type="text"
+                            value={formData.city}
+                            onChange={(e) => updateField('city', e.target.value)}
+                            placeholder="e.g. Chennai"
+                            className="w-full px-6 py-4 rounded-xl border border-emerald-100 focus:border-eco-500 bg-emerald-50/10 text-sm font-bold outline-none"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-emerald-700/60 uppercase tracking-widest px-1">Pincode</label>
+                        <input
+                            type="text"
+                            value={formData.pincode}
+                            onChange={(e) => updateField('pincode', e.target.value)}
+                            placeholder="600001"
+                            className="w-full px-6 py-4 rounded-xl border border-emerald-100 focus:border-eco-500 bg-emerald-50/10 text-sm font-bold outline-none"
+                        />
+                    </div>
                 </div>
             </div>
+
             <div className="pt-8 border-t border-emerald-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2"><Smartphone size={20} className="text-eco-500" />Contact Verification</h3>
+                <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-3 uppercase tracking-tight">
+                    <div className="p-2 bg-emerald-600 text-white rounded-lg shadow-lg shadow-emerald-100">
+                        <Smartphone size={18} />
+                    </div>
+                    Contact Audit
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-emerald-700/60 px-1">Full Name</label>
@@ -542,10 +709,11 @@ const Step4_Address: React.FC<StepProps> = ({ formData, updateField }) => {
         </div>
     );
 };
-
 const Step5_Review: React.FC<StepProps> = ({ formData, updateField }) => {
+    const checklist = formData.checklist || { backup: false, accounts: false, factoryReset: false };
+
     return (
-        <div className="space-y-8 animate-fade-in-up">
+        <div className="space-y-4 animate-fade-in-up">
             <div className="relative bg-gradient-to-br from-eco-900 to-eco-800 rounded-[2.5rem] p-10 text-white overflow-hidden shadow-2xl">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 -mr-10 -mt-10 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-tech-lime/10 -ml-10 -mb-10 rounded-full blur-2xl"></div>
@@ -597,17 +765,50 @@ const Step5_Review: React.FC<StepProps> = ({ formData, updateField }) => {
                     )}
                 </div>
             </div>
-            <div className="p-8 border border-eco-100 rounded-[2rem] bg-gray-50/30">
-                <h4 className="text-lg font-bold text-gray-900 mb-4">Terms & Disclosure</h4>
-                <div className="space-y-4">
-                    <div className="flex gap-4">
-                        <div className="w-6 h-6 rounded-full bg-eco-100 flex items-center justify-center text-eco-600 shrink-0 mt-0.5"><Check size={14} /></div>
-                        <p className="text-xs text-gray-600 font-medium leading-relaxed">I confirm that all data on the devices has been backed up. ELocate is not responsible for data loss during the secure destruction process.</p>
+            <div className="p-8 border border-emerald-100 rounded-[2rem] bg-emerald-50/10">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-tech-lime/20 flex items-center justify-center text-eco-700">
+                        <ShieldCheck size={20} />
                     </div>
-                    <div className="flex gap-4">
-                        <div className="w-6 h-6 rounded-full bg-eco-100 flex items-center justify-center text-eco-600 shrink-0 mt-0.5"><Check size={14} /></div>
-                        <p className="text-xs text-gray-600 font-medium leading-relaxed">I understand that a small handling fee may be deducted from the eco-score points if the device is found to be incompatible with recycled classification.</p>
+                    <div>
+                        <h4 className="text-lg font-bold text-gray-900">Before You Recycle</h4>
+                        <p className="text-xs text-gray-500 font-medium">Please confirm these safety & data steps</p>
                     </div>
+                </div>
+
+                <div className="space-y-3">
+                    {[
+                        { id: 'backup', label: 'I have backed up all personal data and files.', icon: <Package size={14} /> },
+                        { id: 'accounts', label: 'I have logged out of iCloud, Google, and other accounts.', icon: <Check size={14} /> },
+                        { id: 'factoryReset', label: 'I have performed a factory reset or cleared sensitive data.', icon: <Eraser size={14} /> }
+                    ].map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                const currentChecklist = { ...checklist };
+                                currentChecklist[item.id as keyof typeof checklist] = !currentChecklist[item.id as keyof typeof checklist];
+                                updateField('checklist', currentChecklist);
+                            }}
+                            className={`w-full flex items-start gap-4 p-4 rounded-2xl border-2 transition-all ${checklist[item.id as keyof typeof checklist]
+                                ? 'bg-eco-50/50 border-eco-200'
+                                : 'bg-white border-transparent hover:border-emerald-100'
+                                }`}
+                        >
+                            <div className={`mt-0.5 shrink-0 transition-colors ${checklist[item.id as keyof typeof checklist] ? 'text-eco-600' : 'text-gray-300'}`}>
+                                {checklist[item.id as keyof typeof checklist] ? <CheckSquare size={20} /> : <Square size={20} />}
+                            </div>
+                            <p className={`text-sm font-bold text-left leading-tight ${checklist[item.id as keyof typeof checklist] ? 'text-eco-900' : 'text-gray-500'}`}>
+                                {item.label}
+                            </p>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="mt-6 flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 items-start">
+                    <div className="mt-1 text-amber-600 shrink-0"><Info size={16} /></div>
+                    <p className="text-[11px] font-bold text-amber-800 leading-relaxed">
+                        Disclaimer: ELocate is not responsible for any personal data remaining on devices. Our secure destruction process is final and irreversible.
+                    </p>
                 </div>
             </div>
         </div>
@@ -640,18 +841,37 @@ const RecycleRequestForm: React.FC = () => {
         facilityAddress: '',
         facilityLat: null,
         facilityLon: null,
+        pickupAddressId: null,
+        city: '',
+        state: '',
+        pincode: '',
+        latitude: null,
+        longitude: null,
+        checklist: {
+            backup: false,
+            accounts: false,
+            factoryReset: false,
+        },
     };
 
     const [currentStep, setCurrentStep] = useState<Step>(1);
     const [formData, setFormData] = useState<FormData>(INITIAL_DATA);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [submittedRequestId, setSubmittedRequestId] = useState<string>("");
     const [categories, setCategories] = useState<any[]>([]);
+    const [categoryPage, setCategoryPage] = useState(0);
+    const [categoryTotalPages, setCategoryTotalPages] = useState(1);
+    const [categorySearch, setCategorySearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [brands, setBrands] = useState<any[]>([]);
     const [models, setModels] = useState<any[]>([]);
     const [isLoadingCategories, setIsLoadingCategories] = useState(true);
     const [isLoadingBrands, setIsLoadingBrands] = useState(false);
     const [isLoadingModels, setIsLoadingModels] = useState(false);
+    const [userProfile, setUserProfile] = useState<any>(null);
+    const [useProfileAddress, setUseProfileAddress] = useState(true);
 
     const STORAGE_KEY = 'elocate_recycle_form_session';
 
@@ -690,12 +910,46 @@ const RecycleRequestForm: React.FC = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionToSave));
     }, [currentStep, formData]);
 
+    // Load profile on mount
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await userProfileApi.get();
+                if (response.data && response.data.status === 'success') {
+                    setUserProfile(response.data);
+
+                    // If we are on step 4 or loading initial data, and useProfileAddress is true
+                    // we can auto-fill. Let's do it in Step 4 components though.
+                }
+            } catch (error) {
+                console.error("Failed to fetch user profile:", error);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(categorySearch);
+            setCategoryPage(0); // Reset to first page on search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [categorySearch]);
+
+
     useEffect(() => {
         const fetchCategories = async () => {
+            setIsLoadingCategories(true);
             try {
-                const response = await deviceCategoriesApi.getAll();
-                const activeCategories = response.data.content || response.data;
-                setCategories(Array.isArray(activeCategories) ? activeCategories : []);
+                const response = await deviceCategoriesApi.getAll({
+                    page: categoryPage,
+                    size: 8,
+                    search: debouncedSearch
+                });
+                const categoriesData = response.data.content || response.data;
+                setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+                setCategoryTotalPages(response.data.totalPages || 1);
             } catch (error) {
                 console.error("Error fetching categories:", error);
                 showToast('Failed to load device categories.', 'error');
@@ -704,7 +958,7 @@ const RecycleRequestForm: React.FC = () => {
             }
         };
         fetchCategories();
-    }, []);
+    }, [categoryPage, debouncedSearch]);
 
     // Fetch brands when categoryId changes
     useEffect(() => {
@@ -809,16 +1063,60 @@ const RecycleRequestForm: React.FC = () => {
     };
 
     const handleSubmit = async () => {
+        const userId = getUserID();
+        if (!userId) {
+            showToast('You must be signed in to submit a request.', 'error');
+            router.push('/sign-in');
+            return;
+        }
+
         setIsSubmitting(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsSubmitting(false);
+        try {
+            // Map form condition to backend conditionCode
+            const conditionMap: Record<string, string> = {
+                'Working': 'EXCELLENT',
+                'Minor Issues': 'GOOD',
+                'Broken': 'FAIR',
+                'Parts Only': 'POOR'
+            };
 
-        // Clear persisted state on successful submission
-        localStorage.removeItem(STORAGE_KEY);
+            const payload = {
+                deviceModelId: formData.modelId,
+                conditionCode: formData.condition ? conditionMap[formData.condition] : 'GOOD',
+                fulfillmentType: formData.serviceType === 'Pickup' ? 'PICKUP' : 'DROP_OFF',
+                facilityId: formData.serviceType === 'Dropoff' ? formData.facilityId : null,
+                pickupAddressId: formData.pickupAddressId,
+                notes: formData.notes || `Quantity: ${formData.quantity}`,
+                // Adhoc address fields
+                address: formData.address,
+                city: formData.city,
+                state: formData.state,
+                pincode: formData.pincode,
+                latitude: formData.latitude,
+                longitude: formData.longitude
+            };
 
-        showToast('Recycle request submitted successfully!\nYour eco-score will be updated soon.', 'success');
-        router.push('/citizen/book-recycle/requests');
+            const response = await recycleRequestApi.create(userId, payload);
+
+            if (response.status === 201 || response.status === 200) {
+                // Clear persisted state on successful submission
+                localStorage.removeItem(STORAGE_KEY);
+
+                // Get request ID from response if available
+                const newRequestId = response.data?.id || response.data?.referenceId || "";
+                setSubmittedRequestId(newRequestId);
+
+                setShowSuccessModal(true);
+            } else {
+                showToast('Failed to submit request. Please try again.', 'error');
+            }
+        } catch (error: any) {
+            console.error('Submission failed:', error);
+            const errorMessage = error.response?.data?.message || 'An error occurred during submission.';
+            showToast(errorMessage, 'error');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // --- Utility Components ---
@@ -918,19 +1216,11 @@ const RecycleRequestForm: React.FC = () => {
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-50/40 rounded-full blur-[100px] -z-10 animate-pulse"></div>
             <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-sky-50/40 rounded-full blur-[80px] -z-10"></div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start h-full">
-                {/* LEFT COLUMN: Progress & Context */}
-                <aside className="lg:col-span-3 lg:sticky lg:top-[100px] h-fit pt-2">
-                    <div className="bg-slate-50/50 backdrop-blur-sm rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
-                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-eco-100/30 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                        <VerticalStepper />
-                        <StepInfo />
-                    </div>
-                </aside>
 
-                {/* RIGHT COLUMN: Interactive Form Content */}
-                <main className="lg:col-span-9 space-y-4">
-                    {/* Integrated Header */}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start h-full max-w-[1400px] mx-auto px-4 md:px-8 pt-0">
+                {/* LEFT COLUMN: Progress & Context */}
+                <aside className="lg:col-span-3 lg:sticky lg:top-2 h-fit pt-0 space-y-6">
                     <div className="px-2 md:px-0">
                         <button
                             onClick={() => router.back()}
@@ -939,13 +1229,21 @@ const RecycleRequestForm: React.FC = () => {
                             <ArrowLeft size={16} className="transition-transform" />
                             <span className="text-xs uppercase tracking-widest font-bold">Dashboard Overview</span>
                         </button>
-                        <h1 className="text-4xl lg:text-5xl font-display font-bold text-eco-950 leading-none">New Recycle Request</h1>
-                        <p className="text-gray-500 mt-3 text-lg font-medium">Transforming e-waste into sustainable resources.</p>
+                        <h1 className="text-3xl lg:text-4xl font-display font-bold text-eco-950 leading-tight">New Recycle Request</h1>
+                        <p className="text-gray-500 mt-2 text-sm font-medium">Transforming e-waste into sustainable resources.</p>
                     </div>
+                    <div className="bg-white/50 backdrop-blur-sm rounded-[2.5rem] p-8 border border-eco-100 shadow-sm relative overflow-hidden group">
+                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-eco-100/30 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                        <VerticalStepper />
+                        <StepInfo />
+                    </div>
+                </aside>
 
-                    <div className="bg-white rounded-[3.5rem] border border-gray-100 shadow-2xl p-8 md:p-10 lg:p-12 relative overflow-hidden h-full min-h-[700px] flex flex-col transition-all duration-500 hover:shadow-emerald-500/5">
+                {/* RIGHT COLUMN: Interactive Form Content */}
+                <main className="lg:col-span-9 space-y-4">
+                    <div className="bg-white rounded-[3.5rem] border border-gray-100 shadow-2xl p-8 md:p-10 lg:p-12 relative overflow-hidden h-fit flex flex-col transition-all duration-500 hover:shadow-emerald-500/5">
                         {/* Background decoration */}
-                        <div className="absolute -top-24 -right-24 w-64 h-64 bg-eco-50 rounded-full -z-10 blur-3xl opacity-50"></div>
+                        <div className="absolute -top-32 -right-32 w-64 h-64 bg-eco-50 rounded-full -z-10 blur-3xl opacity-50"></div>
                         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-sky-50 rounded-full -z-10 blur-3xl opacity-50"></div>
 
                         {/* Step Dynamic Header */}
@@ -964,23 +1262,36 @@ const RecycleRequestForm: React.FC = () => {
 
                         <div className="flex-1">
                             {currentStep === 1 && (
-                                <Step1_DeviceType 
-                                    formData={formData} 
-                                    updateField={updateField} 
-                                    isLoadingCategories={isLoadingCategories} 
+                                <Step1_DeviceType
+                                    formData={formData}
+                                    updateField={updateField}
+                                    isLoadingCategories={isLoadingCategories}
                                     categories={categories}
                                     onImageAnalyze={handleImageAnalyze}
                                     isAnalyzing={isAnalyzing}
+                                    categoryPage={categoryPage}
+                                    categoryTotalPages={categoryTotalPages}
+                                    onPageChange={(page) => setCategoryPage(page)}
+                                    categorySearch={categorySearch}
+                                    onSearchChange={(val) => setCategorySearch(val)}
                                 />
                             )}
                             {currentStep === 2 && <Step2_DeviceDetails formData={formData} updateField={updateField} isLoadingBrands={isLoadingBrands} brands={brands} isLoadingModels={isLoadingModels} models={models} />}
                             {currentStep === 3 && <Step3_ServiceType formData={formData} updateField={updateField} />}
-                            {currentStep === 4 && <Step4_Address formData={formData} updateField={updateField} />}
+                            {currentStep === 4 && (
+                                <Step4_Address
+                                    formData={formData}
+                                    updateField={updateField}
+                                    userProfile={userProfile}
+                                    useProfileAddress={useProfileAddress}
+                                    setUseProfileAddress={setUseProfileAddress}
+                                />
+                            )}
                             {currentStep === 5 && <Step5_Review formData={formData} updateField={updateField} />}
                         </div>
 
                         {/* Navigation Buttons */}
-                        <div className="flex justify-between items-center mt-12 pt-10 border-t border-gray-100">
+                        <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-100">
                             <button
                                 onClick={handleBack}
                                 disabled={currentStep === 1 || isSubmitting}
@@ -1010,8 +1321,8 @@ const RecycleRequestForm: React.FC = () => {
                             ) : (
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={isSubmitting}
-                                    className="px-12 py-5 bg-emerald-500 text-white rounded-2xl font-bold hover:bg-emerald-600 shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3 disabled:opacity-70"
+                                    disabled={isSubmitting || !formData.checklist?.backup || !formData.checklist?.accounts || !formData.checklist?.factoryReset}
+                                    className="px-12 py-5 bg-emerald-500 text-white rounded-2xl font-bold hover:bg-emerald-600 shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3 disabled:opacity-70 disabled:pointer-events-none"
                                 >
                                     {isSubmitting ? (
                                         <span className="animate-pulse">Processing...</span>
@@ -1027,7 +1338,19 @@ const RecycleRequestForm: React.FC = () => {
                     </div>
                 </main>
             </div>
-        </div>
+
+            <SuccessModal
+                isOpen={showSuccessModal}
+                onClose={() => {
+                    setShowSuccessModal(false);
+                    router.push('/citizen/book-recycle/requests');
+                }}
+                title="Request Submitted!"
+                message="Your recycle request has been successfully created. We've optimized the pickup/drop-off logistics for you. Your eco-score will be updated once processed."
+                formData={formData}
+                requestId={submittedRequestId}
+            />
+        </div >
     );
 };
 

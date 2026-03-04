@@ -157,7 +157,7 @@ const Header = () => {
 
     return (
         <React.Fragment>
-            <header className={`header fixed top-10 left-0 w-full z-50 transition-all duration-300 flex items-center ${isHeaderActive || isDashboardRoute ? "bg-white/90 backdrop-blur-xl border-b border-slate-100 shadow-md h-24" : "bg-transparent h-28"}`} data-header>
+            <header className={`header fixed top-0 left-0 w-full z-50 transition-all duration-300 flex items-center ${isHeaderActive || isDashboardRoute ? "bg-white/90 backdrop-blur-xl border-b border-slate-100 shadow-md h-24" : "bg-transparent h-28"}`} data-header>
                 <div className="container mx-auto flex items-center px-4 md:px-16">
                     <Link href="/citizen" className="flex items-center gap-3 hover:scale-[1.02] transition-transform flex-shrink-0">
                         <div className="w-11 h-11 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200/50">
