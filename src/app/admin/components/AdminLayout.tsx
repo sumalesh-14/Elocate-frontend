@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Layers, 
-  Tag, 
-  Smartphone, 
-  Building2, 
-  LogOut, 
-  Bell, 
+import {
+  LayoutDashboard,
+  Layers,
+  Tag,
+  Smartphone,
+  Building2,
+  LogOut,
+  Bell,
   Search,
   Menu,
   X,
@@ -34,7 +34,7 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pageParam = searchParams.get('page') as Page | null;
-  
+
   const [activePage, setActivePage] = useState<Page>(pageParam || 'dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -101,7 +101,7 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen h-screen bg-slate-50 flex font-sans overflow-hidden">
-      
+
       {/* Sidebar */}
       <aside className={`
         fixed md:sticky top-0 left-0 z-40 h-screen w-80 bg-eco-950 text-white transition-transform duration-300 shadow-2xl flex flex-col
@@ -109,19 +109,19 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
       `}>
         {/* Brand Header */}
         <div className="p-6 flex items-center gap-3 shrink-0 bg-eco-950">
-           <div className="w-10 h-10 bg-gradient-to-br from-tech-lime to-emerald-500 rounded-xl flex items-center justify-center text-eco-950 shadow-lg">
-             <span className="font-display font-bold text-xl">EL</span>
-           </div>
-           <div>
-             <h1 className="font-display font-bold text-xl tracking-tight">ELocate</h1>
-             <p className="text-[10px] text-eco-400 uppercase tracking-widest">Admin Console</p>
-           </div>
-           <button 
-             onClick={() => setIsMobileMenuOpen(false)}
-             className="md:hidden ml-auto text-eco-400"
-           >
-             <X size={20} />
-           </button>
+          <div className="w-10 h-10 bg-gradient-to-br from-tech-lime to-emerald-500 rounded-xl flex items-center justify-center text-eco-950 shadow-lg">
+            <span className="font-display font-bold text-xl">EL</span>
+          </div>
+          <div>
+            <h1 className="font-display font-bold text-xl tracking-tight">ELocate</h1>
+            <p className="text-[10px] text-eco-400 uppercase tracking-widest">Admin Console</p>
+          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden ml-auto text-eco-400"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -158,8 +158,8 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
                       }}
                       className={`
                         w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group relative
-                        ${isActive 
-                          ? 'bg-gradient-to-r from-tech-lime to-emerald-400 text-eco-900 font-semibold shadow-lg' 
+                        ${isActive
+                          ? 'bg-gradient-to-r from-tech-lime to-emerald-400 text-eco-900 font-semibold shadow-lg'
                           : 'text-eco-300 hover:bg-white/5 hover:text-white'}
                       `}
                     >
@@ -179,13 +179,13 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
         {/* User Footer */}
         <div className="p-4 bg-black/20 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3 mb-4 px-2">
-             <div className="w-8 h-8 rounded-full bg-tech-lime flex items-center justify-center text-eco-900 font-bold text-xs">AD</div>
-             <div className="flex-1 min-w-0">
-               <div className="text-sm font-medium text-white truncate">Admin User</div>
-               <div className="text-xs text-eco-400 truncate">admin@elocate.app</div>
-             </div>
+            <div className="w-8 h-8 rounded-full bg-tech-lime flex items-center justify-center text-eco-900 font-bold text-xs">AD</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-white truncate">Admin User</div>
+              <div className="text-xs text-eco-400 truncate">admin@elocate.app</div>
+            </div>
           </div>
-          <button 
+          <button
             onClick={onLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-red-500/20 text-eco-200 hover:text-red-300 rounded-lg transition-colors text-sm font-medium border border-white/5 hover:border-red-500/20"
           >
@@ -197,11 +197,11 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        
+
         {/* Top Header */}
         <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-200 shrink-0 px-6 flex items-center justify-between z-30">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="md:hidden p-2 text-eco-900 hover:bg-eco-50 rounded-lg"
             >
@@ -214,9 +214,9 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
 
           <div className="flex items-center gap-6">
             <div className="hidden md:flex relative group">
-              <input 
-                type="text" 
-                placeholder="Search..." 
+              <input
+                type="text"
+                placeholder="Search..."
                 className="pl-10 pr-4 py-2.5 bg-slate-100 rounded-full text-sm w-64 focus:outline-none focus:ring-2 focus:ring-tech-lime/50 focus:bg-white transition-all border border-transparent focus:border-tech-lime text-gray-900 placeholder-gray-500"
               />
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-eco-600 transition-colors" size={16} />
@@ -226,6 +226,11 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
               <Bell size={20} />
               <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
             </button>
+
+            {/* User Avatar */}
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-tech-lime to-emerald-500 flex items-center justify-center text-eco-900 font-bold text-sm shadow-md">
+              A
+            </div>
           </div>
         </header>
 

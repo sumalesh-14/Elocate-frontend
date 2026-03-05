@@ -75,6 +75,8 @@ const BookRecycle = () => {
 
   const ecoTip =
     "Before recycling your phone, ensure all data is wiped. We perform a secondary wipe, but safety first!";
+  const ecoTip =
+    "Before recycling your phone, ensure all data is wiped. We perform a secondary wipe, but safety first!";
 
   const getDeviceIcon = (deviceType: string) => {
     const icons: { [key: string]: React.ReactNode } = {
@@ -98,7 +100,6 @@ const BookRecycle = () => {
       confirmed: "bg-blue-100 text-blue-800",
       cancelled: "bg-red-100 text-red-800",
     };
-
     return (
       <span
         className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusClasses[status] || "bg-gray-100 text-gray-800"}`}
@@ -108,9 +109,42 @@ const BookRecycle = () => {
     );
   };
 
+  const statCards = [
+    {
+      label: "Personal Score",
+      value: userStats.personalScore,
+      badge: userStats.scoreChange,
+      icon: <MdEco className="text-xl" />,
+      iconBg: "bg-gradient-to-br from-tech-lime to-emerald-400",
+      iconText: "text-eco-900",
+    },
+    {
+      label: "Total Requests",
+      value: userStats.totalRequests,
+      icon: <MdListAlt className="text-xl" />,
+      iconBg: "bg-gradient-to-br from-sky-400 to-blue-500",
+      iconText: "text-white",
+    },
+    {
+      label: "Items Recycled",
+      value: userStats.itemsRecycled,
+      icon: <MdCheckCircle className="text-xl" />,
+      iconBg: "bg-gradient-to-br from-teal-400 to-emerald-500",
+      iconText: "text-white",
+    },
+    {
+      label: "Cancelled",
+      value: userStats.cancelled,
+      icon: <MdCancel className="text-xl" />,
+      iconBg: "bg-gradient-to-br from-red-400 to-rose-500",
+      iconText: "text-white",
+    },
+  ];
+
   return (
     <div className="w-full flex flex-col gap-8 pb-12">
-      {/* Header */}
+
+      {/* Page Header */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -118,6 +152,13 @@ const BookRecycle = () => {
             Welcome back, {name}! Here is your recycling overview.
           </p>
         </div>
+        <Link
+          href="/citizen/book-recycle/new"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-tech-lime to-emerald-400 text-eco-900 font-semibold rounded-xl shadow-md hover:shadow-lg hover:brightness-105 transition-all text-sm"
+        >
+          <MdAddCircle className="text-lg" />
+          New Request
+        </Link>
       </header>
 
       {/* Stats Cards */}
@@ -197,18 +238,25 @@ const BookRecycle = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Left Column - CTA Banner & Recent Requests */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Left Column */}
+        <div className="lg:col-span-2 flex flex-col gap-5">
+
           {/* CTA Banner */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="relative h-60 bg-gradient-to-r from-green-600 to-emerald-500 flex items-center px-8 py-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
+          <div className="rounded-2xl overflow-hidden shadow-md">
+            <div className="relative h-52 bg-gradient-to-r from-eco-950 via-eco-900 to-emerald-800 flex items-center px-8 py-8">
+              {/* Decorative circles */}
+              <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-tech-lime/10 blur-2xl" />
+              <div className="absolute right-16 bottom-4 w-24 h-24 rounded-full bg-emerald-400/10 blur-xl" />
+
               <div className="relative z-10 flex flex-col gap-4 max-w-lg">
-                <h3 className="text-3xl font-medium text-white">Ready to clear some space?</h3>
-                <p className="text-gray-100 text-lg md:text-xl">
-                  Schedule a pickup for your old electronics and boost your eco score today.
-                </p>
+                <span className="inline-flex w-fit items-center gap-1.5 text-[11px] font-bold text-tech-lime uppercase tracking-widest bg-tech-lime/10 border border-tech-lime/20 px-3 py-1 rounded-full">
+                  <MdEco /> Ready to recycle?
+                </span>
+                <h3 className="text-2xl font-bold text-white leading-snug">
+                  Schedule a pickup & boost your eco score today.
+                </h3>
                 <Link
                   href="/citizen/book-recycle/new"
                   className="w-fit px-6 py-3 bg-white hover:bg-gray-300 text-green-700 font-medium rounded-lg shadow-lg transition-all flex items-center gap-2"
@@ -282,8 +330,9 @@ const BookRecycle = () => {
           </div>
         </div>
 
-        {/* Right Column - Eco Tip & Nearest Center */}
-        <div className="flex flex-col gap-6">
+        {/* Right Column */}
+        <div className="flex flex-col gap-5">
+
           {/* Eco Tip */}
           <div className="bg-green-50 border border-green-200 p-6 rounded-xl flex items-start gap-4">
             <MdLightbulb className="text-green-600 text-2xl mt-1 flex-shrink-0" />
@@ -294,13 +343,25 @@ const BookRecycle = () => {
           </div>
 
           {/* Nearest Center */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-4">
-            <h4 className="text-lg font-medium text-gray-900">Nearest Center</h4>
-            <div className="w-full aspect-video bg-gray-200 rounded-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center">
-                <MdLocationOn className="text-red-500 text-6xl drop-shadow-md" />
-              </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-eco-900">Nearest Center</h4>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-eco-400 bg-eco-50 px-2 py-1 rounded-full">Live</span>
             </div>
+
+            {/* Map placeholder */}
+            <div className="w-full aspect-video bg-eco-950 rounded-xl relative overflow-hidden flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-eco-900 to-eco-950" />
+              {/* Grid lines */}
+              <div className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: "linear-gradient(to right, #a8e063 1px, transparent 1px), linear-gradient(to bottom, #a8e063 1px, transparent 1px)",
+                  backgroundSize: "24px 24px"
+                }}
+              />
+              <MdLocationOn className="relative z-10 text-red-400 text-5xl drop-shadow-lg" />
+            </div>
+
             <div>
               <p className="text-gray-900 font-medium text-lg">{nearestCenter.name}</p>
               <p className="text-gray-500 text-base">
@@ -309,7 +370,9 @@ const BookRecycle = () => {
                 {nearestCenter.city}, {nearestCenter.zipCode}
               </p>
             </div>
-            <button className="w-full py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors text-gray-700">
+
+            <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-eco-950 hover:bg-eco-900 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
+              <MdLocationOn className="text-tech-lime text-base" />
               Get Directions
             </button>
           </div>
