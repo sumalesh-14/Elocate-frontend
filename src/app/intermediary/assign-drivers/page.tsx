@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { intermediaryApi, Driver } from "@/lib/intermediary-api";
 import "./styles.css";
 
+// ScheduledCollection interface remains for internal UI state until backend integration
 interface ScheduledCollection {
     id: string;
     clientName: string;
@@ -19,15 +21,6 @@ interface ScheduledCollection {
     driverMessages?: DriverMessage[];
     hasCriticalAlert?: boolean;
     adminHelpRequested?: boolean;
-}
-
-interface Driver {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    vehicleNumber: string;
-    availability: "Available" | "On Route" | "Busy";
 }
 
 interface DriverMessage {
@@ -170,43 +163,28 @@ const AssignDriversPage = () => {
         }
     ]);
 
-    // Mock Data - Available Drivers
-    const drivers: Driver[] = [
-        {
-            id: "DRV-001",
-            name: "John Smith",
-            email: "john.smith@elocate.com",
-            phone: "+1 555-0201",
-            vehicleNumber: "VAN-101",
-            availability: "Available"
-        },
-        {
-            id: "DRV-002",
-            name: "Maria Garcia",
-            email: "maria.garcia@elocate.com",
-            phone: "+1 555-0202",
-            vehicleNumber: "VAN-102",
-            availability: "On Route"
-        },
-        {
-            id: "DRV-003",
-            name: "David Lee",
-            email: "david.lee@elocate.com",
-            phone: "+1 555-0203",
-            vehicleNumber: "VAN-103",
-            availability: "Available"
-        },
-        {
-            id: "DRV-004",
-            name: "Emma Wilson",
-            email: "emma.wilson@elocate.com",
-            phone: "+1 555-0204",
-            vehicleNumber: "TRUCK-201",
-            availability: "Available"
-        }
-    ];
+    const [drivers, setDrivers] = useState<Driver[]>([]);
+    const [driverSearch, setDriverSearch] = useState("");
+    const [driverAvailabilityFilter, setDriverAvailabilityFilter] = useState("All");
 
+    useEffect(() => {
+        if (!showAssignModal) return;
 
+        const fetchDrivers = async () => {
+            try {
+                const data = await intermediaryApi.drivers.getAll(driverSearch, driverAvailabilityFilter);
+                setDrivers(data);
+            } catch (error) {
+                console.error("Error fetching drivers:", error);
+            }
+        };
+
+        const timerId = setTimeout(() => {
+            fetchDrivers();
+        }, 300);
+
+        return () => clearTimeout(timerId);
+    }, [showAssignModal, driverSearch, driverAvailabilityFilter]);
 
     const filteredCollections = collections.filter(collection => {
         if (filterStatus === "All") return true;
@@ -223,17 +201,26 @@ const AssignDriversPage = () => {
         setShowAssignModal(true);
     };
 
-    const confirmAssignment = () => {
+    const confirmAssignment = async () => {
         if (selectedDriver && selectedCollection) {
-            setCollections(collections.map(c =>
-                c.id === selectedCollection.id
-                    ? { ...c, status: "Assigned", assignedDriver: selectedDriver.name, driverEmail: selectedDriver.email, driverMessages: [] }
-                    : c
-            ));
-            alert(`Assignment email sent to ${selectedDriver.name} with collection location and details!`);
-            setShowAssignModal(false);
-            setSelectedDriver(null);
-            setSelectedCollection(null);
+            try {
+                // Actually call the backend to assign the driver
+                await intermediaryApi.requests.assignDriver(selectedCollection.id, selectedDriver.id);
+
+                // Update local status for immediate UI feedback
+                setCollections(collections.map(c =>
+                    c.id === selectedCollection.id
+                        ? { ...c, status: "Assigned", assignedDriver: selectedDriver.name, driverEmail: selectedDriver.email, driverMessages: [] }
+                        : c
+                ));
+                alert(`Assignment email sent to ${selectedDriver.name} with collection location and details!`);
+                setShowAssignModal(false);
+                setSelectedDriver(null);
+                setSelectedCollection(null);
+            } catch (error) {
+                console.error("Failed to assign driver:", error);
+                alert("Error: Could not assign driver in the backend.");
+            }
         }
     };
 
@@ -438,31 +425,55 @@ const AssignDriversPage = () => {
                             </div>
 
                             <div className="drivers-list">
-                                <h3>Select Driver</h3>
-                                {drivers.map((driver) => (
-                                    <div
-                                        key={driver.id}
-                                        className={`driver-item ${selectedDriver?.id === driver.id ? "selected" : ""} ${driver.availability !== "Available" ? "unavailable" : ""}`}
-                                        onClick={() => driver.availability === "Available" && setSelectedDriver(driver)}
+                                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Search by name, email, phone..."
+                                        value={driverSearch}
+                                        onChange={(e) => setDriverSearch(e.target.value)}
+                                        style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
+                                    />
+                                    <select
+                                        value={driverAvailabilityFilter}
+                                        onChange={(e) => setDriverAvailabilityFilter(e.target.value)}
+                                        style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
                                     >
-                                        <div className="driver-info">
-                                            <div className="driver-name">
-                                                <strong>{driver.name}</strong>
-                                                <span className={`availability-badge ${driver.availability.toLowerCase().replace(" ", "-")}`}>
-                                                    {driver.availability}
-                                                </span>
+                                        <option value="All">All Statuses</option>
+                                        <option value="AVAILABLE">Available</option>
+                                        <option value="ON_ROUTE">On Route</option>
+                                        <option value="BUSY">Busy</option>
+                                    </select>
+                                </div>
+
+                                <h3>Select Driver</h3>
+                                {drivers.length === 0 ? (
+                                    <p>No drivers found matching your criteria.</p>
+                                ) : (
+                                    drivers.map((driver) => (
+                                        <div
+                                            key={driver.id}
+                                            className={`driver-item ${selectedDriver?.id === driver.id ? "selected" : ""} ${driver.availability.toUpperCase() !== "AVAILABLE" ? "unavailable" : ""}`}
+                                            onClick={() => driver.availability.toUpperCase() === "AVAILABLE" && setSelectedDriver(driver)}
+                                        >
+                                            <div className="driver-info">
+                                                <div className="driver-name">
+                                                    <strong>{driver.name}</strong>
+                                                    <span className={`availability-badge ${driver.availability.toLowerCase().replace(" ", "-")}`}>
+                                                        {driver.availability}
+                                                    </span>
+                                                </div>
+                                                <div className="driver-details">
+                                                    <span>📧 {driver.email}</span>
+                                                    <span>📞 {driver.phone}</span>
+                                                    <span>🚐 {driver.vehicleNumber}</span>
+                                                </div>
                                             </div>
-                                            <div className="driver-details">
-                                                <span>📧 {driver.email}</span>
-                                                <span>📞 {driver.phone}</span>
-                                                <span>🚐 {driver.vehicleNumber}</span>
-                                            </div>
+                                            {selectedDriver?.id === driver.id && (
+                                                <span className="check-icon">✓</span>
+                                            )}
                                         </div>
-                                        {selectedDriver?.id === driver.id && (
-                                            <span className="check-icon">✓</span>
-                                        )}
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
 

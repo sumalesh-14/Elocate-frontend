@@ -12,6 +12,7 @@ import {
     BarChart2,
     AlertTriangle,
     ChevronRight,
+    Contact,
 } from "lucide-react";
 
 interface DashboardSidebarProps {
@@ -37,6 +38,7 @@ const navGroups = [
         title: "Management",
         items: [
             { name: "Clients", path: "/intermediary/clients", icon: Users },
+            { name: "Drivers", path: "/intermediary/drivers", icon: Contact },
             { name: "Reports", path: "/intermediary/reports", icon: BarChart2 },
             { name: "Settings", path: "/intermediary/settings", icon: Settings },
         ],

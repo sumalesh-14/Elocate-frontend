@@ -9,7 +9,22 @@ import { ToastProvider } from "@/context/ToastContext";
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: "500",
+  weight: ["400", "500", "600", "700"],
+  variable: '--font-poppins',
+});
+
+import { Outfit, Inter } from "next/font/google";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: '--font-outfit',
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
@@ -43,7 +58,7 @@ export default function RootLayout({
         }}
       />
 
-      <body className={poppins.className}>
+      <body className={`${poppins.variable} ${outfit.variable} ${inter.variable} font-sans`}>
         <ToastProvider>
           <NextTopLoader color="#28af60" showSpinner={false} />
           <ConditionalLayout>{children}</ConditionalLayout>

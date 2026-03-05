@@ -37,8 +37,10 @@ const config: Config = {
       },
       fontFamily: {
         cuprum: ['var(--ff-cuprum)', 'sans-serif'],
-        poppins: ['var(--ff-poppins)', 'sans-serif'],
-        display: ['var(--ff-poppins)', 'sans-serif'], // Mapping display font to Poppins for now
+        poppins: ['var(--font-poppins)', 'sans-serif'],
+        display: ['var(--font-outfit)', 'sans-serif'],
+        sans: ['var(--font-inter)', 'sans-serif'],
+        outfit: ['var(--font-outfit)', 'sans-serif'],
       },
       spacing: {
 

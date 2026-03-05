@@ -14,8 +14,12 @@ interface LayoutProps {
 
 export default function DashboardLayout({ children }: LayoutProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [user, setUserState] = React.useState<any>(null);
     const pathname = usePathname();
-    const user = getUser();
+
+    React.useEffect(() => {
+        setUserState(getUser());
+    }, []);
 
     const getPageTitle = (path: string) => {
         const titleMap: Record<string, string> = {

@@ -186,6 +186,17 @@ export const recycleRequestApi = {
         return response;
     },
 
+    getByUserId: async (userId: string, status?: string, searchTerm?: string) => {
+        const params: Record<string, string> = { userId };
+        if (status && status !== 'all') params.status = status;
+        if (searchTerm) params.searchTerm = searchTerm;
+        const response = await adminApiClient.get("/recycle-requests", {
+            params,
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+
     getById: async (id: string) => {
         const response = await adminApiClient.get(`/recycle-requests/${id}`, {
             headers: getAuthHeaders(),

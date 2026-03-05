@@ -453,39 +453,65 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
       90% { transform: translateY(65vh) rotate(360deg); opacity: 0; scale(0.5); }
       100% { opacity: 0; }
     }
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(190, 242, 100, 0.2); }
+      50% { box-shadow: 0 0 40px rgba(190, 242, 100, 0.4); }
+    }
     .waste-item {
       position: absolute;
       top: 0;
       animation: fallToBin 5s infinite linear;
       z-index: 10;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
     }
-    .label-tiny {
+    .label-premium {
       display: block;
-      font-size: 0.65rem;
+      font-size: 0.85rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #6b7280;
-      margin-bottom: 0.35rem;
+      letter-spacing: 0.1em;
+      color: #94a3b8;
+      margin-bottom: 0.75rem;
+      font-family: var(--font-inter);
     }
-    .input-compact {
+    .input-premium {
       width: 100%;
-      background-color: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 0.75rem;
-      padding: 0.75rem 1rem;
-      color: #111827;
-      font-weight: 500;
-      font-size: 0.95rem;
+      background-color: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 1.25rem;
+      padding: 1.25rem 1.5rem;
+      color: #1e293b;
+      font-weight: 600;
+      font-size: 1.15rem;
       outline: none;
-      transition: all 0.2s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: var(--font-inter);
     }
-    .input-compact:focus {
-      border-color: #d9f99d;
-      box-shadow: 0 0 0 3px rgba(217, 249, 157, 0.3);
+    .input-premium:focus {
+      border-color: #bef264;
+      background-color: white;
+      box-shadow: 0 10px 25px -5px rgba(190, 242, 100, 0.2);
+      transform: translateY(-2px);
     }
-    .input-compact::placeholder {
-      color: #9ca3af;
+    .input-premium::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 10px;
     }
   `;
 
@@ -497,62 +523,77 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
       <style>{animationStyles}</style>
 
       {/* LEFT SIDE: Animation Panel */}
-      <div className="hidden lg:flex w-[40%] bg-eco-950 relative overflow-hidden flex-col items-center justify-between">
-        <div className="absolute inset-0 bg-gradient-to-b from-eco-900 to-eco-950"></div>
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-tech-lime/10 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[80px]"></div>
+      <div className="hidden lg:flex w-[42%] bg-[#050a08] relative overflow-hidden flex-col items-center justify-between">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,#0f291e,transparent)]"></div>
+        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-tech-lime/5 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
 
-        <div className="relative z-20 pt-20 px-12 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-tech-lime text-xs font-bold uppercase tracking-wider mb-6">
-            <Recycle size={14} /> The Future of E-Waste
+        <div className="relative z-20 pt-24 px-16 text-center">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl text-tech-lime text-xs font-black uppercase tracking-[0.2em] mb-10 animate-fade-in shadow-2xl">
+            <div className="w-2 h-2 rounded-full bg-tech-lime animate-ping"></div>
+            ELocate Ecosystem
           </div>
-          <h2 className="text-5xl font-display font-bold text-white mb-6 leading-tight">
-            Turn your old gadgets into <span className="text-transparent bg-clip-text bg-gradient-to-r from-tech-lime to-emerald-400">new possibilities.</span>
+          <h2 className="text-6xl font-display font-black text-white mb-8 leading-[1.1] tracking-tight">
+            The Future of <span className="text-transparent bg-clip-text bg-gradient-to-br from-tech-lime via-emerald-400 to-teal-400">Waste Recovery.</span>
           </h2>
-          <p className="text-eco-200/60 text-lg max-w-md mx-auto leading-relaxed">
-            Join the global network that is recovering millions of precious materials from electronic waste every day.
+          <p className="text-eco-100/40 text-xl max-w-md mx-auto leading-relaxed font-sans">
+            Join thousands of citizens and partners building a sustainable world through intelligent e-waste management.
           </p>
         </div>
 
-        <div className="relative w-full flex-1 flex justify-center perspective-1000 overflow-hidden">
+        <div className="relative w-full flex-1 flex justify-center perspective-[2000px] overflow-hidden">
           {fallingItems.map((item) => (
             <div
               key={item.id}
-              className="waste-item text-eco-200/80 drop-shadow-[0_0_15px_rgba(217,249,157,0.3)]"
+              className="waste-item text-white/20"
               style={{
                 left: `${item.left}%`,
                 animationDelay: `${item.delay}s`,
-                animationDuration: `${4 + Math.random() * 3}s`
+                animationDuration: `${5 + Math.random() * 5}s`
               }}
             >
-              {item.type === 'phone' && <Smartphone size={32} strokeWidth={1.5} />}
-              {item.type === 'battery' && <Battery size={32} strokeWidth={1.5} />}
-              {item.type === 'laptop' && <Laptop size={48} strokeWidth={1.5} />}
+              <div className="p-4 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 shadow-2xl">
+                {item.type === 'phone' && <Smartphone size={32} strokeWidth={1} />}
+                {item.type === 'battery' && <Battery size={32} strokeWidth={1} />}
+                {item.type === 'laptop' && <Laptop size={40} strokeWidth={1} />}
+              </div>
             </div>
           ))}
 
-          <div className="absolute bottom-24 w-72 h-64 z-20">
-            <div className="absolute inset-x-6 bottom-0 h-48 bg-eco-800/80 rounded-b-[2.5rem] transform skew-x-3 border border-white/5"></div>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/20 shadow-2xl flex items-center justify-center flex-col z-30 group">
-              <div className="w-24 h-2 bg-tech-lime/50 rounded-full mb-6 group-hover:bg-tech-lime/80 transition-colors"></div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-tech-lime/20 blur-xl rounded-full animate-pulse"></div>
-                <Recycle className="text-white relative z-10" size={64} strokeWidth={1.5} />
+          <div className="absolute bottom-16 w-80 h-72 z-20">
+            <div className="absolute inset-x-8 bottom-0 h-56 bg-black/40 rounded-b-[3rem] blur-2xl"></div>
+            <div className="absolute inset-0 glass-card rounded-[3.5rem] flex items-center justify-center flex-col z-30 group transition-all duration-500 hover:scale-105">
+              <div className="w-24 h-2.5 bg-tech-lime/20 rounded-full mb-10 overflow-hidden">
+                <div className="w-1/2 h-full bg-tech-lime animate-[shimmer_2s_infinite]"></div>
               </div>
-              <div className="mt-4 flex flex-col items-center gap-1">
-                <span className="text-xs text-tech-lime font-bold uppercase tracking-[0.2em]">Processing</span>
-                <div className="flex gap-1">
-                  <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce"></span>
-                  <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce delay-75"></span>
-                  <span className="w-1 h-1 bg-tech-lime rounded-full animate-bounce delay-150"></span>
+
+              <div className="relative p-8 rounded-full bg-tech-lime/10 border border-tech-lime/20 group-hover:border-tech-lime/50 transition-all duration-500">
+                <div className="absolute inset-0 bg-tech-lime/20 blur-2xl rounded-full animate-pulse"></div>
+                <Recycle className="text-tech-lime relative z-10" size={80} strokeWidth={1} />
+              </div>
+
+              <div className="mt-8 flex flex-col items-center gap-3">
+                <span className="text-[10px] text-tech-lime/60 font-black uppercase tracking-[0.4em]">Neural Core Active</span>
+                <div className="flex gap-2">
+                  <span className="w-1.5 h-1.5 bg-tech-lime rounded-full animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 bg-tech-lime rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                  <span className="w-1.5 h-1.5 bg-tech-lime rounded-full animate-bounce [animation-delay:0.4s]"></span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="relative z-20 pb-8 text-eco-200/40 text-xs uppercase tracking-widest font-medium">
-          Powered by EcoBot AI & Gemini
+        <div className="relative z-20 pb-12 flex flex-col items-center gap-4">
+          <div className="flex gap-4 opacity-30">
+            <div className="w-12 h-[1px] bg-white"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+            <div className="w-12 h-[1px] bg-white"></div>
+          </div>
+          <span className="text-eco-100/20 text-[10px] uppercase tracking-[0.5em] font-black">
+            Intelligent Infrastructure v2.0
+          </span>
         </div>
       </div>
 
@@ -590,37 +631,90 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
             {/* --- VIEW: LOGIN --- */}
             {view === 'login' && (
               <div className="animate-fade-in-up">
-                <div className="mb-10">
-                  <h3 className="font-display font-bold text-4xl text-eco-900 mb-3">Welcome Back</h3>
-                  <p className="text-gray-500 text-lg">Enter your credentials to access your dashboard.</p>
+                <div className="mb-12">
+                  <h3 className="font-display font-black text-6xl text-slate-900 mb-4 tracking-tighter">
+                    Welcome <span className="text-tech-lime drop-shadow-sm">Back</span>
+                  </h3>
+                  <p className="text-slate-400 text-xl font-medium leading-relaxed max-w-sm">
+                    Access your account and continue your sustainable journey.
+                  </p>
                 </div>
 
-                <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-8">
-                  <button onClick={() => setLoginMethod('password')} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all shadow-sm ${loginMethod === 'password' ? 'bg-white text-eco-900' : 'bg-transparent text-gray-400 shadow-none hover:text-gray-600'}`}>Password</button>
-                  <button onClick={() => setLoginMethod('otp')} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all shadow-sm ${loginMethod === 'otp' ? 'bg-white text-eco-900' : 'bg-transparent text-gray-400 shadow-none hover:text-gray-600'}`}>One-Time Password</button>
+                <div className="flex bg-slate-100 p-2 rounded-[1.5rem] mb-10">
+                  <button
+                    onClick={() => setLoginMethod('password')}
+                    className={`flex-1 py-4 text-sm font-black rounded-2xl transition-all duration-300 ${loginMethod === 'password' ? 'bg-white text-slate-900 shadow-xl scale-[1.02]' : 'bg-transparent text-slate-400 hover:text-slate-600'}`}
+                  >
+                    PASSWORD
+                  </button>
+                  <button
+                    onClick={() => setLoginMethod('otp')}
+                    className={`flex-1 py-4 text-sm font-black rounded-2xl transition-all duration-300 ${loginMethod === 'otp' ? 'bg-white text-slate-900 shadow-xl scale-[1.02]' : 'bg-transparent text-slate-400 hover:text-slate-600'}`}
+                  >
+                    OTP LOGIN
+                  </button>
                 </div>
 
-                <form onSubmit={handleLoginSubmit} className="space-y-6">
+                <form onSubmit={handleLoginSubmit} className="space-y-8">
                   <div className="group">
-                    <label className="label-tiny">Email or Mobile</label>
+                    <label className="label-premium">Account Identifier</label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-600 transition-colors pointer-events-none" size={20} />
-                      <input type="text" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="input-compact !pl-12" placeholder="user@example.com" required />
+                      <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-tech-lime group-focus-within:scale-110 transition-all pointer-events-none" size={24} />
+                      <input
+                        type="text"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        className="input-premium !pl-16 shadow-sm"
+                        placeholder="Email or phone number"
+                        required
+                      />
                     </div>
                   </div>
+
                   {loginMethod === 'password' && (
                     <div className="group">
-                      <label className="label-tiny">Password</label>
+                      <div className="flex justify-between items-end mb-0">
+                        <label className="label-premium">Security Password</label>
+                        <button type="button" className="text-xs font-bold text-tech-lime hover:underline mb-3">FORGOT?</button>
+                      </div>
                       <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-eco-600 transition-colors pointer-events-none" size={20} />
-                        <input type="password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} className="input-compact !pl-12" placeholder="••••••••" required />
+                        <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-tech-lime group-focus-within:scale-110 transition-all pointer-events-none" size={24} />
+                        <input
+                          type="password"
+                          value={loginPass}
+                          onChange={(e) => setLoginPass(e.target.value)}
+                          className="input-premium !pl-16 shadow-sm"
+                          placeholder="••••••••"
+                          required
+                        />
                       </div>
                     </div>
                   )}
-                  <button type="submit" disabled={isLoading} className="w-full py-4 rounded-2xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                    {isLoading ? 'Authenticating...' : (loginMethod === 'password' ? 'Sign In' : 'Send Code')}
-                    {!isLoading && <ArrowRight size={20} />}
-                  </button>
+
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-6 rounded-[2rem] bg-slate-900 text-white font-black text-xl hover:bg-slate-800 transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] hover:shadow-tech-lime/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 group disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <>
+                          {loginMethod === 'password' ? 'SIGN IN' : 'SEND SECURE CODE'}
+                          <div className="p-1 rounded-full bg-tech-lime text-slate-900 group-hover:translate-x-1 transition-transform">
+                            <ArrowRight size={18} strokeWidth={3} />
+                          </div>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="mt-8 flex items-center gap-4 opacity-50">
+                      <div className="flex-1 h-[1px] bg-slate-200"></div>
+                      <span className="text-[10px] font-black tracking-[0.2em] text-slate-400">ENCRYPTED LOGIN</span>
+                      <div className="flex-1 h-[1px] bg-slate-200"></div>
+                    </div>
+                  </div>
                 </form>
               </div>
             )}
@@ -628,16 +722,35 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
             {/* --- VIEW: ROLE SELECTION --- */}
             {view === 'role-selection' && (
               <div className="animate-fade-in-up pt-4">
-                <h3 className="font-display font-bold text-4xl text-center text-eco-900 mb-3">Join ELocate</h3>
-                <p className="text-center text-gray-500 mb-12 text-lg">Choose your role in the ecosystem.</p>
-                <div className="grid gap-6">
-                  <button onClick={() => setView('register-citizen')} className="group relative p-8 bg-white border-2 border-gray-100 rounded-[2rem] hover:border-tech-lime hover:bg-eco-50/30 transition-all hover:shadow-xl text-left flex items-start gap-6">
-                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm border border-blue-100"><User size={32} /></div>
-                    <div className="flex-1"><div className="flex justify-between items-center mb-1"><h4 className="font-bold text-xl text-gray-900 group-hover:text-eco-900">Citizen</h4><ArrowRight size={20} className="text-gray-300 group-hover:text-eco-600 transition-colors" /></div><p className="text-sm text-gray-500 leading-relaxed">I want to recycle my personal devices, earn rewards, and track my environmental impact.</p></div>
+                <h3 className="font-display font-black text-6xl text-center text-slate-900 mb-4 tracking-tighter">Join <span className="text-tech-lime">ELocate</span></h3>
+                <p className="text-center text-slate-400 mb-16 text-xl font-medium">Choose your role in the ecosystem.</p>
+                <div className="grid gap-8">
+                  <button onClick={() => setView('register-citizen')} className="group relative p-10 bg-white border-2 border-slate-100 rounded-[3rem] hover:border-tech-lime hover:bg-slate-50/50 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] text-left flex items-start gap-8">
+                    <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-sm border border-blue-100/50"><User size={40} strokeWidth={1.5} /></div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-black text-2xl text-slate-900 group-hover:text-black">Citizen Account</h4>
+                        <div className="p-1 px-3 rounded-full bg-blue-100/50 text-blue-600 text-[10px] font-black tracking-widest uppercase">INDIVIDUAL</div>
+                      </div>
+                      <p className="text-base text-slate-400 leading-relaxed font-medium">Recycle personal devices, earn eco-rewards, and track your environmental impact.</p>
+                      <div className="mt-4 flex items-center gap-2 text-tech-lime font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                        GET STARTED <ArrowRight size={14} />
+                      </div>
+                    </div>
                   </button>
-                  <button onClick={() => setView('register-intermediary')} className="group relative p-8 bg-white border-2 border-gray-100 rounded-[2rem] hover:border-tech-lime hover:bg-eco-50/30 transition-all hover:shadow-xl text-left flex items-start gap-6">
-                    <div className="w-16 h-16 bg-eco-50 text-eco-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm border border-eco-100"><Building2 size={32} /></div>
-                    <div className="flex-1"><div className="flex justify-between items-center mb-1"><h4 className="font-bold text-xl text-gray-900 group-hover:text-eco-900">Facility / Partner</h4><ArrowRight size={20} className="text-gray-300 group-hover:text-eco-600 transition-colors" /></div><p className="text-sm text-gray-500 leading-relaxed">I represent a recycling center, collector, or refurbisher looking to join the network.</p></div>
+
+                  <button onClick={() => setView('register-intermediary')} className="group relative p-10 bg-white border-2 border-slate-100 rounded-[3rem] hover:border-emerald-400 hover:bg-slate-50/50 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] text-left flex items-start gap-8">
+                    <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-[2rem] flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 shadow-sm border border-emerald-100/50"><Building2 size={40} strokeWidth={1.5} /></div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-black text-2xl text-slate-900 group-hover:text-black">Facility / Partner</h4>
+                        <div className="p-1 px-3 rounded-full bg-emerald-100/50 text-emerald-600 text-[10px] font-black tracking-widest uppercase">ORGANIZATION</div>
+                      </div>
+                      <p className="text-base text-slate-400 leading-relaxed font-medium">Register as a recycling center, collector, or refurbisher to join our global network.</p>
+                      <div className="mt-4 flex items-center gap-2 text-emerald-500 font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                        PARTNER WITH US <ArrowRight size={14} />
+                      </div>
+                    </div>
                   </button>
                 </div>
               </div>
@@ -646,111 +759,108 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
             {/* --- VIEW: REGISTER CITIZEN --- */}
             {view === 'register-citizen' && (
               <div className="animate-fade-in-up">
-                <div className="mb-6 text-center md:text-left">
-                  <h3 className="font-display font-bold text-3xl text-eco-900 mb-1">Create Citizen Account</h3>
-                  <p className="text-gray-500 text-sm">Start your journey towards a zero-waste lifestyle.</p>
+                <div className="mb-10 text-center md:text-left">
+                  <h3 className="font-display font-black text-5xl text-slate-900 mb-2 tracking-tight">Create <span className="text-tech-lime">Account</span></h3>
+                  <p className="text-slate-400 text-lg font-medium">Join the sustainable revolution today.</p>
                 </div>
 
-                <form onSubmit={handleRegisterSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-
-                  {/* Row 1: Name & Mobile */}
+                <form onSubmit={handleRegisterSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                   <div className="col-span-1">
-                    <label className="label-tiny">Full Name</label>
+                    <label className="label-premium">Full Name</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                      <input type="text" required value={citizenData.name} onChange={(e) => handleCitizenChange('name', e.target.value)} className="input-compact !pl-12" placeholder="John Doe" />
+                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                      <input type="text" required value={citizenData.name} onChange={(e) => handleCitizenChange('name', e.target.value)} className="input-premium !pl-14" placeholder="e.g. Alex Johnson" />
                     </div>
                   </div>
                   <div className="col-span-1">
-                    <label className="label-tiny">Mobile Number</label>
+                    <label className="label-premium">Mobile Contact</label>
                     <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                      <input type="tel" required value={citizenData.mobile} onChange={(e) => handleCitizenChange('mobile', e.target.value)} className="input-compact !pl-12" placeholder="+91 9999999999" />
+                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                      <input type="tel" required value={citizenData.mobile} onChange={(e) => handleCitizenChange('mobile', e.target.value)} className="input-premium !pl-14" placeholder="+91 00000 00000" />
                     </div>
                   </div>
 
-                  {/* Row 2: Email */}
                   <div className="col-span-1 md:col-span-2">
-                    <label className="label-tiny">Email Address</label>
+                    <label className="label-premium">Email Address</label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                      <input type="email" required value={citizenData.email} onChange={(e) => handleCitizenChange('email', e.target.value)} className="input-compact !pl-12" placeholder="citizen@gmail.com" />
+                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                      <input type="email" required value={citizenData.email} onChange={(e) => handleCitizenChange('email', e.target.value)} className="input-premium !pl-14" placeholder="alex@example.com" />
                     </div>
                   </div>
 
-                  {/* Row 3: Address */}
                   <div className="col-span-1 md:col-span-2">
-                    <label className="label-tiny">Address</label>
+                    <label className="label-premium">Primary Residence / Address</label>
                     <div className="relative">
-                      <Home className="absolute left-4 top-4 text-gray-400 pointer-events-none" size={18} />
-                      <textarea rows={1} value={citizenData.address} onChange={(e) => handleCitizenChange('address', e.target.value)} className="input-compact !pl-12 resize-none py-3" placeholder="Street Address, Area"></textarea>
+                      <Home className="absolute left-5 top-5 text-slate-300" size={20} />
+                      <textarea rows={1} value={citizenData.address} onChange={(e) => handleCitizenChange('address', e.target.value)} className="input-premium !pl-14 resize-none min-h-[80px] py-4" placeholder="Building, Street, Area..."></textarea>
                     </div>
                   </div>
 
-                  {/* Row 4: City, State, Pincode */}
-                  <div className="col-span-1 md:col-span-2 grid grid-cols-3 gap-4">
+                  <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="label-tiny">City</label>
-                      <input type="text" value={citizenData.city} onChange={(e) => handleCitizenChange('city', e.target.value)} className="input-compact" placeholder="City" />
+                      <label className="label-premium">City</label>
+                      <input type="text" value={citizenData.city} onChange={(e) => handleCitizenChange('city', e.target.value)} className="input-premium" placeholder="City" />
                     </div>
                     <div>
-                      <label className="label-tiny">State</label>
+                      <label className="label-premium">State</label>
                       <div className="relative">
                         <select
                           value={citizenData.state}
                           onChange={(e) => handleCitizenChange('state', e.target.value)}
-                          className="input-compact appearance-none bg-white pr-8"
+                          className="input-premium appearance-none bg-[#f8fafc] pr-12 focus:bg-white"
                         >
-                          <option value="">Select State</option>
+                          <option value="">Select</option>
                           {INDIAN_STATES.map(state => (
                             <option key={state} value={state}>{state}</option>
                           ))}
                         </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
                       </div>
                     </div>
                     <div>
-                      <label className="label-tiny">Pincode</label>
-                      <input type="text" value={citizenData.pincode} onChange={(e) => handleCitizenChange('pincode', e.target.value)} className="input-compact" placeholder="Pincode" />
+                      <label className="label-premium">Pincode</label>
+                      <input type="text" value={citizenData.pincode} onChange={(e) => handleCitizenChange('pincode', e.target.value)} className="input-premium" placeholder="000 000" />
                     </div>
                   </div>
 
-                  {/* Row 5: Location */}
-                  <div className="col-span-1 md:col-span-2 grid grid-cols-12 gap-4 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
-                    <div className="col-span-4 md:col-span-3">
-                      <label className="label-tiny">Latitude</label>
-                      <input type="text" disabled value={citizenData.latitude} className="input-compact bg-white text-gray-500 text-xs py-2.5" placeholder="0.00" />
+                  <div className="col-span-1 md:col-span-2 bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-100 flex flex-col md:flex-row items-center gap-6">
+                    <div className="flex-1 flex gap-4 w-full">
+                      <div className="flex-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Latitude</label>
+                        <div className="text-lg font-black text-slate-900">{citizenData.latitude || '0.0000'}</div>
+                      </div>
+                      <div className="flex-1 border-l border-slate-200 pl-4">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Longitude</label>
+                        <div className="text-lg font-black text-slate-900">{citizenData.longitude || '0.0000'}</div>
+                      </div>
                     </div>
-                    <div className="col-span-4 md:col-span-3">
-                      <label className="label-tiny">Longitude</label>
-                      <input type="text" disabled value={citizenData.longitude} className="input-compact bg-white text-gray-500 text-xs py-2.5" placeholder="0.00" />
-                    </div>
-                    <div className="col-span-4 md:col-span-6">
-                      <button type="button" onClick={autoDetectCitizenLocation} className="w-full py-2.5 bg-tech-lime text-eco-900 rounded-lg font-bold hover:bg-lime-400 transition-colors flex items-center justify-center gap-2 shadow-sm text-sm border border-tech-lime">
-                        <Leaf size={16} /> <span className="hidden md:inline">Auto Detect Location</span><span className="md:hidden">Detect</span>
-                      </button>
-                    </div>
+                    <button type="button" onClick={autoDetectCitizenLocation} className="shrink-0 py-4 px-8 bg-white text-slate-900 rounded-2xl font-black text-sm hover:bg-tech-lime transition-all duration-300 flex items-center gap-3 shadow-sm border-2 border-slate-200 hover:border-tech-lime group">
+                      <MapPin size={20} className="text-tech-lime group-hover:text-slate-900 transition-colors" />
+                      AUTO-LOCATE
+                    </button>
                   </div>
 
-                  {/* Row 6: Passwords */}
                   <div className="col-span-1">
-                    <label className="label-tiny">Password</label>
+                    <label className="label-premium">Password</label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                      <input type="password" required value={citizenData.password} onChange={(e) => handleCitizenChange('password', e.target.value)} className="input-compact !pl-12" placeholder="••••••••" />
+                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                      <input type="password" required value={citizenData.password} onChange={(e) => handleCitizenChange('password', e.target.value)} className="input-premium !pl-14" placeholder="••••••••" />
                     </div>
                   </div>
                   <div className="col-span-1">
-                    <label className="label-tiny">Confirm Password</label>
+                    <label className="label-premium">Confirm</label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                      <input type="password" required value={citizenData.confirmPassword} onChange={(e) => handleCitizenChange('confirmPassword', e.target.value)} className="input-compact !pl-12" placeholder="••••••••" />
+                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                      <input type="password" required value={citizenData.confirmPassword} onChange={(e) => handleCitizenChange('confirmPassword', e.target.value)} className="input-premium !pl-14" placeholder="••••••••" />
                     </div>
                   </div>
 
-                  <div className="col-span-1 md:col-span-2 mt-4">
-                    <button type="submit" className="w-full py-3.5 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl">
-                      Complete Registration
+                  <div className="col-span-1 md:col-span-2 mt-6 pt-6 border-t border-slate-100">
+                    <button type="submit" className="w-full py-6 rounded-[2.5rem] bg-slate-900 text-white font-black text-xl hover:bg-slate-800 transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] hover:shadow-tech-lime/20 flex items-center justify-center gap-4 group">
+                      CREATE MY ACCOUNT
+                      <div className="p-1 rounded-full bg-tech-lime text-slate-900 group-hover:translate-x-1 transition-transform">
+                        <ArrowRight size={20} strokeWidth={3} />
+                      </div>
                     </button>
                   </div>
                 </form>
@@ -760,93 +870,109 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
             {/* --- VIEW: REGISTER INTERMEDIARY --- */}
             {view === 'register-intermediary' && (
               <div className="animate-fade-in-up">
-                <div className="mb-6 text-center md:text-left">
-                  <h3 className="font-display font-bold text-3xl text-eco-900 mb-1">Facility Registration</h3>
-                  <p className="text-gray-500 text-sm">Register your organization as an official partner.</p>
+                <div className="mb-10 text-center md:text-left">
+                  <h3 className="font-display font-black text-5xl text-slate-900 mb-2 tracking-tight">Facility <span className="text-tech-lime">Portal</span></h3>
+                  <p className="text-slate-400 text-lg font-medium">Register your organization as an official partner.</p>
                 </div>
 
-                <form onSubmit={handleRegisterSubmit} className="space-y-6">
-                  {/* Basic Info & Location Compacted */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <form onSubmit={handleRegisterSubmit} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div className="col-span-1 md:col-span-2">
-                      <label className="label-tiny">Facility Name</label>
-                      <input type="text" required className="input-compact" placeholder="GreenCycle Hub" value={facilityData.name} onChange={e => handleFacilityChange('name', e.target.value)} />
+                      <label className="label-premium">Organization Name</label>
+                      <input type="text" required className="input-premium" placeholder="e.g. GreenCycle Hub" value={facilityData.name} onChange={e => handleFacilityChange('name', e.target.value)} />
                     </div>
                     <div className="col-span-1">
-                      <label className="label-tiny">Registration Number</label>
-                      <input type="text" required className="input-compact" placeholder="REG123456" value={facilityData.registrationNumber} onChange={e => handleFacilityChange('registrationNumber', e.target.value)} />
+                      <label className="label-premium">Registration ID</label>
+                      <input type="text" required className="input-premium" placeholder="REG-123456" value={facilityData.registrationNumber} onChange={e => handleFacilityChange('registrationNumber', e.target.value)} />
                     </div>
                     <div className="col-span-1">
-                      <label className="label-tiny">Email</label>
-                      <input type="email" required className="input-compact" placeholder="contact@facility.com" value={facilityData.email} onChange={e => handleFacilityChange('email', e.target.value)} />
+                      <label className="label-premium">Official Email</label>
+                      <input type="email" required className="input-premium" placeholder="contact@organization.com" value={facilityData.email} onChange={e => handleFacilityChange('email', e.target.value)} />
                     </div>
                     <div className="col-span-1">
-                      <label className="label-tiny">Password</label>
-                      <input type="password" required className="input-compact" placeholder="Min 8 characters" value={facilityData.password} onChange={e => handleFacilityChange('password', e.target.value)} />
+                      <label className="label-premium">Secure Password</label>
+                      <input type="password" required className="input-premium" placeholder="Min 8 characters" value={facilityData.password} onChange={e => handleFacilityChange('password', e.target.value)} />
                     </div>
                     <div className="col-span-1">
-                      <label className="label-tiny">Contact Number</label>
-                      <input type="tel" required className="input-compact" placeholder="+1 234 567 8900" value={facilityData.contactNumber} onChange={e => handleFacilityChange('contactNumber', e.target.value)} />
+                      <label className="label-premium">Primary Contact</label>
+                      <input type="tel" required className="input-premium" placeholder="+1 000 000 0000" value={facilityData.contactNumber} onChange={e => handleFacilityChange('contactNumber', e.target.value)} />
                     </div>
                     <div className="col-span-1">
-                      <label className="label-tiny">Daily Capacity (kg)</label>
-                      <input type="number" required className="input-compact" placeholder="1000" value={facilityData.capacity} onChange={e => handleFacilityChange('capacity', Number(e.target.value))} />
+                      <label className="label-premium">Daily Cap (kg)</label>
+                      <input type="number" required className="input-premium" placeholder="1000" value={facilityData.capacity} onChange={e => handleFacilityChange('capacity', Number(e.target.value))} />
                     </div>
                     <div className="col-span-1">
-                      <label className="label-tiny">Operating Hours</label>
-                      <input type="text" required className="input-compact" placeholder="Mon-Fri, 9AM-5PM" value={facilityData.operatingHours} onChange={e => handleFacilityChange('operatingHours', e.target.value)} />
+                      <label className="label-premium">Operating Window</label>
+                      <input type="text" required className="input-premium" placeholder="e.g. 09:00 - 18:00" value={facilityData.operatingHours} onChange={e => handleFacilityChange('operatingHours', e.target.value)} />
                     </div>
 
-                    {/* Address Block */}
-                    <div className="col-span-1 md:col-span-2 pt-2 border-t border-gray-100 mt-2">
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="label-tiny mb-0">Address</label>
-                        <button type="button" onClick={autoDetectLocation} className="text-[10px] bg-tech-lime/20 text-eco-800 px-2 py-0.5 rounded hover:bg-tech-lime/40 transition-colors font-bold flex items-center gap-1 uppercase tracking-wide">
-                          <Leaf size={10} /> Auto Detect
+                    <div className="col-span-1 md:col-span-2 p-8 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100">
+                      <div className="flex justify-between items-center mb-6">
+                        <label className="label-premium mb-0">Hq Location</label>
+                        <button type="button" onClick={autoDetectLocation} className="text-[10px] font-black bg-tech-lime text-slate-900 px-4 py-2 rounded-full hover:shadow-lg transition-all flex items-center gap-2 group">
+                          <MapPin size={14} className="group-hover:scale-110 transition-transform" /> DETECT
                         </button>
                       </div>
-                      <input type="text" required className="input-compact mb-3" placeholder="Street Address" value={facilityData.address.address} onChange={e => handleAddressChange('address', e.target.value)} />
+                      <input type="text" required className="input-premium mb-6 bg-white" placeholder="Street Address" value={facilityData.address.address} onChange={e => handleAddressChange('address', e.target.value)} />
 
-                      <div className="grid grid-cols-3 gap-3 mb-3">
-                        <input type="text" className="input-compact" placeholder="City" value={facilityData.address.city} onChange={e => handleAddressChange('city', e.target.value)} />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <input type="text" className="input-premium bg-white" placeholder="City" value={facilityData.address.city} onChange={e => handleAddressChange('city', e.target.value)} />
                         <div className="relative">
                           <select
                             value={facilityData.address.state}
                             onChange={e => handleAddressChange('state', e.target.value)}
-                            className="input-compact appearance-none bg-white pr-8 text-sm"
+                            className="input-premium bg-white appearance-none pr-12"
                           >
                             <option value="">State</option>
                             {INDIAN_STATES.map(state => (
                               <option key={state} value={state}>{state}</option>
                             ))}
                           </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                          <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                         </div>
-                        <input type="text" className="input-compact" placeholder="Zip" value={facilityData.address.pincode} onChange={e => handleAddressChange('pincode', e.target.value)} />
+                        <input type="text" className="input-premium bg-white" placeholder="Pincode" value={facilityData.address.pincode} onChange={e => handleAddressChange('pincode', e.target.value)} />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <input type="number" disabled className="input-compact bg-gray-50 text-gray-500 text-xs" placeholder="Lat: 0.00" value={facilityData.address.latitude} />
-                        <input type="number" disabled className="input-compact bg-gray-50 text-gray-500 text-xs" placeholder="Long: 0.00" value={facilityData.address.longitude} />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-white/50 rounded-2xl border border-slate-200 text-center">
+                          <span className="text-[10px] font-black text-slate-400 block mb-1">LAT</span>
+                          <span className="font-black text-slate-900 text-sm">{facilityData.address.latitude || '0.00'}</span>
+                        </div>
+                        <div className="p-4 bg-white/50 rounded-2xl border border-slate-200 text-center">
+                          <span className="text-[10px] font-black text-slate-400 block mb-1">LONG</span>
+                          <span className="font-black text-slate-900 text-sm">{facilityData.address.longitude || '0.00'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* File Upload */}
-                  <div className="pt-2 border-t border-gray-100">
-                    <label className="label-tiny mb-2">Verification Documents</label>
-                    <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-white hover:border-tech-lime transition-all">
-                      <div className="flex items-center gap-3">
-                        <UploadCloud className="w-5 h-5 text-gray-400" />
-                        <p className="text-xs text-gray-500"><span className="font-semibold">Click to upload</span> (PDF, JPG)</p>
+                  <div className="p-8 border-2 border-slate-100 rounded-[2.5rem] bg-white group hover:border-tech-lime transition-all duration-300">
+                    <label className="label-premium mb-4">Verification Artifacts</label>
+                    <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-slate-200 border-dashed rounded-3xl cursor-pointer hover:bg-slate-50 transition-all">
+                      <div className="flex flex-col items-center gap-4 py-8">
+                        <div className="p-4 bg-slate-100 rounded-full text-slate-400 group-hover:text-tech-lime transition-colors">
+                          <UploadCloud size={32} />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-base font-black text-slate-900">Upload documentation</p>
+                          <p className="text-xs font-medium text-slate-400 mt-1">PDF, JPG or PNG (Max 10MB)</p>
+                        </div>
                       </div>
                       <input type="file" className="hidden" onChange={handleFileUpload} />
                     </label>
-                    {fileName && <div className="mt-2 text-xs text-eco-700 flex items-center gap-1"><CheckCircle size={12} /> {fileName}</div>}
+                    {fileName && (
+                      <div className="mt-4 p-4 bg-emerald-50 rounded-2xl flex items-center gap-3 border border-emerald-100 animate-slide-in-top">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg"><CheckCircle size={18} /></div>
+                        <span className="text-sm font-black text-emerald-900 truncate">{fileName}</span>
+                      </div>
+                    )}
                   </div>
 
-                  <button type="submit" className="w-full py-3.5 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl">
-                    Complete Registration
+                  <button type="submit" className="w-full py-6 rounded-[2.5rem] bg-slate-900 text-white font-black text-xl hover:bg-slate-800 transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] hover:shadow-tech-lime/20 flex items-center justify-center gap-4 group">
+                    COMPLETE REGISTRATION
+                    <div className="p-1 rounded-full bg-tech-lime text-slate-900 group-hover:translate-x-1 transition-transform">
+                      <ArrowRight size={20} strokeWidth={3} />
+                    </div>
                   </button>
                 </form>
               </div>
@@ -855,16 +981,16 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
             {/* --- VIEW: OTP VERIFICATION --- */}
             {view === 'otp-verify' && (
               <div className="max-w-md mx-auto animate-fade-in-up text-center pt-10">
-                <div className="w-16 h-16 bg-tech-lime/20 text-eco-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Mail size={32} />
+                <div className="w-24 h-24 bg-tech-lime/10 text-tech-lime rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-2xl animate-glow">
+                  <Mail size={48} strokeWidth={1} />
                 </div>
-                <h3 className="font-display font-bold text-3xl text-eco-950 mb-2">Verify It's You</h3>
-                <p className="text-gray-500 mb-8 text-lg">
-                  We've sent a 6-digit code to your email/mobile. <br /> Please enter it below to continue.
+                <h3 className="font-display font-black text-4xl text-slate-900 mb-4 tracking-tighter">Secure <span className="text-tech-lime">Verification</span></h3>
+                <p className="text-slate-400 mb-12 text-xl font-medium leading-[1.6]">
+                  We've sent a 6-digit code to your cloud identity. Enter it below to authorize.
                 </p>
 
-                <form onSubmit={handleOtpVerify}>
-                  <div className="flex gap-3 justify-center mb-8">
+                <form onSubmit={handleOtpVerify} className="space-y-10">
+                  <div className="flex gap-4 justify-center">
                     {otp.map((digit, idx) => (
                       <input
                         key={idx}
@@ -874,20 +1000,21 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
                         value={digit}
                         onChange={(e) => handleOtpChange(idx, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                        className="w-12 h-14 bg-white border border-gray-300 rounded-xl text-center text-2xl font-bold text-eco-900 focus:border-tech-lime focus:ring-2 focus:ring-tech-lime/50 focus:outline-none transition-all shadow-sm"
+                        className="w-16 h-20 bg-slate-50 border-2 border-slate-100 rounded-3xl text-center text-3xl font-black text-slate-900 focus:border-tech-lime focus:bg-white focus:shadow-2xl focus:scale-110 focus:outline-none transition-all duration-300"
                       />
                     ))}
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
+                    className="w-full py-6 rounded-[2.5rem] bg-slate-900 text-white font-black text-2xl hover:bg-slate-800 transition-all duration-300 shadow-2xl hover:shadow-tech-lime/20 group"
                   >
-                    Submit
+                    AUTHORIZE <ArrowRight className="inline ml-2 group-hover:translate-x-2 transition-transform" />
                   </button>
                 </form>
-                <div className="mt-8 text-sm text-gray-500">
-                  Didn't receive code? <button type="button" onClick={handleResendOtp} className="font-bold text-eco-700 hover:underline ml-1">Resend</button>
+
+                <div className="mt-12 text-sm font-black text-slate-400 tracking-widest uppercase">
+                  WAITING FOR CODE... <button type="button" onClick={handleResendOtp} className="text-tech-lime hover:underline ml-2">RESEND</button>
                 </div>
               </div>
             )}
@@ -895,33 +1022,33 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
             {/* --- VIEW: PENDING APPROVAL --- */}
             {view === 'pending-approval' && (
               <div className="max-w-md mx-auto animate-fade-in-up text-center pt-10">
-                <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Building2 size={40} />
+                <div className="w-28 h-28 bg-blue-50 text-blue-500 rounded-[3rem] flex items-center justify-center mx-auto mb-10 shadow-xl">
+                  <Building2 size={56} strokeWidth={1} />
                 </div>
-                <h3 className="font-display font-bold text-3xl text-eco-950 mb-3">Request Received!</h3>
-                <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                  Thank you for registering as a recycling partner. <br />
-                  Your application is currently under review.
+                <h3 className="font-display font-black text-4xl text-slate-900 mb-6 tracking-tighter">Transmission <span className="text-blue-500">Received</span></h3>
+                <p className="text-slate-400 mb-10 text-xl font-medium leading-relaxed">
+                  Your partner application is being verified by our Neural Compliance Engine.
                 </p>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8 text-left">
-                  <h4 className="font-bold text-eco-900 mb-3 flex items-center gap-2">
-                    <CheckCircle size={20} className="text-yellow-600" />
-                    What happens next?
+                <div className="bg-slate-900 rounded-[3rem] p-10 mb-10 text-left relative overflow-hidden group">
+                  <div className="absolute top-[-20%] right-[-20%] w-[200px] h-[200px] bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
+                  <h4 className="font-black text-white text-lg mb-6 flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping"></div>
+                    NEXT STEPS
                   </h4>
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    <li className="flex items-start gap-2">
-                      <span className="text-yellow-600 mt-0.5">•</span>
-                      <span>Our team will review your facility details and documents</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-yellow-600 mt-0.5">•</span>
-                      <span>You'll receive an email notification once approved</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-yellow-600 mt-0.5">•</span>
-                      <span>Approval typically takes 2-3 business days</span>
-                    </li>
+                  <ul className="space-y-6">
+                    {[
+                      "Facility data verification in progress",
+                      "Operational capacity audit scheduled",
+                      "Cloud dashboard access pending approval"
+                    ].map((step, idx) => (
+                      <li key={idx} className="flex items-center gap-4">
+                        <div className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center shrink-0">
+                          <CheckCircle size={14} className="text-white/20" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-300">{step}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -930,39 +1057,31 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
                     onClose();
                     window.location.href = '/';
                   }}
-                  className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
+                  className="w-full py-6 rounded-[2.5rem] bg-slate-100 text-slate-900 font-black text-xl hover:bg-slate-200 transition-all duration-300"
                 >
-                  Return to Home
+                  DISMISS VIEW
                 </button>
-
-                <p className="mt-6 text-sm text-gray-500">
-                  Questions? Contact us at <a href="mailto:support@elocate.com" className="text-eco-700 font-semibold hover:underline">support@elocate.com</a>
-                </p>
               </div>
             )}
 
             {/* --- VIEW: ACCOUNT PENDING --- */}
             {view === 'account-pending' && (
               <div className="max-w-md mx-auto animate-fade-in-up text-center pt-10">
-                <div className="w-20 h-20 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Building2 size={40} />
+                <div className="w-28 h-28 bg-orange-100 text-orange-600 rounded-[3rem] flex items-center justify-center mx-auto mb-10 shadow-xl border-4 border-white">
+                  <Lock size={56} strokeWidth={1} />
                 </div>
-                <h3 className="font-display font-bold text-3xl text-eco-950 mb-3">Account Pending Approval</h3>
-                <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                  Your partner account is currently under review by our admin team.
+                <h3 className="font-display font-black text-4xl text-slate-900 mb-6 tracking-tighter">Access <span className="text-orange-600">Restricted</span></h3>
+                <p className="text-slate-400 mb-10 text-xl font-medium leading-relaxed">
+                  Your partner profile is currently in the verification queue.
                 </p>
 
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-8 text-left">
-                  <h4 className="font-bold text-eco-900 mb-3 flex items-center gap-2">
-                    <Mail size={20} className="text-orange-600" />
-                    Status Update
-                  </h4>
-                  <p className="text-sm text-gray-700 mb-3">
-                    You'll receive an email notification once your account has been approved.
-                    After approval, you'll be able to access your partner dashboard.
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Approval typically takes 2-3 business days.
+                <div className="bg-orange-50 border-2 border-orange-100 rounded-[2.5rem] p-8 mb-10 text-left">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Mail className="text-orange-600" size={24} />
+                    <span className="font-black text-orange-900 text-sm tracking-widest uppercase">Status Update</span>
+                  </div>
+                  <p className="text-base font-medium text-orange-800/80 leading-relaxed">
+                    Once authorized, you will receive a secure transmission at your registered email address. This typically takes 48-72 standard cycles.
                   </p>
                 </div>
 
@@ -972,14 +1091,10 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
                     setLoginEmail('');
                     setLoginPass('');
                   }}
-                  className="w-full py-4 rounded-xl bg-eco-900 text-white font-bold text-lg hover:bg-eco-800 transition-all shadow-lg hover:shadow-xl"
+                  className="w-full py-6 rounded-[2.5rem] bg-slate-900 text-white font-black text-xl hover:bg-slate-800 transition-all duration-300 shadow-2xl"
                 >
-                  Back to Login
+                  BACK TO LOGIN
                 </button>
-
-                <p className="mt-6 text-sm text-gray-500">
-                  Need help? <a href="mailto:support@elocate.com" className="text-eco-700 font-semibold hover:underline">Contact Support</a>
-                </p>
               </div>
             )}
 
@@ -987,38 +1102,6 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
         </div>
       </div>
 
-      {/* Global Input Styles */}
-      <style>{`
-        .input-std {
-          width: 100%;
-          background-color: white;
-          border: 1px solid #e5e7eb;
-          border-radius: 0.75rem;
-          padding: 0.875rem 1rem;
-          color: #111827;
-          font-weight: 500;
-          outline: none;
-          transition: all 0.2s;
-        }
-        .input-std:focus {
-          border-color: #d9f99d;
-          box-shadow: 0 0 0 2px rgba(217, 249, 157, 0.5);
-        }
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f9fafb;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #10b981;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #059669;
-        }
-      `}</style>
     </div>
   );
 };
