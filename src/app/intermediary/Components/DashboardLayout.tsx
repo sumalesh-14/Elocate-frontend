@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Menu, X } from 'lucide-react';
 import { ReactNode } from 'react';
@@ -15,7 +15,11 @@ interface LayoutProps {
 export default function DashboardLayout({ children }: LayoutProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const pathname = usePathname();
-    const user = getUser();
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        setUser(getUser());
+    }, []);
 
     const getPageTitle = (path: string) => {
         const titleMap: Record<string, string> = {

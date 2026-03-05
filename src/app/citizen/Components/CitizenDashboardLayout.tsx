@@ -48,13 +48,11 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
 
             {/* Sidebar */}
             <aside className={`
-        fixed md:sticky top-24 left-0 z-40 md:h-[calc(100vh-96px)] w-80 bg-gradient-to-b from-white to-emerald-50/30 border-r border-emerald-100 text-gray-800 transition-transform duration-300 shadow-sm flex flex-col
+        fixed md:sticky top-24 left-0 z-40 md:h-[calc(100vh-96px)] w-72 bg-eco-950 text-white transition-transform duration-300 shadow-2xl flex flex-col
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-
-
                 {/* Navigation */}
-                <nav className="flex-1 overflow-y-auto p-6 space-y-3 sidebar-scrollbar">
+                <nav className="flex-1 overflow-y-auto p-4 space-y-1.5">
                     {menuItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href;
@@ -64,30 +62,29 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
                                 href={item.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={`
-                  w-full flex items-center justify-between px-6 py-5 rounded-2xl transition-all duration-300 group relative
+                  w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group relative
                   ${isActive
-                                        ? 'bg-eco-600 text-white font-bold shadow-lg shadow-emerald-200/50 scale-[1.02]'
-                                        : 'text-gray-600 hover:bg-emerald-50 hover:text-eco-800 hover:translate-x-2'}
+                                        ? 'bg-gradient-to-r from-tech-lime to-emerald-400 text-eco-900 font-semibold shadow-lg'
+                                        : 'text-eco-300 hover:bg-white/5 hover:text-white'}
                 `}
                             >
-                                <div className="flex items-center gap-4 relative z-10">
-                                    <Icon size={24} className={isActive ? 'text-white' : 'text-emerald-400 group-hover:text-eco-600 transition-colors'} />
-                                    <span className="text-lg">{item.label}</span>
+                                <div className="flex items-center gap-3 relative z-10">
+                                    <Icon size={18} className={isActive ? 'text-eco-900' : 'text-eco-400 group-hover:text-tech-lime transition-colors'} />
+                                    <span>{item.label}</span>
                                 </div>
-                                {isActive && <ChevronRight size={18} className="text-white/70" />}
+                                {isActive && <ChevronRight size={16} className="text-eco-900 opacity-70" />}
                             </Link>
                         );
                     })}
                 </nav>
-
             </aside>
 
-            <div className="flex-1 flex flex-col min-w-0 bg-white">
+            <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
                 {/* Space for the fixed navbar */}
                 <div className="h-24 shrink-0"></div>
 
                 {/* Dynamic Page Content */}
-                <main className="flex-1 p-6 lg:p-10 scroll-smooth bg-white">
+                <main className="flex-1 p-6 lg:p-10 scroll-smooth">
                     <div className="w-full pb-10 px-2">
                         {children}
                     </div>
@@ -96,4 +93,5 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
             </div>
         </div>
     );
+
 };
