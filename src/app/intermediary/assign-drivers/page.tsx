@@ -173,7 +173,7 @@ const AssignDriversPage = () => {
         const fetchDrivers = async () => {
             try {
                 const data = await intermediaryApi.drivers.getAll(driverSearch, driverAvailabilityFilter);
-                setDrivers(data);
+                setDrivers(data.content || []);
             } catch (error) {
                 console.error("Error fetching drivers:", error);
             }

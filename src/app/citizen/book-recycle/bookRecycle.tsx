@@ -75,8 +75,6 @@ const BookRecycle = () => {
 
   const ecoTip =
     "Before recycling your phone, ensure all data is wiped. We perform a secondary wipe, but safety first!";
-  const ecoTip =
-    "Before recycling your phone, ensure all data is wiped. We perform a secondary wipe, but safety first!";
 
   const getDeviceIcon = (deviceType: string) => {
     const icons: { [key: string]: React.ReactNode } = {
@@ -109,37 +107,7 @@ const BookRecycle = () => {
     );
   };
 
-  const statCards = [
-    {
-      label: "Personal Score",
-      value: userStats.personalScore,
-      badge: userStats.scoreChange,
-      icon: <MdEco className="text-xl" />,
-      iconBg: "bg-gradient-to-br from-tech-lime to-emerald-400",
-      iconText: "text-eco-900",
-    },
-    {
-      label: "Total Requests",
-      value: userStats.totalRequests,
-      icon: <MdListAlt className="text-xl" />,
-      iconBg: "bg-gradient-to-br from-sky-400 to-blue-500",
-      iconText: "text-white",
-    },
-    {
-      label: "Items Recycled",
-      value: userStats.itemsRecycled,
-      icon: <MdCheckCircle className="text-xl" />,
-      iconBg: "bg-gradient-to-br from-teal-400 to-emerald-500",
-      iconText: "text-white",
-    },
-    {
-      label: "Cancelled",
-      value: userStats.cancelled,
-      icon: <MdCancel className="text-xl" />,
-      iconBg: "bg-gradient-to-br from-red-400 to-rose-500",
-      iconText: "text-white",
-    },
-  ];
+
 
   return (
     <div className="w-full flex flex-col gap-8 pb-12">
