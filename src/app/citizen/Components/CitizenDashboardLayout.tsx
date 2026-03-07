@@ -48,7 +48,7 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
 
             {/* Sidebar */}
             <aside className={`
-        fixed md:sticky top-24 left-0 z-40 md:h-[calc(100vh-96px)] w-72 bg-eco-950 text-white transition-transform duration-300 shadow-2xl flex flex-col
+        fixed md:sticky top-24 left-0 z-40 md:h-[calc(100vh-96px)] w-72 bg-white text-gray-900 transition-transform duration-300 border-r border-gray-100 flex flex-col
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
                 {/* Navigation */}
@@ -64,15 +64,15 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
                                 className={`
                   w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group relative
                   ${isActive
-                                        ? 'bg-gradient-to-r from-tech-lime to-emerald-400 text-eco-900 font-semibold shadow-lg'
-                                        : 'text-eco-300 hover:bg-white/5 hover:text-white'}
+                                        ? 'bg-eco-50 text-eco-700 font-semibold shadow-sm border border-eco-100'
+                                        : 'text-gray-500 hover:bg-gray-50 hover:text-eco-600'}
                 `}
                             >
                                 <div className="flex items-center gap-3 relative z-10">
-                                    <Icon size={18} className={isActive ? 'text-eco-900' : 'text-eco-400 group-hover:text-tech-lime transition-colors'} />
+                                    <Icon size={18} className={isActive ? 'text-eco-600' : 'text-gray-400 group-hover:text-eco-500 transition-colors'} />
                                     <span>{item.label}</span>
                                 </div>
-                                {isActive && <ChevronRight size={16} className="text-eco-900 opacity-70" />}
+                                {isActive && <ChevronRight size={16} className="text-eco-500 opacity-70" />}
                             </Link>
                         );
                     })}

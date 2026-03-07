@@ -8,7 +8,7 @@
  */
 
 // ✅ Toggle mock mode here
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const IMAGE_ANALYZER_URL =
     process.env.NEXT_PUBLIC_IMAGE_ANALYZER_URL ||
@@ -27,7 +27,8 @@ export interface MaterialAnalysisRequestPayload {
     model_id: string;
     model_name: string;
     country: string;
-    description?: string;
+    deviceCondition: string;
+    conditionNotes: string;
 }
 
 export interface MaterialData {
@@ -39,16 +40,50 @@ export interface MaterialData {
     foundIn: string;
 }
 
+export interface PlatformLink {
+    platformName: string;
+    link: string;
+    icon: string;
+    displayOrder: number;
+}
+
+export interface DevicePricing {
+    currentMarketPrice: number | null;
+    currency: string | null;
+    platformLinks: PlatformLink[];
+}
+
+export interface RecyclingEstimate {
+    totalMaterialValue: number;
+    suggestedRecyclingPrice: number;
+    suggestedBuybackPrice: number;
+    conditionImpact: string;
+    currency: string;
+    priceBreakdown: string;
+}
+
 export interface MaterialAnalysisResponse {
     success: boolean;
+    timestamp?: string;
     processingTimeMs: number;
     data?: {
-        materials: MaterialData[];
+        brand: { id: string; name: string };
+        category: { id: string; name: string };
+        model: { id: string; name: string };
+        country: string;
         analysisDescription: string;
+        materials: MaterialData[];
+        devicePricing: DevicePricing;
+        recyclingEstimate: RecyclingEstimate;
+        metadata: {
+            llmModel: string;
+            analysisTimestamp: string;
+        };
     };
     error?: {
         code: string;
         message: string;
+        details?: any;
     };
 }
 
@@ -356,17 +391,45 @@ export async function analyzeDeviceMaterials(payload: MaterialAnalysisRequestPay
         // Mock implementation for material analysis
         return new Promise((resolve) => setTimeout(() => resolve({
             success: true,
-            processingTimeMs: 1200,
+            timestamp: new Date().toISOString(),
+            processingTimeMs: 1954,
             data: {
+                brand: { id: payload.brand_id, name: payload.brand_name },
+                category: { id: payload.category_id, name: payload.category_name },
+                model: { id: payload.model_id, name: payload.model_name },
+                country: payload.country,
+                analysisDescription: "The analysis methodology includes estimating the quantities of various materials present in a " + payload.model_name + " based on typical device composition and e-waste recycling market data. Recovery efficiency considerations are also taken into account, assuming an average recovery efficiency of 70%. Market rates are based on realistic e-waste scrap rates for India, adjusted for recovery costs and efficiency.",
                 materials: [
-                    { materialName: "Gold", isPrecious: true, estimatedQuantityGrams: 0.034, marketRatePerGram: 60.5, currency: "USD", foundIn: "Circuit Board" },
-                    { materialName: "Silver", isPrecious: true, estimatedQuantityGrams: 0.35, marketRatePerGram: 0.8, currency: "USD", foundIn: "Connectors" },
-                    { materialName: "Copper", isPrecious: false, estimatedQuantityGrams: 15.0, marketRatePerGram: 0.008, currency: "USD", foundIn: "Wiring" },
-                    { materialName: "Aluminum", isPrecious: false, estimatedQuantityGrams: 45.0, marketRatePerGram: 0.002, currency: "USD", foundIn: "Casing" }
+                    { materialName: "Gold", isPrecious: true, estimatedQuantityGrams: 0.034, marketRatePerGram: 4500.0, currency: "INR", foundIn: "Circuit board and connectors" },
+                    { materialName: "Silver", isPrecious: true, estimatedQuantityGrams: 1.2, marketRatePerGram: 55.0, currency: "INR", foundIn: "Circuit board, keyboard, and display connectors" },
+                    { materialName: "Copper", isPrecious: false, estimatedQuantityGrams: 450.0, marketRatePerGram: 0.45, currency: "INR", foundIn: "Circuit board, wiring, and heat sinks" },
+                    { materialName: "Aluminum", isPrecious: false, estimatedQuantityGrams: 1200.0, marketRatePerGram: 0.165, currency: "INR", foundIn: "Body, frame, and heat sinks" },
+                    { materialName: "Lithium", isPrecious: false, estimatedQuantityGrams: 60.0, marketRatePerGram: 100.0, currency: "INR", foundIn: "Lithium-ion battery" },
+                    { materialName: "Cobalt", isPrecious: false, estimatedQuantityGrams: 30.0, marketRatePerGram: 350.0, currency: "INR", foundIn: "Lithium-ion battery" }
                 ],
-                analysisDescription: "Device contains trace amounts of precious metals concentrated in the main logic board."
+                devicePricing: {
+                    currentMarketPrice: null,
+                    currency: "INR",
+                    platformLinks: [
+                        { platformName: "Flipkart", link: "https://www.flipkart.com", icon: "https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/flipkart-plus_8d85f4.png", displayOrder: 1 },
+                        { platformName: "Amazon", link: "https://www.amazon.in", icon: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg", displayOrder: 2 },
+                        { platformName: "Apple Official", link: "https://www.apple.com/in/", icon: "https://www.apple.com/favicon.ico", displayOrder: 999 }
+                    ]
+                },
+                recyclingEstimate: {
+                    totalMaterialValue: 19797.00,
+                    suggestedRecyclingPrice: 10888.35,
+                    suggestedBuybackPrice: 137494.50,
+                    conditionImpact: "Device condition '" + payload.deviceCondition + "' results in 55% of material value. Minor cosmetic wear does not significantly impact material extraction efficiency.",
+                    currency: "INR",
+                    priceBreakdown: "Material value: 19797.00 | Recycling price: 10888.35 | Buyback price: 137494.50 | Recommendation: Buyback is better than recycling."
+                },
+                metadata: {
+                    llmModel: "llama-3.3-70b-versatile",
+                    analysisTimestamp: new Date().toISOString()
+                }
             }
-        }), 800));
+        } as MaterialAnalysisResponse), 800));
     }
 
     try {

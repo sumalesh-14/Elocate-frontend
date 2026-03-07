@@ -105,8 +105,8 @@ export const intermediaryApi = {
 
     // Recycle Requests (For the intermediary flow)
     requests: {
-        getAll: async (facilityId: string, status?: string, search?: string): Promise<any> => {
-            let url = `${BASE_URL}/api/v1/intermediary/recycle-requests?facilityId=${facilityId}&`;
+        getAll: async (userId: string, status?: string, search?: string): Promise<any> => {
+            let url = `${BASE_URL}/api/v1/intermediary/recycle-requests?userId=${userId}&`;
             if (status && status !== "All") url += `status=${encodeURIComponent(status)}&`;
             if (search) url += `search=${encodeURIComponent(search)}&`;
 
@@ -126,7 +126,7 @@ export const intermediaryApi = {
             return response.json();
         },
 
-        approve: async (id: string, payload: { adjustedEstimatedPoints: number, adjustmentReason: string }): Promise<any> => {
+        approve: async (id: string, payload: { adjustedEstimatedAmount: number, adjustmentReason: string, aiPricingResponse?: any }): Promise<any> => {
             const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/approve`, {
                 method: "POST",
                 headers: getHeaders(),

@@ -216,6 +216,13 @@ export const recycleRequestApi = {
             headers: getAuthHeaders(),
         });
         return response;
+    },
+    cancel: async (id: string, userId: string) => {
+        const response = await adminApiClient.put(`/recycle-requests/${id}/cancel`, null, {
+            params: { userId },
+            headers: getAuthHeaders(),
+        });
+        return response;
     }
 };
 

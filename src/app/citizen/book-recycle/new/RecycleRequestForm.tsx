@@ -784,7 +784,7 @@ const Step3_ServiceType: React.FC<StepProps> = ({ formData, updateField }) => {
     const mapRef = React.useRef<mapboxgl.Map | null>(null);
 
     useEffect(() => {
-        if (formData.serviceType === 'Dropoff' && mapContainerRef.current) {
+        if (formData.serviceType && mapContainerRef.current) {
             const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
             if (!mapboxToken) {
                 console.warn("Mapbox token is missing!");
@@ -891,7 +891,7 @@ const Step3_ServiceType: React.FC<StepProps> = ({ formData, updateField }) => {
             {formData.serviceType === 'Pickup' && (
                 <div className="pt-8 border-t border-gray-100 animate-slide-up">
                     <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2"><Calendar size={20} className="text-eco-500" />Select Date & Time</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         <div className="space-y-3">
                             <label className="text-sm font-bold text-gray-700">Preferred Date</label>
                             <div className="relative group">
@@ -917,11 +917,19 @@ const Step3_ServiceType: React.FC<StepProps> = ({ formData, updateField }) => {
                 </div>
             )}
 
-            {formData.serviceType === 'Dropoff' && (
+            {formData.serviceType && (
                 <div className="pt-8 border-t border-gray-100 animate-slide-up">
                     <div className="flex flex-col md:flex-row gap-8">
                         <div className="flex-1">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin size={20} className="text-eco-500" />Select Drop-off Facility</h3>
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <MapPin size={20} className="text-eco-500" />
+                                {formData.serviceType === 'Pickup' ? 'Preferred Recycling Facility (Optional)' : 'Select Drop-off Facility'}
+                            </h3>
+                            {formData.serviceType === 'Pickup' && (
+                                <p className="text-xs text-gray-500 mb-4 font-medium italic">
+                                    If left empty, we will automatically assign the nearest facility to your pickup address.
+                                </p>
+                            )}
                             <div className="mb-6 h-[400px] rounded-3xl overflow-hidden border-2 border-slate-100 shadow-inner relative">
                                 {mapLoading && (
                                     <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-md flex items-center justify-center">
@@ -995,6 +1003,20 @@ const Step3_ServiceType: React.FC<StepProps> = ({ formData, updateField }) => {
                                 <div className="w-10 h-10 bg-eco-500 rounded-xl flex items-center justify-center text-white"><Check size={20} /></div>
                                 <div className="text-xs font-bold text-eco-900">Confirmed</div>
                             </div>
+                            {formData.serviceType === 'Pickup' && (
+                                <button
+                                    onClick={() => {
+                                        updateField('facilityId', '');
+                                        updateField('facilityName', '');
+                                        updateField('facilityAddress', '');
+                                        updateField('facilityLat', null);
+                                        updateField('facilityLon', null);
+                                    }}
+                                    className="ml-4 p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                >
+                                    <X size={20} />
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -1160,6 +1182,9 @@ const Step5_Review: React.FC<StepProps> = ({ formData, updateField }) => {
                             <div className="text-right">
                                 <div className="text-3xl font-bold leading-tight">{formData.pickupDate}</div>
                                 <div className="text-white/60 text-sm font-medium">{formData.pickupTime}</div>
+                                {formData.facilityName && (
+                                    <div className="mt-2 text-[10px] font-bold text-tech-lime/80 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md inline-block">Ref: {formData.facilityName}</div>
+                                )}
                             </div>
                         ) : (
                             <div className="text-right">
@@ -1171,18 +1196,28 @@ const Step5_Review: React.FC<StepProps> = ({ formData, updateField }) => {
                 </div>
                 <div className="mt-10 pt-8 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 text-white">
                     <div>
-                        <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">{formData.serviceType === 'Pickup' ? 'Pickup Origin' : 'Drop-off Destination'}</h4>
-                        <p className="text-sm font-medium leading-relaxed max-w-xs">{formData.serviceType === 'Pickup' ? formData.address : formData.facilityAddress}</p>
+                        <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">
+                            {formData.serviceType === 'Pickup' ? 'Pickup Origin' : 'Drop-off Destination'}
+                        </h4>
+                        <p className="text-sm font-medium leading-relaxed max-w-xs">
+                            {formData.serviceType === 'Pickup' ? formData.address : formData.facilityAddress}
+                        </p>
                     </div>
-                    {formData.notes ? (
+                    {formData.serviceType === 'Pickup' && formData.facilityId ? (
+                        <div>
+                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">Preferred Destination</h4>
+                            <p className="text-sm font-medium leading-relaxed text-white/80">{formData.facilityName}</p>
+                            <p className="text-[10px] text-white/40 mt-1 line-clamp-1">{formData.facilityAddress}</p>
+                        </div>
+                    ) : formData.notes ? (
                         <div>
                             <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">Handling Notes</h4>
                             <p className="text-sm font-medium leading-relaxed line-clamp-2 italic text-white/80">"{formData.notes}"</p>
                         </div>
-                    ) : formData.serviceType === 'Dropoff' && (
+                    ) : (
                         <div>
-                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">Facility ID</h4>
-                            <p className="text-sm font-medium leading-relaxed text-white/80">{formData.facilityId}</p>
+                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3 leading-none">{formData.serviceType === 'Dropoff' ? 'Facility ID' : 'Auto-Assignment'}</h4>
+                            <p className="text-sm font-medium leading-relaxed text-white/80">{formData.serviceType === 'Dropoff' ? formData.facilityId : 'Nearest available facility'}</p>
                         </div>
                     )}
                 </div>
@@ -1542,7 +1577,7 @@ const RecycleRequestForm: React.FC = () => {
                 deviceModelId: formData.modelId,
                 conditionCode: formData.condition ? conditionMap[formData.condition] : 'GOOD',
                 fulfillmentType: formData.serviceType === 'Pickup' ? 'PICKUP' : 'DROP_OFF',
-                facilityId: formData.serviceType === 'Dropoff' ? formData.facilityId : null,
+                facilityId: formData.facilityId || null,
                 pickupAddressId: formData.pickupAddressId,
                 notes: formData.notes || `Quantity: ${formData.quantity}`,
                 // Adhoc address fields

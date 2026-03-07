@@ -4,10 +4,12 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { intermediaryApi } from "@/lib/intermediary-api";
 import { analyzeDeviceMaterials } from "@/lib/image-analyzer-api";
+import { useToast } from "@/context/ToastContext";
 
 export default function CollectionDetailsPage() {
     const params = useParams();
     const router = useRouter();
+    const { showToast } = useToast();
     const [request, setRequest] = useState<any>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -15,7 +17,7 @@ export default function CollectionDetailsPage() {
     const [drivers, setDrivers] = useState<any[]>([]);
     const [selectedDriverId, setSelectedDriverId] = useState<string>("");
 
-    const [adjustedPoints, setAdjustedPoints] = useState<number>(0);
+
     const [adjustmentReason, setAdjustmentReason] = useState<string>("");
 
     const [conditionCode, setConditionCode] = useState<string>("GOOD");
@@ -30,7 +32,7 @@ export default function CollectionDetailsPage() {
                 setLoading(true);
                 const data = await intermediaryApi.requests.getById(params.id as string);
                 setRequest(data);
-                setAdjustedPoints(data.estimatedPoints || 0);
+
 
                 // Fetch drivers right away so we have them if needed
                 const driversData = await intermediaryApi.drivers.getAll();
@@ -44,17 +46,36 @@ export default function CollectionDetailsPage() {
         fetchDetails();
     }, [params.id]);
 
+    const calculateGrandTotal = () => {
+        if (!materialsData) return request?.estimatedAmount || 0;
+        let total = 0;
+        materialsData.materials.forEach((m: any) => {
+            total += (m.estimatedQuantityGrams * (m.editableRate || 0));
+        });
+        return Math.round(total * 100) / 100;
+    };
+
+    const grandTotal = calculateGrandTotal();
+
+    const handleRateChange = (idx: number, newRate: string) => {
+        if (!materialsData) return;
+        const updated = [...materialsData.materials];
+        updated[idx].editableRate = Number(newRate);
+        setMaterialsData({ ...materialsData, materials: updated });
+    };
+
     const handleApprove = async () => {
         try {
             setActionLoading(true);
             await intermediaryApi.requests.approve(params.id as string, {
-                adjustedEstimatedPoints: adjustedPoints,
-                adjustmentReason: adjustmentReason || "Standard Approval"
+                adjustedEstimatedAmount: grandTotal,
+                adjustmentReason: adjustmentReason || "Standard Approval",
+                aiPricingResponse: materialsData || undefined
             });
-            alert("Request approved successfully.");
-            window.location.reload();
+            showToast("Success\nRequest approved successfully.", "success");
+            setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            alert("Failed to approve. Check console.");
+            showToast("Error\nFailed to approve. Check console.", "error");
             console.error(error);
         } finally {
             setActionLoading(false);
@@ -63,16 +84,30 @@ export default function CollectionDetailsPage() {
 
     const handleAssignDriver = async () => {
         if (!selectedDriverId) {
-            alert("Please select a driver first.");
+            showToast("Selection Required\nPlease select a driver first.", "info");
             return;
         }
         try {
             setActionLoading(true);
             await intermediaryApi.requests.assignDriver(params.id as string, selectedDriverId);
-            alert("Driver assigned successfully! An email has been sent.");
-            window.location.reload();
+            showToast("Success\nDriver assigned successfully! Email sent.", "success");
+            setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            alert("Failed to assign driver. Check console.");
+            showToast("Error\nFailed to assign driver. Check console.", "error");
+            console.error(error);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleMarkAsDropped = async () => {
+        try {
+            setActionLoading(true);
+            await intermediaryApi.requests.markDropped(params.id as string);
+            showToast("Success\nMarked as received at facility.", "success");
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (error) {
+            showToast("Error\nFailed to mark as dropped.", "error");
             console.error(error);
         } finally {
             setActionLoading(false);
@@ -83,10 +118,10 @@ export default function CollectionDetailsPage() {
         try {
             setActionLoading(true);
             await intermediaryApi.requests.verifyDropOff(params.id as string);
-            alert("Verified Drop-off successfully.");
-            window.location.reload();
+            showToast("Success\nVerified Drop-off successfully.", "success");
+            setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            alert("Failed to verify drop-off. Check console.");
+            showToast("Error\nFailed to verify drop-off.", "error");
             console.error(error);
         } finally {
             setActionLoading(false);
@@ -97,10 +132,10 @@ export default function CollectionDetailsPage() {
         try {
             setActionLoading(true);
             await intermediaryApi.requests.verifyCondition(params.id as string, conditionCode, "Condition verified on receipt.");
-            alert("Condition verified successfully.");
-            window.location.reload();
+            showToast("Success\nCondition verified successfully.", "success");
+            setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            alert("Failed to verify condition. Check console.");
+            showToast("Error\nFailed to verify condition.", "error");
             console.error(error);
         } finally {
             setActionLoading(false);
@@ -111,10 +146,10 @@ export default function CollectionDetailsPage() {
         try {
             setActionLoading(true);
             await intermediaryApi.requests.markRecycled(params.id as string);
-            alert("Marked as Recycled!");
-            window.location.reload();
+            showToast("Success\nMarked as Recycled!", "success");
+            setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            alert("Failed. Check console.");
+            showToast("Error\nFailed mark as recycled.", "error");
             console.error(error);
         } finally {
             setActionLoading(false);
@@ -132,28 +167,23 @@ export default function CollectionDetailsPage() {
                 category_name: request.categoryName || "Unknown",
                 model_id: request.deviceModelId || "mock",
                 model_name: request.deviceModelName || "Unknown",
-                country: "US"
+                country: "IN"
             };
             const res = await analyzeDeviceMaterials(payload);
             if (res.success && res.data) {
+                const materialsWithRates = res.data.materials.map((m: any) => ({
+                    ...m,
+                    editableRate: m.marketRatePerGram
+                }));
+                res.data.materials = materialsWithRates;
                 setMaterialsData(res.data);
-                // Calculate estimated raw value:
-                let totalMarketValue = 0;
-                res.data.materials.forEach(m => {
-                    totalMarketValue += (m.estimatedQuantityGrams * m.marketRatePerGram);
-                });
-
-                // Set suggested points (roughly calculated as value * 10 for demo)
-                const suggested = Math.round(totalMarketValue * 10);
-                if (suggested > 0) {
-                    setAdjustedPoints(suggested);
-                }
+                showToast("Analysis Complete\nMaterial composition data updated.", "success");
             } else {
-                alert("Failed to analyze materials.");
+                showToast("Analysis Failed\nCould not fetch material data.", "error");
             }
         } catch (err) {
             console.error("Analysis Error:", err);
-            alert("Error running material analysis.");
+            showToast("System Error\nError running material analysis.", "error");
         } finally {
             setAnalyzingMaterials(false);
         }
@@ -162,9 +192,12 @@ export default function CollectionDetailsPage() {
     if (loading) return <div className="p-8 text-center text-eco-600">Loading collection details...</div>;
     if (!request) return <div className="p-8 text-center text-red-600">Failed to load request.</div>;
 
-    const needsApproval = request.status === "PENDING" || request.status === "REQUESTED";
+    const needsApproval = request.status === "CREATED" || request.status === "PENDING" || request.status === "REQUESTED";
     const needsDriver = request.fulfillmentType === "PICKUP" && !request.assignedDriverId && request.status !== "CANCELLED" && request.status !== "COMPLETED" && request.status !== "PENDING" && request.status !== "REQUESTED";
-    const needsDropVerification = request.fulfillmentType === "DROP_OFF" && request.fulfillmentStatus === "PENDING_DROP" && request.status === "APPROVED";
+    // Drop-off specific logic
+    const canMarkAsDropped = request.fulfillmentType === "DROP_OFF" && request.fulfillmentStatus === "DROP_PENDING" && request.status === "APPROVED";
+    const canVerifyDropOff = request.fulfillmentType === "DROP_OFF" && request.fulfillmentStatus === "DROPPED_AT_FACILITY";
+
     const needsConditionVerification = (request.fulfillmentStatus === "PICKUP_COMPLETED" || request.fulfillmentStatus === "DROP_VERIFIED") && request.status !== "VERIFIED" && request.status !== "RECYCLED";
     const canRecycle = request.status === "VERIFIED";
 
@@ -214,12 +247,12 @@ export default function CollectionDetailsPage() {
                             <span className="font-medium">{request.conditionCode}</span>
                         </div>
                         <div className="flex justify-between bg-eco-50 p-2 rounded-lg mt-2 font-bold">
-                            <span className="text-eco-700">Estimated Points</span>
-                            <span className="text-eco-900">{request.estimatedPoints} pts</span>
+                            <span className="text-eco-700">Estimated Amount</span>
+                            <span className="text-eco-900">₹{request.estimatedAmount}</span>
                         </div>
                         <div className="flex justify-between bg-green-50 p-2 rounded-lg font-bold">
-                            <span className="text-green-700">Final Points (Credited)</span>
-                            <span className="text-green-900">{request.finalPoints || 0} pts</span>
+                            <span className="text-green-700">Final Amount (Credited)</span>
+                            <span className="text-green-900">₹{request.finalAmount || 0}</span>
                         </div>
                     </div>
 
@@ -278,21 +311,54 @@ export default function CollectionDetailsPage() {
 
                         {materialsData && (
                             <div className="mt-4 bg-white/60 p-4 rounded-lg border border-indigo-100 space-y-3">
-                                <p className="text-sm text-gray-800 font-medium">📋 {materialsData.analysisDescription}</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                                    {materialsData.materials.map((m: any, idx: number) => (
-                                        <div key={idx} className="bg-white p-3 rounded shadow-sm border border-gray-100 flex flex-col gap-1 relative overflow-hidden">
-                                            {m.isPrecious && (
-                                                <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[10px] px-2 py-0.5 rounded-bl font-bold">PRECIOUS</div>
-                                            )}
-                                            <span className="font-bold text-gray-800">{m.materialName}</span>
-                                            <span className="text-xs text-gray-500">Found in: {m.foundIn}</span>
-                                            <div className="flex justify-between items-end mt-2">
-                                                <span className="text-sm font-medium text-gray-700">{m.estimatedQuantityGrams}g</span>
-                                                <span className="text-sm font-bold text-green-600">${(m.estimatedQuantityGrams * m.marketRatePerGram).toFixed(2)}</span>
-                                            </div>
-                                        </div>
-                                    ))}
+                                <p className="text-sm text-gray-800 font-medium mb-4">📋 {materialsData.analysisDescription}</p>
+
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full text-left bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                        <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">Metal Name</th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">Found In</th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">Estimated Grams</th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">Market Rate (₹/g)</th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-right">Total Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {materialsData.materials.map((m: any, idx: number) => (
+                                                <tr key={idx} className="hover:bg-gray-50 transition">
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-gray-800">{m.materialName}</span>
+                                                            {m.isPrecious && (
+                                                                <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold border border-yellow-200">PRECIOUS</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate" title={m.foundIn}>{m.foundIn}</td>
+                                                    <td className="px-4 py-3 text-sm font-medium text-gray-700">{m.estimatedQuantityGrams}g</td>
+                                                    <td className="px-4 py-3">
+                                                        <input
+                                                            type="number"
+                                                            value={m.editableRate}
+                                                            onChange={(e) => handleRateChange(idx, e.target.value)}
+                                                            className="w-24 p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                                                            step="0.01"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-bold text-green-600">
+                                                        ₹{(m.estimatedQuantityGrams * (m.editableRate || 0)).toFixed(2)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot className="bg-gray-50 border-t border-gray-200">
+                                            <tr>
+                                                <td colSpan={4} className="px-4 py-3 text-right font-bold text-gray-800 uppercase tracking-widest text-sm">Grand Total (Value):</td>
+                                                <td className="px-4 py-3 text-right font-bold text-green-700 text-lg">₹{grandTotal.toFixed(2)}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
                                 </div>
                             </div>
                         )}
@@ -302,13 +368,13 @@ export default function CollectionDetailsPage() {
                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 flex flex-col gap-4">
                             <h4 className="font-semibold text-yellow-800">1. Approve Request</h4>
                             <div className="grid grid-cols-2 gap-4">
-                                <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-                                    Adjusted Points (Optional)
-                                    <input type="number" value={adjustedPoints} onChange={e => setAdjustedPoints(Number(e.target.value))} className="p-2 border rounded-md" />
-                                </label>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-sm font-medium text-gray-700">Estimated Final Amount (Value)</span>
+                                    <div className="p-2 border rounded-md bg-gray-100 font-bold text-green-700">₹{grandTotal.toFixed(2)}</div>
+                                </div>
                                 <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
                                     Reason for Adjustment
-                                    <input type="text" placeholder="e.g. Screen more damaged than reported" value={adjustmentReason} onChange={e => setAdjustmentReason(e.target.value)} className="p-2 border rounded-md" />
+                                    <input type="text" placeholder="e.g. Added premium for clean screen" value={adjustmentReason} onChange={e => setAdjustmentReason(e.target.value)} className="p-2 border rounded-md" />
                                 </label>
                             </div>
                             <button
@@ -316,7 +382,7 @@ export default function CollectionDetailsPage() {
                                 disabled={actionLoading}
                                 className="px-6 py-2.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-semibold shadow-sm w-fit"
                             >
-                                {actionLoading ? "Processing..." : "Approve Request"}
+                                {actionLoading ? "Processing..." : "Approve with " + "₹" + grandTotal.toFixed(2)}
                             </button>
                         </div>
                     )}
@@ -346,16 +412,30 @@ export default function CollectionDetailsPage() {
                         </div>
                     )}
 
-                    {needsDropVerification && (
+                    {canMarkAsDropped && (
+                        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 flex flex-col gap-4">
+                            <h4 className="font-semibold text-indigo-800">2. Receive Drop-off</h4>
+                            <p className="text-sm text-indigo-700">Citizen is at the facility with the product. Mark it as received to proceed.</p>
+                            <button
+                                onClick={handleMarkAsDropped}
+                                disabled={actionLoading}
+                                className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold shadow-sm w-fit mt-2"
+                            >
+                                {actionLoading ? "Processing..." : "Mark as Received at Facility"}
+                            </button>
+                        </div>
+                    )}
+
+                    {canVerifyDropOff && (
                         <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 flex flex-col gap-4">
-                            <h4 className="font-semibold text-purple-800">Verify Drop-off</h4>
-                            <p className="text-sm text-purple-700">Citizen has dropped off the product at the facility.</p>
+                            <h4 className="font-semibold text-purple-800">3. Verify Drop-off</h4>
+                            <p className="text-sm text-purple-700">The product has been dropped at your facility. Verify it to proceed with condition assessment.</p>
                             <button
                                 onClick={handleVerifyDropOff}
                                 disabled={actionLoading}
                                 className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold shadow-sm w-fit mt-2"
                             >
-                                {actionLoading ? "Processing..." : "Mark as Drop-off Verified"}
+                                {actionLoading ? "Processing..." : "Verify Drop-off Content"}
                             </button>
                         </div>
                     )}
@@ -397,7 +477,7 @@ export default function CollectionDetailsPage() {
                         </div>
                     )}
 
-                    {!needsApproval && !needsDriver && !needsDropVerification && !needsConditionVerification && !canRecycle && (
+                    {!needsApproval && !needsDriver && !canMarkAsDropped && !canVerifyDropOff && !needsConditionVerification && !canRecycle && (
                         <div className="text-center p-4 bg-gray-50 rounded-xl text-gray-500 italic">
                             No immediate actions available for this status.
                         </div>

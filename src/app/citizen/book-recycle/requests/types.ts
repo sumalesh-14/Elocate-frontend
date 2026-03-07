@@ -8,8 +8,8 @@ export interface RecycleRequestApiResponse {
     brandName: string;
     categoryName: string;
     conditionCode: string;
-    estimatedPoints: number | null;
-    finalPoints: number | null;
+    estimatedAmount: number | null;
+    finalAmount: number | null;
     status: string;
     fulfillmentType: string;
     fulfillmentStatus: string;
@@ -52,8 +52,8 @@ export interface Request {
     fulfillmentStatus?: string;
     fulfillmentStatusDisplay?: string;
     fulfillmentType?: string;
-    estimatedPoints?: number | null;
-    finalPoints?: number | null;
+    estimatedAmount?: number | null;
+    finalAmount?: number | null;
 }
 
 /**
@@ -77,12 +77,12 @@ export function mapApiResponseToRequest(r: RecycleRequestApiResponse): Request {
         zipCode: r.pickupPincode ?? "",
         phoneNumber: "",
         requestDate: r.createdAt ? r.createdAt.split("T")[0] : "",
-        estimatedValue: r.estimatedPoints != null ? `${r.estimatedPoints} pts` : undefined,
+        estimatedValue: r.estimatedAmount != null ? `₹${r.estimatedAmount}` : undefined,
         fulfillmentStatus: r.fulfillmentStatus,
         fulfillmentStatusDisplay: r.fulfillmentStatusDisplay,
         fulfillmentType: r.fulfillmentType,
-        estimatedPoints: r.estimatedPoints,
-        finalPoints: r.finalPoints,
+        estimatedAmount: r.estimatedAmount,
+        finalAmount: r.finalAmount,
     };
 }
 
