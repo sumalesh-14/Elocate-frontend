@@ -1,92 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
-import { getUser } from "../../intermediary/sign-in/auth";
-
-// Define TypeScript interfaces
-interface CollectionRequest {
-    id: string;
-    customerName: string;
-    location: string;
-    items: string;
-    weight: string;
-    date: string;
-    status: "Pending" | "Scheduled" | "Completed" | "Cancelled";
-}
+import React, { useState, useEffect } from "react";
+import { getUser, getUserID } from "../../intermediary/sign-in/auth";
+import { intermediaryApi } from "@/lib/intermediary-api";
 
 const CollectionsPage = () => {
     const user = getUser();
+    const facilityOwnerId = getUserID(); // In a real app this might be different if facility is a separate ID, assuming user ID = facility owner
     const [filterStatus, setFilterStatus] = useState<string>("All");
     const [searchTerm, setSearchTerm] = useState<string>("");
+    const [collections, setCollections] = useState<any[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
 
-    // Mock Data
-    const collections: CollectionRequest[] = [
-        {
-            id: "REQ-001",
-            customerName: "John Doe",
-            location: "123 Green St, Springfield",
-            items: "Old Laptop, 2 Phones",
-            weight: "2.5 kg",
-            date: "2024-01-28",
-            status: "Pending",
-        },
-        {
-            id: "REQ-002",
-            customerName: "Alice Smith",
-            location: "456 Eco Ave, Shelbyville",
-            items: "Washing Machine",
-            weight: "45 kg",
-            date: "2024-01-27",
-            status: "Scheduled",
-        },
-        {
-            id: "REQ-003",
-            customerName: "Bob Johnson",
-            location: "789 Recycle Rd, Capital City",
-            items: "CRT Monitor, Cables",
-            weight: "12 kg",
-            date: "2024-01-25",
-            status: "Completed",
-        },
-        {
-            id: "REQ-004",
-            customerName: "Sarah Connor",
-            location: "101 Skynet Blvd, Future City",
-            items: "Robot Arm",
-            weight: "15 kg",
-            date: "2024-01-26",
-            status: "Cancelled",
-        },
-        {
-            id: "REQ-005",
-            customerName: "Mike Ross",
-            location: "500 Pearson St, New York",
-            items: "Printer, Fax Machine",
-            weight: "8 kg",
-            date: "2024-01-29",
-            status: "Pending",
-        },
-    ];
+    useEffect(() => {
+        const fetchRequests = async () => {
+            if (!facilityOwnerId) return;
+            try {
+                setLoading(true);
+                const data = await intermediaryApi.requests.getAll(facilityOwnerId as string, filterStatus, searchTerm);
+                setCollections(data);
+            } catch (error) {
+                console.error("Failed to load collections:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Filter Logic
-    const filteredCollections = collections.filter((item) => {
-        const matchesStatus = filterStatus === "All" || item.status === filterStatus;
-        const matchesSearch =
-            item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.location.toLowerCase().includes(searchTerm.toLowerCase());
+        const timeoutId = setTimeout(() => {
+            fetchRequests();
+        }, 300);
 
-        return matchesStatus && matchesSearch;
-    });
+        return () => clearTimeout(timeoutId);
+    }, [facilityOwnerId, filterStatus, searchTerm]);
 
     const getStatusClass = (status: string) => {
-        switch (status) {
-            case "Pending": return "status-pending";
-            case "Scheduled": return "status-scheduled";
-            case "Completed": return "status-completed";
-            case "Cancelled": return "status-cancelled";
-            default: return "";
-        }
+        const lower = (status || "").toLowerCase();
+        if (lower === "pending") return "status-pending";
+        if (lower === "approved" || lower === "scheduled") return "status-scheduled";
+        if (lower === "completed" || lower === "recycled") return "status-completed";
+        if (lower === "cancelled" || lower === "rejected") return "status-cancelled";
+        return "status-pending";
     };
 
     return (
@@ -138,19 +91,25 @@ const CollectionsPage = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredCollections.length > 0 ? (
-                            filteredCollections.map((item) => (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={8} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)" }}>
+                                    Loading collections...
+                                </td>
+                            </tr>
+                        ) : collections.length > 0 ? (
+                            collections.map((item) => (
                                 <tr key={item.id}>
-                                    <td><strong>{item.id}</strong></td>
-                                    <td>{item.customerName}</td>
+                                    <td><strong>{item.id.substring(0, 8).toUpperCase()}</strong></td>
+                                    <td>User Data Int.</td>
                                     <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                        {item.items}
+                                        {item.deviceModelName || "Unknown"}
                                     </td>
-                                    <td>{item.weight}</td>
+                                    <td>—</td>
                                     <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                        {item.location}
+                                        {item.pickupAddress || item.facilityName}
                                     </td>
-                                    <td>{item.date}</td>
+                                    <td>{new Date(item.createdAt).toLocaleDateString()}</td>
                                     <td>
                                         <span className={`status-badge ${getStatusClass(item.status)}`}>
                                             {item.status}
@@ -158,14 +117,9 @@ const CollectionsPage = () => {
                                     </td>
                                     <td>
                                         <div style={{ display: "flex", gap: "0.5rem" }}>
-                                            <button className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>
-                                                View
-                                            </button>
-                                            {item.status === "Pending" && (
-                                                <button className="btn btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>
-                                                    Accept
-                                                </button>
-                                            )}
+                                            <a href={`/intermediary/collections/${item.id}`} className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", textDecoration: "none" }}>
+                                                Manage
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>

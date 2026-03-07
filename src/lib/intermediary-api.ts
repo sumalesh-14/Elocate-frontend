@@ -105,12 +105,44 @@ export const intermediaryApi = {
 
     // Recycle Requests (For the intermediary flow)
     requests: {
-        approve: async (id: string): Promise<any> => {
-            const response = await fetch(`${BASE_URL}/api/v1/recycle-requests/${id}/approve`, {
-                method: "PUT",
+        getAll: async (facilityId: string, status?: string, search?: string): Promise<any> => {
+            let url = `${BASE_URL}/api/v1/intermediary/recycle-requests?facilityId=${facilityId}&`;
+            if (status && status !== "All") url += `status=${encodeURIComponent(status)}&`;
+            if (search) url += `search=${encodeURIComponent(search)}&`;
+
+            const finalUrl = url.replace(/[?&]$/, '');
+            const response = await fetch(finalUrl, {
                 headers: getHeaders()
             });
+            if (!response.ok) throw new Error("Failed to fetch requests");
+            return response.json();
+        },
+
+        getById: async (id: string): Promise<any> => {
+            const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}`, {
+                headers: getHeaders()
+            });
+            if (!response.ok) throw new Error("Failed to fetch request details");
+            return response.json();
+        },
+
+        approve: async (id: string, payload: { adjustedEstimatedPoints: number, adjustmentReason: string }): Promise<any> => {
+            const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/approve`, {
+                method: "POST",
+                headers: getHeaders(),
+                body: JSON.stringify(payload)
+            });
             if (!response.ok) throw new Error("Failed to approve request");
+            return response.json();
+        },
+
+        reject: async (id: string, reason: string): Promise<any> => {
+            const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/reject`, {
+                method: "POST",
+                headers: getHeaders(),
+                body: JSON.stringify({ reason })
+            });
+            if (!response.ok) throw new Error("Failed to reject request");
             return response.json();
         },
 
@@ -118,10 +150,55 @@ export const intermediaryApi = {
             const response = await fetch(`${BASE_URL}/api/v1/recycle-requests/${requestId}/assign-driver`, {
                 method: "POST",
                 headers: getHeaders(),
-                body: JSON.stringify({ assignedDriverId: driverId }),
+                body: JSON.stringify({ driverId }),
             });
             if (!response.ok) throw new Error("Failed to assign driver");
             return response.json();
         },
+
+        getAiPricing: async (id: string): Promise<any> => {
+            const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/ai-pricing`, {
+                headers: getHeaders()
+            });
+            if (!response.ok) throw new Error("Failed to fetch AI pricing");
+            return response.json();
+        },
+
+        verifyCondition: async (id: string, conditionCode: string, notes: string): Promise<any> => {
+            const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/verify-condition`, {
+                method: "POST",
+                headers: getHeaders(),
+                body: JSON.stringify({ conditionCode, notes })
+            });
+            if (!response.ok) throw new Error("Failed to verify condition");
+            return response.json();
+        },
+
+        markRecycled: async (id: string): Promise<any> => {
+            const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/mark-recycled`, {
+                method: "POST",
+                headers: getHeaders()
+            });
+            if (!response.ok) throw new Error("Failed to mark recycled");
+            return response.json();
+        },
+
+        markDropped: async (id: string): Promise<any> => {
+            const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/mark-dropped`, {
+                method: "POST",
+                headers: getHeaders()
+            });
+            if (!response.ok) throw new Error("Failed to mark dropped");
+            return response.json();
+        },
+
+        verifyDropOff: async (id: string): Promise<any> => {
+            const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/verify-drop`, {
+                method: "POST",
+                headers: getHeaders()
+            });
+            if (!response.ok) throw new Error("Failed to verify drop-off");
+            return response.json();
+        }
     }
 };

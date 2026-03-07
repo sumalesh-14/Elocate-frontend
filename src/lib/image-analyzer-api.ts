@@ -19,6 +19,39 @@ const IMAGE_ANALYZER_API_KEY =
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface MaterialAnalysisRequestPayload {
+    brand_id: string;
+    brand_name: string;
+    category_id: string;
+    category_name: string;
+    model_id: string;
+    model_name: string;
+    country: string;
+    description?: string;
+}
+
+export interface MaterialData {
+    materialName: string;
+    isPrecious: boolean;
+    estimatedQuantityGrams: number;
+    marketRatePerGram: number;
+    currency: string;
+    foundIn: string;
+}
+
+export interface MaterialAnalysisResponse {
+    success: boolean;
+    processingTimeMs: number;
+    data?: {
+        materials: MaterialData[];
+        analysisDescription: string;
+    };
+    error?: {
+        code: string;
+        message: string;
+    };
+}
+
 export interface AnalysisResult {
     success: boolean;
     timestamp: string;
@@ -310,6 +343,56 @@ export async function analyzeDeviceImage(file: File): Promise<AnalysisResult> {
                     error instanceof Error
                         ? error.message
                         : 'Failed to connect to image analysis service',
+            },
+        };
+    }
+}
+
+/**
+ * Analyzes materials for a device based on model details.
+ */
+export async function analyzeDeviceMaterials(payload: MaterialAnalysisRequestPayload): Promise<MaterialAnalysisResponse> {
+    if (USE_MOCK) {
+        // Mock implementation for material analysis
+        return new Promise((resolve) => setTimeout(() => resolve({
+            success: true,
+            processingTimeMs: 1200,
+            data: {
+                materials: [
+                    { materialName: "Gold", isPrecious: true, estimatedQuantityGrams: 0.034, marketRatePerGram: 60.5, currency: "USD", foundIn: "Circuit Board" },
+                    { materialName: "Silver", isPrecious: true, estimatedQuantityGrams: 0.35, marketRatePerGram: 0.8, currency: "USD", foundIn: "Connectors" },
+                    { materialName: "Copper", isPrecious: false, estimatedQuantityGrams: 15.0, marketRatePerGram: 0.008, currency: "USD", foundIn: "Wiring" },
+                    { materialName: "Aluminum", isPrecious: false, estimatedQuantityGrams: 45.0, marketRatePerGram: 0.002, currency: "USD", foundIn: "Casing" }
+                ],
+                analysisDescription: "Device contains trace amounts of precious metals concentrated in the main logic board."
+            }
+        }), 800));
+    }
+
+    try {
+        const response = await fetch(`${IMAGE_ANALYZER_URL}/api/v1/analyze-materials`, {
+            method: 'POST',
+            headers: {
+                'X-API-Key': IMAGE_ANALYZER_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `Material analysis failed with status ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Material analysis error:', error);
+        return {
+            success: false,
+            processingTimeMs: 0,
+            error: {
+                code: 'NETWORK_ERROR',
+                message: error instanceof Error ? error.message : 'Failed to connect to material analysis service',
             },
         };
     }
