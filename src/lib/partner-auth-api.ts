@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/elocate';
 
 // Helper to get auth token from localStorage
 const getAuthToken = () => {
@@ -87,13 +87,13 @@ export interface PartnerDashboardResponse {
 export const partnerAuthApi = {
   // Partner self-registration
   register: async (data: PartnerRegistrationRequest) => {
-    const response = await axios.post(`/api/partner-auth/register`, data);
+    const response = await axios.post(`${API_BASE_URL}/api/partner-auth/register`, data);
     return response.data;
   },
 
   // Get partner dashboard
   getDashboard: async (userId: string): Promise<PartnerDashboardResponse> => {
-    const response = await axios.get(`/api/partner-auth/dashboard`, {
+    const response = await axios.get(`${API_BASE_URL}/api/partner-auth/dashboard`, {
       headers: {
         'X-User-Id': userId,
       },
@@ -103,7 +103,7 @@ export const partnerAuthApi = {
 
   // Update own facility
   updateOwnFacility: async (userId: string, data: any) => {
-    const response = await axios.put(`/api/partner-auth/facility`, data, {
+    const response = await axios.put(`${API_BASE_URL}/api/partner-auth/facility`, data, {
       headers: {
         'X-User-Id': userId,
       },
@@ -113,19 +113,23 @@ export const partnerAuthApi = {
 
   // Admin creates partner
   adminCreatePartner: async (data: AdminCreatePartnerRequest) => {
-    const response = await axios.post(`/api/partners/admin/create`, data);
+    const response = await axios.post(`${API_BASE_URL}/api/partners/admin/create`, data, {
+      headers: getAuthHeaders(),
+    });
     return response.data;
   },
 
   // Admin approves/rejects partner
   approvePartner: async (id: string, data: PartnerApprovalRequest) => {
-    const response = await axios.patch(`/api/partners/${id}/approve`, data);
+    const response = await axios.patch(`${API_BASE_URL}/api/partners/${id}/approve`, data, {
+      headers: getAuthHeaders(),
+    });
     return response.data;
   },
 
   // List partners by status
   listPartnersByStatus: async (status: string, page: number = 0, size: number = 10) => {
-    const response = await axios.get(`/api/partners/by-status/${status}`, {
+    const response = await axios.get(`${API_BASE_URL}/api/partners/by-status/${status}`, {
       params: { page, size },
       headers: getAuthHeaders(),
     });
