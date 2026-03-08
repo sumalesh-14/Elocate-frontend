@@ -1,9 +1,9 @@
-import axios from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { toast } from "react-toastify";
 
 /**
  * adminApiClient
- * Centralized axios instance for admin API calls
+ * Centralized axios instance for admin API calls with automatic token refresh
  */
 export const adminApiClient = axios.create({
     baseURL: "/api/v1", // Local Next.js API routes
@@ -12,9 +12,109 @@ export const adminApiClient = axios.create({
     },
 });
 
+// Track if we're currently refreshing to avoid multiple refresh calls
+let isRefreshing = false;
+let failedQueue: Array<{
+    resolve: (value?: any) => void;
+    reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
+
+// Helper to get auth token
+const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Helper to check if token is expired or about to expire
+const isTokenExpired = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    
+    const token = localStorage.getItem('token');
+    const tokenTimestamp = localStorage.getItem('tokenTimestamp');
+    
+    if (!token || !tokenTimestamp) return true;
+    
+    const expirationTime = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    const currentTime = Date.now();
+    const tokenAge = currentTime - parseInt(tokenTimestamp);
+    
+    // Refresh if token is older than 23 hours (1 hour before expiry)
+    return tokenAge > (expirationTime - 60 * 60 * 1000);
+};
+
+// Function to refresh token
+const refreshToken = async (): Promise<string | null> => {
+    try {
+        const currentRefreshToken = localStorage.getItem('refreshToken');
+        if (!currentRefreshToken) {
+            console.error('❌ [TOKEN REFRESH] No refresh token found');
+            return null;
+        }
+
+        console.log('🔄 [TOKEN REFRESH] Attempting to refresh token...');
+        
+        const response = await axios.post('/api/v1/auth/refresh', {
+            refreshToken: currentRefreshToken
+        });
+
+        if (response.data && response.data.tokens) {
+            const newAccessToken = response.data.tokens.accessToken;
+            const newRefreshToken = response.data.tokens.refreshToken;
+            
+            localStorage.setItem('token', newAccessToken);
+            localStorage.setItem('refreshToken', newRefreshToken);
+            localStorage.setItem('tokenTimestamp', Date.now().toString());
+            
+            console.log('✅ [TOKEN REFRESH] Token refreshed successfully');
+            return newAccessToken;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('❌ [TOKEN REFRESH] Failed to refresh token:', error);
+        return null;
+    }
+};
+
+// Request interceptor - add token and check expiry
+adminApiClient.interceptors.request.use(
+    async (config: InternalAxiosRequestConfig) => {
+        // Check if token is expired or about to expire
+        if (isTokenExpired() && !isRefreshing) {
+            console.log('⚠️ [TOKEN] Token expired or about to expire, refreshing...');
+            const newToken = await refreshToken();
+            if (newToken && config.headers) {
+                config.headers.Authorization = `Bearer ${newToken}`;
+            }
+        } else {
+            // Add current token to request
+            const token = localStorage.getItem('token');
+            if (token && config.headers) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor - handle 401/403 errors with token refresh
 adminApiClient.interceptors.response.use(
     (response) => {
-        const resData = response.data;
+        const resData = response.data as any;
         if (resData?.message === 'SESSION_EXPIRED' || resData?.error === 'SESSION_EXPIRED') {
             toast.error("Session expired. Re-routing to login page...", {
                 autoClose: 5000,
@@ -27,10 +127,71 @@ adminApiClient.interceptors.response.use(
         }
         return response;
     },
-    (error) => {
+    async (error: AxiosError) => {
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+        // Handle 401 or 403 errors
+        if (error.response && (error.response.status === 401 || error.response.status === 403) && !originalRequest._retry) {
+            if (isRefreshing) {
+                // If already refreshing, queue this request
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then(token => {
+                    if (originalRequest.headers) {
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                    }
+                    return adminApiClient(originalRequest);
+                }).catch(err => {
+                    return Promise.reject(err);
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const newToken = await refreshToken();
+                
+                if (newToken) {
+                    processQueue(null, newToken);
+                    if (originalRequest.headers) {
+                        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                    }
+                    return adminApiClient(originalRequest);
+                } else {
+                    // Refresh failed, logout user
+                    processQueue(new Error('Token refresh failed'), null);
+                    toast.error("Session expired. Please login again.", {
+                        autoClose: 5000,
+                        position: "top-right",
+                    });
+                    if (typeof window !== "undefined") {
+                        localStorage.clear();
+                        window.location.replace("/sign-in");
+                    }
+                    return Promise.reject(error);
+                }
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                toast.error("Session expired. Please login again.", {
+                    autoClose: 5000,
+                    position: "top-right",
+                });
+                if (typeof window !== "undefined") {
+                    localStorage.clear();
+                    window.location.replace("/sign-in");
+                }
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
+        }
+
+        // Handle other session expired messages
+        const errorData = error.response?.data as any;
         if (
-            error.response?.data?.message === 'SESSION_EXPIRED' ||
-            error.response?.data?.error === 'SESSION_EXPIRED' ||
+            errorData?.message === 'SESSION_EXPIRED' ||
+            errorData?.error === 'SESSION_EXPIRED' ||
             error.message === 'SESSION_EXPIRED'
         ) {
             toast.error("Session expired. Re-routing to login page...", {
@@ -42,15 +203,10 @@ adminApiClient.interceptors.response.use(
                 window.location.replace("/sign-in");
             }
         }
+        
         return Promise.reject(error);
     }
 );
-
-// Helper to get auth token
-const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 /**
  * Device Categories API

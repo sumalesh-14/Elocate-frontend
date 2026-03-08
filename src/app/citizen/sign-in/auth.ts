@@ -5,6 +5,7 @@ const isLocalStorageAvailable = typeof window !== 'undefined';
 export const setToken = (token: string): void => {
   if (isLocalStorageAvailable) {
     localStorage.setItem('token', token);
+    localStorage.setItem('tokenTimestamp', Date.now().toString());
     console.log('Token set:', token);
   }
 };
