@@ -48,7 +48,7 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
 
             {/* Sidebar */}
             <aside className={`
-        fixed md:sticky top-24 left-0 z-40 md:h-[calc(100vh-96px)] w-72 bg-white text-gray-900 transition-transform duration-300 border-r border-gray-100 flex flex-col
+        fixed md:sticky top-24 left-0 z-40 md:h-[calc(100vh-96px)] w-72 bg-white/80 backdrop-blur-md text-gray-900 transition-transform duration-300 border-r border-gray-100 flex flex-col
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
                 {/* Navigation */}
@@ -84,8 +84,13 @@ export const CitizenDashboardLayout: React.FC<CitizenDashboardLayoutProps> = ({ 
                 <div className="h-24 shrink-0"></div>
 
                 {/* Dynamic Page Content */}
-                <main className="flex-1 p-6 lg:p-10 scroll-smooth">
-                    <div className="w-full pb-10 px-2">
+                <main className={`flex-1 flex flex-col scroll-smooth relative ${pathname === '/citizen/book-recycle/requests' ? 'p-0' : 'p-6 lg:p-10'}`}>
+                    {/* Global Emerald Scanning Grid */}
+                    <div className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none"
+                        style={{ backgroundImage: 'linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+                    </div>
+
+                    <div className={`w-full relative z-10 ${pathname === '/citizen/book-recycle/requests' ? 'px-0 pb-0 flex-1 flex flex-col' : 'pb-10 px-2'}`}>
                         {children}
                     </div>
                 </main>

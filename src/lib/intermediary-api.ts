@@ -146,11 +146,11 @@ export const intermediaryApi = {
             return response.json();
         },
 
-        assignDriver: async (requestId: string, driverId: string): Promise<any> => {
+        assignDriver: async (requestId: string, driverId: string, comments?: string): Promise<any> => {
             const response = await fetch(`${BASE_URL}/api/v1/recycle-requests/${requestId}/assign-driver`, {
                 method: "POST",
                 headers: getHeaders(),
-                body: JSON.stringify({ driverId }),
+                body: JSON.stringify({ driverId, comments }),
             });
             if (!response.ok) throw new Error("Failed to assign driver");
             return response.json();
@@ -164,11 +164,11 @@ export const intermediaryApi = {
             return response.json();
         },
 
-        verifyCondition: async (id: string, conditionCode: string, notes: string): Promise<any> => {
+        verifyCondition: async (id: string, conditionCode: string, notes: string, finalAmount?: number): Promise<any> => {
             const response = await fetch(`${BASE_URL}/api/v1/intermediary/recycle-requests/${id}/verify-condition`, {
                 method: "POST",
                 headers: getHeaders(),
-                body: JSON.stringify({ conditionCode, notes })
+                body: JSON.stringify({ verifiedConditionCode: conditionCode, notes, finalAmount })
             });
             if (!response.ok) throw new Error("Failed to verify condition");
             return response.json();

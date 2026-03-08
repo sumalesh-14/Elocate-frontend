@@ -3,6 +3,7 @@
 /** Raw API response shape from the elocate backend */
 export interface RecycleRequestApiResponse {
     id: string;
+    requestNumber: string | null;  // Human-readable request ID (e.g., RCY-2024-000001)
     deviceModelId: string;
     deviceModelName: string;
     brandName: string;
@@ -24,6 +25,7 @@ export interface RecycleRequestApiResponse {
     pickupPincode: string | null;
     // Scheduled pickup date (ISO date string, e.g. "2026-03-10")
     pickupDate: string | null;
+    certificateUrl: string | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -31,6 +33,7 @@ export interface RecycleRequestApiResponse {
 /** UI-facing request model used throughout the components */
 export interface Request {
     id: string;
+    requestNumber: string;  // Human-readable request ID (e.g., RCY-2024-000001)
     /** Icon-selection key derived from categoryName (e.g. "laptop", "smartphone") */
     deviceType: string;
     /** Raw category name from the backend (e.g. "Laptop & Notebooks", "Mobile Phones") */
@@ -54,6 +57,7 @@ export interface Request {
     fulfillmentType?: string;
     estimatedAmount?: number | null;
     finalAmount?: number | null;
+    certificateUrl?: string | null;
 }
 
 /**
@@ -63,6 +67,7 @@ export interface Request {
 export function mapApiResponseToRequest(r: RecycleRequestApiResponse): Request {
     return {
         id: r.id,
+        requestNumber: r.requestNumber || r.id.slice(-8),  // Fallback to last 8 chars of UUID if no requestNumber
         categoryName: r.categoryName || "Unknown Category",
         deviceType: mapCategoryToType(r.categoryName),
         deviceBrand: r.brandName || "Unknown",
@@ -83,6 +88,7 @@ export function mapApiResponseToRequest(r: RecycleRequestApiResponse): Request {
         fulfillmentType: r.fulfillmentType,
         estimatedAmount: r.estimatedAmount,
         finalAmount: r.finalAmount,
+        certificateUrl: r.certificateUrl,
     };
 }
 

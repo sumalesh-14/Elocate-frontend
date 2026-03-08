@@ -6,38 +6,86 @@ import { Request, RecycleRequestApiResponse, mapApiResponseToRequest } from "./t
 import { downloadReceipt } from "./receiptForm";
 import { recycleRequestApi } from "@/lib/admin-api";
 import { getUserID } from "@/app/citizen/sign-in/auth";
-import { analyzeDeviceMaterials, MaterialAnalysisResponse } from "@/lib/image-analyzer-api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
-    MdLaptopMac,
-    MdSmartphone,
-    MdPrint,
-    MdTv,
-    MdHeadphones,
-    MdWatch,
-    MdKeyboard,
-    MdDevicesOther,
-    MdFilterList,
-    MdSearch,
-    MdCancel,
-    MdAddCircle,
-    MdDownload,
-    MdRefresh,
-    MdCheckCircle,
-    MdLocalShipping,
-    MdLocationOn,
-    MdDateRange,
-    MdOutlineAccountBalanceWallet,
-    MdCheck,
-    MdArrowForward,
-    MdInfo,
-    MdAnalytics,
-    MdLayers,
-    MdTrendingUp,
-    MdHistory,
-    MdClose
+    MdLaptopMac, MdSmartphone, MdPrint, MdTv, MdHeadphones, MdWatch,
+    MdKeyboard, MdDevicesOther, MdSearch, MdAddCircle, MdDownload,
+    MdRefresh, MdLocationOn, MdArrowForward, MdInfo, MdLayers,
+    MdHistory, MdExpandMore, MdNotifications, MdChevronRight, MdCheckCircle,
+    MdMoreVert, MdCalendarToday, MdLocalShipping, MdEmojiEvents
 } from "react-icons/md";
+
+// --- Sub-Components ---
+
+/**
+ * Premium collapsible section with smooth height animation and consistent icon/title.
+ */
+const CollapsibleCard = ({
+    title,
+    icon: Icon,
+    isOpen,
+    onToggle,
+    children,
+    colorClass = "blue",
+    badge = null
+}: {
+    title: string;
+    icon: any;
+    isOpen: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+    colorClass?: "blue" | "green" | "emerald" | "orange" | "indigo" | "rose";
+    badge?: React.ReactNode;
+}) => {
+    const config_ = {
+        blue: { bg: "bg-blue-50/50", iconBg: "bg-blue-100", iconText: "text-blue-600", border: "border-blue-100" },
+        green: { bg: "bg-green-50/50", iconBg: "bg-green-100", iconText: "text-green-600", border: "border-green-100" },
+        emerald: { bg: "bg-emerald-50/50", iconBg: "bg-emerald-100", iconText: "text-emerald-600", border: "border-emerald-100" },
+        orange: { bg: "bg-orange-50/50", iconBg: "bg-orange-100", iconText: "text-orange-600", border: "border-orange-100" },
+        indigo: { bg: "bg-indigo-50/50", iconBg: "bg-indigo-100", iconText: "text-indigo-600", border: "border-indigo-100" },
+        rose: { bg: "bg-rose-50/50", iconBg: "bg-rose-100", iconText: "text-rose-600", border: "border-rose-100" },
+    };
+
+    const c = config_[colorClass as keyof typeof config_];
+
+    return (
+        <div className={`bg-white rounded-[32px] border-2 ${c.border} shadow-lg shadow-black/5 overflow-hidden transition-all duration-300 ${isOpen ? 'ring-4 ring-black/2' : ''}`}>
+            <div
+                className="flex items-center justify-between p-5 md:p-6 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                onClick={onToggle}
+            >
+                <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 ${c.iconBg} ${c.iconText} rounded-2xl flex items-center justify-center shadow-inner transition-transform duration-500 ${isOpen ? 'rotate-3 scale-110' : ''}`}>
+                        <Icon className="text-2xl" />
+                    </div>
+                    <div>
+                        <h4 className="text-lg font-black text-gray-900 tracking-tight leading-none mb-1">{title}</h4>
+                        {badge}
+                    </div>
+                </div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isOpen ? 'bg-gray-900 text-white rotate-180' : 'bg-gray-100 text-gray-400 rotate-0'}`}>
+                    <MdExpandMore className="text-xl" />
+                </div>
+            </div>
+
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                    >
+                        <div className={`p-6 md:p-8 ${c.bg} border-t-2 ${c.border}`}>
+                            {children}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 const MyRequestsList = () => {
     const [searchQuery, setSearchQuery] = useState("");
@@ -46,8 +94,27 @@ const MyRequestsList = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
-    const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
-    const [analysisData, setAnalysisData] = useState<MaterialAnalysisResponse | null>(null);
+
+    // Collapsible sections state
+    const [expandedSection, setExpandedSection] = useState<string | null>("timeline");
+    const [expandedSubTimelines, setExpandedSubTimelines] = useState<string[]>(["recycle", "fulfillment"]);
+
+    const toggleSubTimeline = (id: string) => {
+        setExpandedSubTimelines(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
+    // Status history state
+    const [statusHistory, setStatusHistory] = useState<any[]>([]);
+
+    // Detail view state
+    const [detailLoading, setDetailLoading] = useState(false);
+
+    // Reminder state
+    const [sendingReminder, setSendingReminder] = useState(false);
+
+    const toggleSection = (section: string) => {
+        setExpandedSection(prev => prev === section ? null : section);
+    };
 
     const fetchRequests = useCallback(async (showToast = false) => {
         const userId = getUserID();
@@ -72,11 +139,7 @@ const MyRequestsList = () => {
             if (showToast) toast.success("Refreshed successfully!");
         } catch (err: any) {
             console.error("Failed to fetch recycle requests:", err);
-            setError(
-                err?.response?.data?.message ||
-                err?.message ||
-                "Failed to load your requests. Please try again."
-            );
+            setError(err?.response?.data?.message || err?.message || "Failed to load your requests.");
         } finally {
             setLoading(false);
         }
@@ -84,46 +147,72 @@ const MyRequestsList = () => {
 
     useEffect(() => {
         fetchRequests();
-    }, [fetchRequests]); // Run when fetchRequests changes
+    }, []);
 
     const selectedRequest = useMemo(() =>
         requests.find(r => r.id === selectedRequestId),
         [requests, selectedRequestId]);
 
-    // Fetch analysis when request selection changes
-    useEffect(() => {
-        if (selectedRequest) {
-            const runAnalysis = async () => {
-                setIsAnalysisLoading(true);
-                try {
-                    const res = await analyzeDeviceMaterials({
-                        brand_id: "mock",
-                        brand_name: selectedRequest.deviceBrand,
-                        category_id: "mock",
-                        category_name: selectedRequest.categoryName,
-                        model_id: selectedRequest.id,
-                        model_name: selectedRequest.deviceModel,
-                        country: "IN",
-                        deviceCondition: selectedRequest.deviceCondition,
-                        conditionNotes: "Auto-generated analysis for request ID: " + selectedRequest.id
-                    });
-                    if (res.success) {
-                        setAnalysisData(res);
-                    } else {
-                        toast.error("Analysis failed: " + res.error?.message);
-                    }
-                } catch (err) {
-                    console.error("Analysis failed:", err);
-                    toast.error("AI Analysis encountered an error. Please try again later.");
-                } finally {
-                    setIsAnalysisLoading(false);
-                }
-            };
-            runAnalysis();
-        } else {
-            setAnalysisData(null);
+    const loadRequestDetails = useCallback(async (requestId: string) => {
+        setDetailLoading(true);
+        try {
+            const [requestRes, historyRes] = await Promise.all([
+                recycleRequestApi.getById(requestId),
+                recycleRequestApi.getStatusHistory(requestId)
+            ]);
+
+            if (requestRes.data) {
+                const updatedRequest = mapApiResponseToRequest(requestRes.data);
+                setRequests(prev => prev.map(r => r.id === requestId ? updatedRequest : r));
+            }
+
+            if (historyRes.data) {
+                setStatusHistory(historyRes.data);
+            } else {
+                setStatusHistory([]);
+            }
+        } catch (err: any) {
+            console.error('Error loading request details:', err);
+            toast.error("Failed to load request details.");
+        } finally {
+            setDetailLoading(false);
         }
-    }, [selectedRequestId, selectedRequest?.id]);
+    }, []);
+
+    useEffect(() => {
+        if (selectedRequestId) {
+            loadRequestDetails(selectedRequestId);
+        }
+    }, [selectedRequestId, loadRequestDetails]);
+
+    const handleSendReminder = async () => {
+        if (!selectedRequestId) return;
+        const userId = getUserID();
+        if (!userId) return;
+
+        setSendingReminder(true);
+        const reminderToast = toast.loading("Sending reminder...");
+
+        try {
+            await recycleRequestApi.sendReminder(selectedRequestId, userId, 'Reminder: Please process this recycle request');
+            toast.update(reminderToast, {
+                render: "Reminder sent successfully!",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000
+            });
+            loadRequestDetails(selectedRequestId);
+        } catch (err: any) {
+            toast.update(reminderToast, {
+                render: "Failed to send reminder.",
+                type: "error",
+                isLoading: false,
+                autoClose: 3000
+            });
+        } finally {
+            setSendingReminder(false);
+        }
+    };
 
     const getDeviceIcon = (deviceType: string, className = "text-2xl") => {
         const icons: { [key: string]: React.ReactNode } = {
@@ -139,19 +228,19 @@ const MyRequestsList = () => {
         return icons[deviceType] || icons.other;
     };
 
-    const getStatusBadge = (status: Request["status"]) => {
+    const getStatusBadge = (status: Request["status"], showPulsing = false) => {
         const statusConfig = {
             pending: { bg: "bg-amber-100", text: "text-amber-800", dot: "bg-amber-500", label: "Pending" },
             confirmed: { bg: "bg-blue-100", text: "text-blue-800", dot: "bg-blue-500", label: "Confirmed" },
             "in-progress": { bg: "bg-indigo-100", text: "text-indigo-800", dot: "bg-indigo-500", label: "In Transit" },
             completed: { bg: "bg-emerald-100", text: "text-emerald-800", dot: "bg-emerald-500", label: "Completed" },
-            cancelled: { bg: "bg-red-100", text: "text-red-800", dot: "bg-red-500", label: "Cancelled" },
+            cancelled: { bg: "bg-rose-100", text: "text-rose-800", dot: "bg-rose-500", label: "Cancelled" },
         };
 
-        const config = statusConfig[status] ?? statusConfig["pending"];
+        const config = statusConfig[status as keyof typeof statusConfig] ?? statusConfig["pending"];
         return (
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase ${config.bg} ${config.text}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`}></span>
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase ${config.bg} ${config.text} shadow-sm`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${config.dot} ${showPulsing ? 'animate-pulse' : ''}`}></span>
                 {config.label}
             </span>
         );
@@ -160,432 +249,447 @@ const MyRequestsList = () => {
     const handleCancelRequest = async (requestId: string) => {
         const userId = getUserID();
         if (!userId) return;
-
-        if (confirm(`Are you sure you want to cancel request ${requestId.slice(-8)}?`)) {
-            // Instant UI update
-            setRequests((prev) =>
-                prev.map((r) =>
-                    r.id === requestId ? { ...r, status: "cancelled" as const } : r
-                )
-            );
-
+        if (confirm(`Are you sure you want to cancel this request?`)) {
             const cancelToastId = toast.loading("Cancelling request...");
-
             try {
                 await recycleRequestApi.cancel(requestId, userId);
-                toast.update(cancelToastId, {
-                    render: "Request cancelled successfully",
-                    type: "success",
-                    isLoading: false,
-                    autoClose: 3000
-                });
+                toast.update(cancelToastId, { render: "Request cancelled successfully", type: "success", isLoading: false, autoClose: 3000 });
+                loadRequestDetails(requestId);
             } catch (err: any) {
-                console.error("Cancel failed:", err);
-                toast.update(cancelToastId, {
-                    render: "Failed to cancel request. Rolling back...",
-                    type: "error",
-                    isLoading: false,
-                    autoClose: 3000
-                });
-                fetchRequests(); // Rollback
+                toast.update(cancelToastId, { render: "Failed to cancel request.", type: "error", isLoading: false, autoClose: 3000 });
             }
         }
     };
 
     const filteredRequests = requests.filter((request) => {
+        const q = searchQuery.toLowerCase();
         const matchesSearch =
-            request.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            request.deviceBrand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            request.deviceModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            request.categoryName.toLowerCase().includes(searchQuery.toLowerCase());
+            request.requestNumber.toLowerCase().includes(q) ||
+            request.deviceBrand.toLowerCase().includes(q) ||
+            request.deviceModel.toLowerCase().includes(q) ||
+            request.categoryName.toLowerCase().includes(q);
         const matchesFilter = filterStatus === "all" || request.status === filterStatus;
         return matchesSearch && matchesFilter;
     });
 
-    const stats = {
-        total: requests.length,
-        pending: requests.filter((r) => r.status === "pending").length,
-        completed: requests.filter((r) => r.status === "completed").length,
-    };
-
-    // ——— Loading skeleton ———
     if (loading) {
         return (
-            <div className="w-full h-[80vh] flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
-                    <p className="text-gray-500 font-medium animate-pulse">Loading your requests...</p>
+            <div className="w-full h-[70vh] flex flex-col items-center justify-center gap-6">
+                <div className="relative">
+                    <div className="w-20 h-20 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <MdLayers className="text-2xl text-emerald-600 animate-pulse" />
+                    </div>
+                </div>
+                <div className="text-center group">
+                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Accessing Recycle Hub...</h2>
+                    <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Initializing secure blockchain records</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-6 pb-8 h-full">
-            <ToastContainer />
+        <div className="w-full h-full flex flex-col bg-white overflow-hidden relative">
+            <ToastContainer position="bottom-right" theme="dark" />
+            <style jsx global>{`
+                .customize-scrollbar::-webkit-scrollbar { width: 7px; }
+                .customize-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .customize-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+                .customize-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+            `}</style>
 
-            {/* Header / Stats Bar */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/40 backdrop-blur-md p-4 rounded-3xl border border-white/60 shadow-xl shadow-green-900/5">
-                <div className="flex items-center gap-4 px-2">
-                    <div className="bg-green-600 p-3 rounded-2xl shadow-lg shadow-green-600/30 text-white">
-                        <MdLayers className="text-2xl" />
+            {/* --- Premium Header --- */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 bg-white/80 backdrop-blur-xl pl-0 pr-12 py-8 border-b border-gray-100 shadow-sm shrink-0 z-20"
+            >
+                <div className="flex items-center gap-8 pl-10">
+                    <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-green-400 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                        <div className="relative bg-emerald-600 p-5 rounded-[28px] shadow-xl text-white transition-transform group-hover:rotate-3">
+                            <MdLayers className="text-4xl" />
+                        </div>
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Recycle Hub</h1>
-                        <div className="flex items-center gap-3 text-sm text-gray-500 font-semibold uppercase tracking-wider">
-                            <span>{stats.total} Total</span>
-                            <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                            <span className="text-amber-600">{stats.pending} Pending</span>
-                            <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                            <span className="text-emerald-600">{stats.completed} Done</span>
-                        </div>
+                        <h1 className="text-4xl font-black text-gray-900 tracking-tighter leading-none mb-2">My Requests</h1>
+                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.4em]">Lifecycle Intelligence Portal</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="relative group">
-                        <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-green-500 transition-colors" />
+                <div className="flex flex-wrap items-center gap-6">
+                    <div className="relative group flex-1 min-w-[350px] md:flex-none">
+                        <MdSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 text-3xl group-focus-within:text-emerald-500 transition-all duration-300" />
                         <input
                             type="text"
-                            placeholder="Search requests..."
+                            placeholder="Find records..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-11 pr-4 py-2.5 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all text-sm w-full md:w-64 font-medium shadow-sm"
+                            className="pl-16 pr-8 py-5 bg-gray-50/50 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-emerald-500/20 focus:ring-8 focus:ring-emerald-500/5 transition-all text-base w-full md:w-[450px] font-bold shadow-inner"
                         />
                     </div>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="px-4 py-2.5 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all text-sm font-semibold text-gray-700 cursor-pointer shadow-sm"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                    <button
-                        onClick={() => fetchRequests(true)}
-                        className="p-3 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-green-600 hover:border-green-100 transition-all shadow-sm"
-                        title="Refresh"
-                    >
-                        <MdRefresh className="text-xl" />
-                    </button>
-                    <Link
-                        href="/citizen/book-recycle/new"
-                        className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 shadow-lg shadow-green-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                        <MdAddCircle className="text-xl" />
-                        New
-                    </Link>
-                </div>
-            </div>
-
-            {/* Main Content Area: Split View */}
-            <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)] min-h-[600px]">
-
-                {/* Left Sidebar: Request List (30%) */}
-                <div className="w-full lg:w-[320px] xl:w-[380px] flex flex-col gap-4 overflow-y-auto pr-1 customize-scrollbar">
-                    {filteredRequests.length === 0 ? (
-                        <div className="bg-white p-12 text-center rounded-[32px] border border-gray-100">
-                            <MdLayers className="text-5xl text-gray-200 mx-auto mb-4" />
-                            <p className="text-gray-400 font-bold">No results found</p>
-                        </div>
-                    ) : (
-                        filteredRequests.map((req) => (
-                            <button
-                                key={req.id}
-                                onClick={() => setSelectedRequestId(req.id)}
-                                className={`group flex items-start gap-4 p-4 rounded-[28px] transition-all duration-300 border-2 text-left
-                                    ${selectedRequestId === req.id
-                                        ? "bg-white border-green-500 shadow-xl shadow-green-900/5 translate-x-1"
-                                        : "bg-white/60 border-transparent hover:bg-white hover:border-gray-200 shadow-sm"
-                                    }`}
+                    <div className="flex items-center gap-4">
+                        <div className="relative group/filter">
+                            <MdEmojiEvents className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-600 text-2xl z-10 pointer-events-none transition-transform group-hover/filter:scale-110" />
+                            <select
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                                className="pl-14 pr-12 py-5 bg-white border-2 border-gray-100 rounded-[24px] focus:border-emerald-500 text-base font-black text-gray-800 cursor-pointer shadow-md hover:bg-gray-50 transition-all outline-none appearance-none min-w-[200px]"
                             >
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500
-                                    ${selectedRequestId === req.id ? "bg-green-600 text-white rotate-3 scale-110" : "bg-gray-100 text-gray-400 rotate-0"}
-                                `}>
-                                    {getDeviceIcon(req.deviceType, "text-2xl")}
+                                <option value="all">View All</option>
+                                <option value="pending">Pending Only</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Success</option>
+                            </select>
+                            <MdExpandMore className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 text-2xl pointer-events-none" />
+                        </div>
+                        <button
+                            onClick={() => fetchRequests(true)}
+                            className="p-5 bg-white border-2 border-gray-100 rounded-[24px] text-gray-500 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-md group active:scale-95"
+                        >
+                            <MdRefresh className="text-4xl group-hover:rotate-180 transition-transform duration-700" title="Refresh Data" />
+                        </button>
+                        <Link
+                            href="/citizen/book-recycle/new"
+                            className="flex items-center gap-4 px-12 py-5 bg-gray-900 text-white rounded-[24px] font-black text-base uppercase tracking-widest hover:bg-black shadow-2xl shadow-gray-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        >
+                            <MdAddCircle className="text-3xl" />
+                            Request
+                        </Link>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* --- Main Content Split View --- */}
+            <div className="flex flex-col lg:flex-row gap-0 flex-1 overflow-hidden min-h-0 relative bg-transparent">
+                {/* --- Left Column: Request List (Fixed Scroll) --- */}
+                <div className="w-full lg:w-[450px] xl:w-[500px] flex flex-col gap-0 overflow-y-auto bg-white/60 backdrop-blur-md border-r border-gray-100 customize-scrollbar z-10 relative">
+                    <div className="flex items-center justify-between pl-0 pr-10 py-8 mb-6 sticky top-0 bg-white/90 backdrop-blur-xl z-30 border-b border-gray-100 shadow-sm">
+                        <div className="flex flex-col pl-10">
+                            <span className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-1 leading-none">Activity Feed</span>
+                            <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-none">Active Orders</h2>
+                        </div>
+                        <div className="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center font-black text-base shadow-lg shadow-black/20">
+                            {filteredRequests.length}
+                        </div>
+                    </div>
+                    <div className="px-6 pb-12 flex flex-col gap-6">
+                        {filteredRequests.length === 0 ? (
+                            <div className="bg-white/60 border-2 border-dashed border-gray-200 p-16 text-center rounded-[48px] shadow-inner m-4">
+                                <div className="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center mx-auto mb-6 text-gray-300 ring-8 ring-gray-50/50">
+                                    <MdSearch className="text-4xl" />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">ID: {req.id.slice(-8)}</p>
-                                        {getStatusBadge(req.status)}
-                                    </div>
-                                    <h3 className={`font-black text-sm truncate transition-colors ${selectedRequestId === req.id ? "text-gray-900" : "text-gray-600"}`}>
-                                        {req.deviceBrand} {req.deviceModel}
-                                    </h3>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded font-bold text-gray-500 uppercase">{req.categoryName}</span>
-                                        <span className="text-[10px] font-bold text-gray-400">{req.requestDate}</span>
-                                    </div>
-                                </div>
-                                <MdArrowForward className={`text-xl mt-4 transition-all ${selectedRequestId === req.id ? "text-green-500 translate-x-1 opacity-100" : "text-gray-200 opacity-0"}`} />
-                            </button>
-                        ))
-                    )}
+                                <p className="text-gray-900 font-black text-xl tracking-tight">Zero Matches</p>
+                                <p className="text-gray-400 font-bold text-[11px] uppercase tracking-widest mt-2 px-4">The records you're hunting for seem elusive.</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-6">
+                                {filteredRequests.map((req, idx) => (
+                                    <motion.button
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        key={req.id}
+                                        onClick={() => setSelectedRequestId(req.id)}
+                                        className={`group relative flex items-center gap-6 p-6 rounded-[40px] transition-all duration-500 border-2 text-left
+                                        ${selectedRequestId === req.id
+                                                ? "bg-white border-emerald-600 shadow-[0_30px_60px_-15px_rgba(16,185,129,0.15)] -translate-y-1 scale-[1.02] z-10"
+                                                : "bg-white/40 border-transparent hover:bg-white hover:border-gray-200 shadow-sm"
+                                            }`}
+                                    >
+                                        {selectedRequestId === req.id && (
+                                            <motion.div layoutId="active-pill" className="absolute -left-1 top-1/2 -translate-y-1/2 w-4 h-16 bg-emerald-600 rounded-full" />
+                                        )}
+
+                                        <div className={`w-20 h-20 rounded-[30px] flex items-center justify-center transition-all duration-700 shrink-0
+                                        ${selectedRequestId === req.id
+                                                ? "bg-emerald-600 text-white shadow-xl shadow-emerald-200 rotate-6"
+                                                : "bg-white text-gray-400 border border-gray-100 shadow-inner group-hover:bg-emerald-50 group-hover:text-emerald-500 rotate-0"}
+                                    `}>
+                                            {getDeviceIcon(req.deviceType, "text-4xl")}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] truncate">{req.requestNumber}</p>
+                                                {getStatusBadge(req.status, selectedRequestId === req.id)}
+                                            </div>
+                                            <h3 className={`font-black text-xl truncate leading-tight tracking-tight ${selectedRequestId === req.id ? "text-gray-900" : "text-gray-700"}`}>
+                                                {req.deviceBrand} <span className="text-gray-400 text-base font-bold ml-1">{req.deviceModel}</span>
+                                            </h3>
+                                            <div className="flex items-center gap-4 mt-4">
+                                                <span className="text-[10px] bg-slate-100 px-3 py-1.5 rounded-xl font-black text-slate-500 uppercase tracking-widest">{req.categoryName}</span>
+                                                <div className="w-1.5 h-1.5 bg-gray-200 rounded-full"></div>
+                                                <span className="text-[11px] font-bold text-gray-400">{new Date(req.requestDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                            </div>
+                                        </div>
+                                        <MdChevronRight className={`text-3xl transition-all duration-500 ${selectedRequestId === req.id ? "text-emerald-600 translate-x-2" : "text-gray-200 group-hover:text-gray-400"}`} />
+                                    </motion.button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Right Area: Content & Analysis (70%) */}
-                <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-y-auto customize-scrollbar pb-4 pr-1">
+                {/* --- Right Column: Details & Collapsibles (Liquid Scroll) --- */}
+                <div className="flex-1 overflow-y-auto customize-scrollbar p-10 bg-transparent z-10 relative">
                     <AnimatePresence mode="wait">
                         {selectedRequest ? (
                             <motion.div
                                 key={selectedRequest.id}
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.4, ease: "easeOut" }}
-                                className="flex-1 flex flex-col lg:flex-row gap-6 w-full"
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                transition={{ duration: 0.5, ease: "circOut" }}
+                                className={`flex flex-col gap-8 transition-opacity duration-300 ${detailLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
                             >
-                                {/* Left Col: Request Details & Timeline (45%) */}
-                                <div className="flex-1 flex flex-col gap-6 min-w-0">
-                                    {/* Device Info Card */}
-                                    <div className="bg-white p-6 rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/50">
-                                        <div className="flex items-start justify-between mb-8">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-16 h-16 bg-green-50 rounded-3xl flex items-center justify-center text-green-600">
-                                                    {getDeviceIcon(selectedRequest.deviceType, "text-3xl")}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <h2 className="text-2xl font-black text-gray-900 truncate">{selectedRequest.deviceBrand} {selectedRequest.deviceModel}</h2>
-                                                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs mt-1 truncate">{selectedRequest.categoryName}</p>
-                                                </div>
+                                {detailLoading && (
+                                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/20 backdrop-blur-[2px]">
+                                        <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                                    </div>
+                                )}
+                                {/* --- Device Identity Hero --- */}
+                                <div className="relative bg-white rounded-[48px] p-8 md:p-12 border-2 border-gray-50 shadow-2xl shadow-black/5 overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[100px] -mr-20 -mt-20 group-hover:bg-emerald-500/10 transition-colors duration-1000"></div>
+
+                                    <div className="relative flex flex-col md:flex-row items-center md:items-start justify-between gap-10">
+                                        <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+                                            <div className="w-28 h-28 bg-gradient-to-br from-emerald-500 to-green-600 rounded-[32px] flex items-center justify-center text-white shadow-[0_20px_40px_rgba(16,185,129,0.3)] ring-8 ring-emerald-50 transition-transform duration-700 hover:rotate-6">
+                                                {getDeviceIcon(selectedRequest.deviceType, "text-5xl")}
                                             </div>
-                                            <div className="text-right shrink-0">
-                                                <p className="text-[10px] font-black text-gray-300 uppercase">Status</p>
-                                                <div className="mt-1">{getStatusBadge(selectedRequest.status)}</div>
+                                            <div className="text-center md:text-left">
+                                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-3">
+                                                    {getStatusBadge(selectedRequest.status, true)}
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">{selectedRequest.requestNumber}</span>
+                                                </div>
+                                                <h2 className="text-4xl lg:text-5xl font-black text-gray-900 leading-none tracking-tighter mb-4">
+                                                    {selectedRequest.deviceBrand} <br />
+                                                    <span className="text-emerald-600">{selectedRequest.deviceModel}</span>
+                                                </h2>
+                                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
+                                                    <MdLayers className="text-gray-400" />
+                                                    <span className="text-[11px] font-black text-gray-600 uppercase tracking-widest">{selectedRequest.categoryName}</span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="bg-gray-50/50 p-4 rounded-3xl border border-gray-100">
-                                                <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Condition</p>
-                                                <p className="font-bold text-gray-900 flex items-center gap-2">
-                                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                                    {selectedRequest.deviceCondition}
-                                                </p>
-                                            </div>
-                                            <div className="bg-gray-50/50 p-4 rounded-3xl border border-gray-100">
-                                                <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Estimation</p>
-                                                <p className="font-bold text-emerald-600 text-lg">{selectedRequest.estimatedValue || "TBD"}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-6 p-4 bg-indigo-50/30 rounded-3xl border border-indigo-100 flex items-center justify-between gap-4">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="w-10 h-10 bg-indigo-500 rounded-2xl flex items-center justify-center text-white shrink-0">
-                                                    <MdLocationOn />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-[10px] font-black text-indigo-400 uppercase">Pickup Location</p>
-                                                    <p className="text-xs font-bold text-gray-700 truncate">{selectedRequest.address}, {selectedRequest.city}</p>
-                                                </div>
-                                            </div>
+                                        <div className="flex flex-col gap-3 min-w-[200px] w-full md:w-auto">
                                             {selectedRequest.status === "pending" && (
                                                 <button
                                                     onClick={() => handleCancelRequest(selectedRequest.id)}
-                                                    className="text-xs font-black text-red-500 hover:text-red-700 uppercase tracking-widest shrink-0"
+                                                    className="w-full px-6 py-4 text-xs font-black text-rose-600 hover:text-white hover:bg-rose-600 border-2 border-rose-100 hover:border-rose-600 rounded-[24px] uppercase tracking-[0.2em] transition-all bg-rose-50/30"
                                                 >
-                                                    Cancel
+                                                    Discard Request
                                                 </button>
+                                            )}
+                                            {selectedRequest.status === "completed" && selectedRequest.certificateUrl && (
+                                                <a
+                                                    href={selectedRequest.certificateUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center justify-center gap-2 w-full px-6 py-4 bg-emerald-600 text-white rounded-[24px] font-black uppercase tracking-widest text-xs hover:bg-emerald-700 shadow-xl shadow-emerald-900/20 transition-all hover:-translate-y-1"
+                                                >
+                                                    <MdEmojiEvents className="text-xl" />
+                                                    View Certificate
+                                                </a>
                                             )}
                                         </div>
                                     </div>
 
-                                    {/* Timeline Section */}
-                                    <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/50 flex-1">
-                                        <div className="flex items-center gap-3 mb-8">
-                                            <MdHistory className="text-2xl text-gray-400" />
-                                            <h3 className="text-xl font-black text-gray-900 tracking-tight">Timeline</h3>
-                                        </div>
-
-                                        <div className="relative pl-8 border-l-2 border-dashed border-gray-100 space-y-12">
-                                            {[
-                                                { label: "Request Created", date: selectedRequest.requestDate, desc: "Order successfully placed", active: true },
-                                                { label: "Verification", date: "System Scan", desc: "Automated analysis completed", active: true },
-                                                { label: "Logistics Scheduled", date: selectedRequest.pickupDate || "Pending", desc: selectedRequest.fulfillmentType === "PICKUP" ? "Agent will collect the device" : "Awaiting drop-off", active: selectedRequest.status !== "pending" },
-                                                { label: "Completed", date: "Final Phase", desc: "Credits issued and certificate generated", active: selectedRequest.status === "completed" }
-                                            ].map((step, idx) => (
-                                                <div key={idx} className="relative">
-                                                    <motion.div
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        transition={{ delay: idx * 0.1 }}
-                                                        className={`absolute -left-[41px] top-0 w-5 h-5 rounded-full border-4 border-white shadow-md transition-all duration-500
-                                                            ${step.active ? "bg-green-600 scale-125 ring-8 ring-green-100" : "bg-gray-200 scale-100"}
-                                                        `}
-                                                    ></motion.div>
-                                                    <div className="flex items-baseline justify-between mb-1">
-                                                        <h4 className={`font-black text-sm uppercase tracking-wider ${step.active ? "text-gray-900" : "text-gray-300"}`}>{step.label}</h4>
-                                                        <span className={`text-[10px] font-bold ${step.active ? "text-green-600" : "text-gray-300"}`}>{step.date}</span>
-                                                    </div>
-                                                    <p className={`text-xs font-semibold leading-relaxed ${step.active ? "text-gray-500" : "text-gray-200"}`}>{step.desc}</p>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
+                                        {[
+                                            { label: "Condition", value: selectedRequest.deviceCondition, color: "blue", icon: MdCheckCircle },
+                                            { label: "Status", value: selectedRequest.fulfillmentStatusDisplay || selectedRequest.status, color: "indigo", icon: MdLocalShipping },
+                                            { label: "Booked On", value: selectedRequest.requestDate, color: "emerald", icon: MdCalendarToday },
+                                            { label: "Payout", value: selectedRequest.estimatedValue || "TBD", color: "amber", icon: MdEmojiEvents },
+                                        ].map((stat, i) => (
+                                            <div key={i} className="bg-gray-50 p-5 rounded-[28px] border border-gray-100 hover:border-gray-200 transition-colors group/stat">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                                                    <stat.icon className="text-gray-300 group-hover/stat:text-emerald-500 transition-colors" />
                                                 </div>
-                                            ))}
-                                        </div>
+                                                <p className="font-black text-gray-900 text-sm xl:text-base truncate">{stat.value}</p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                {/* Right Col: AI Analysis & Financials (55%) */}
-                                <div className="flex-[1.2] flex flex-col gap-6 min-w-0">
-                                    {/* Material Analysis Dashboard */}
-                                    <div className="bg-gradient-to-br from-gray-900 to-black p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden group min-h-[500px] flex flex-col">
-                                        <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 blur-[80px] rounded-full group-hover:bg-green-500/20 transition-all"></div>
-
-                                        <div className="flex items-center justify-between mb-8 relative z-10">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                                                    <MdAnalytics className="text-2xl text-green-400" />
+                                <div className="flex flex-col gap-6">
+                                    <CollapsibleCard
+                                        title="Order Specifications"
+                                        icon={MdInfo}
+                                        isOpen={expandedSection === 'details'}
+                                        onToggle={() => toggleSection('details')}
+                                        colorClass="blue"
+                                        badge={<span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">General Info</span>}
+                                    >
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {[
+                                                { label: "Request Reference", value: selectedRequest.requestNumber },
+                                                { label: "Fulfillment Type", value: selectedRequest.fulfillmentType },
+                                                { label: "Address Line", value: `${selectedRequest.address}, ${selectedRequest.city}` },
+                                                { label: "Planned Pickup", value: selectedRequest.pickupDate || "Not scheduled", highlight: true },
+                                            ].map((item, i) => (
+                                                <div key={i} className="flex flex-col bg-white p-5 rounded-2xl border border-blue-50 shadow-sm">
+                                                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">{item.label}</span>
+                                                    <span className={`text-sm font-bold ${item.highlight ? 'text-blue-600' : 'text-gray-800'}`}>{item.value}</span>
                                                 </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black tracking-tight">AI Composition Analysis</h3>
-                                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Powered by Llama 3.3</p>
-                                                </div>
-                                            </div>
-                                            {isAnalysisLoading && <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>}
+                                            ))}
                                         </div>
-
-                                        <div className="flex-1 relative z-10 flex flex-col">
-                                            {analysisData?.data ? (
-                                                <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    className="space-y-8 flex-1"
+                                        {selectedRequest.status === "completed" && (
+                                            <div className="mt-8 flex flex-col md:flex-row gap-4">
+                                                <button
+                                                    onClick={() => downloadReceipt(selectedRequest)}
+                                                    className="flex-1 py-5 bg-gray-900 text-white rounded-[24px] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-gray-900/10 active:scale-95"
                                                 >
-                                                    {/* Precious Metals Grid */}
-                                                    <div className="grid grid-cols-3 gap-3">
-                                                        {analysisData.data.materials.filter(m => m.isPrecious).map((m, idx) => (
-                                                            <div key={idx} className="bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-md hover:bg-white/10 transition-all cursor-default group/item">
-                                                                <p className="text-[10px] font-black text-gray-400 uppercase mb-1">{m.materialName}</p>
-                                                                <p className="text-lg font-black text-amber-500">{m.estimatedQuantityGrams}g</p>
-                                                                <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                                                                    <div className="h-full bg-amber-500/50 w-2/3 group-hover/item:w-full transition-all duration-700"></div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                        <div className="bg-green-500/10 p-4 rounded-3xl border border-green-500/20 backdrop-blur-md flex flex-col justify-center">
-                                                            <p className="text-[10px] font-black text-green-400 uppercase mb-1">Total Value</p>
-                                                            <p className="text-xl font-black text-white">₹{analysisData.data.recyclingEstimate.totalMaterialValue.toLocaleString()}</p>
-                                                        </div>
-                                                    </div>
+                                                    <MdDownload className="text-xl" />
+                                                    Get Digital Receipt
+                                                </button>
+                                            </div>
+                                        )}
+                                    </CollapsibleCard>
 
-                                                    {/* Financial Breakdown */}
-                                                    <div className="space-y-4">
-                                                        <div className="flex items-center justify-between p-5 bg-white/5 rounded-3xl border border-white/10">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-400">
-                                                                    <MdTrendingUp className="text-2xl" />
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs font-black text-gray-400 uppercase">Buyback Estimate</p>
-                                                                    <p className="text-2xl font-black text-white">₹{analysisData.data.recyclingEstimate.suggestedBuybackPrice.toLocaleString()}</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="px-4 py-2 bg-green-500 text-black rounded-2xl font-black text-[10px] uppercase tracking-tighter">Recommendation</div>
-                                                        </div>
-
-                                                        <div className="flex items-center justify-between p-5 bg-white/5 rounded-3xl border border-white/10">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400">
-                                                                    <MdOutlineAccountBalanceWallet className="text-2xl" />
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs font-black text-gray-400 uppercase">Recycling Price</p>
-                                                                    <p className="text-2xl font-black text-white">₹{analysisData.data.recyclingEstimate.suggestedRecyclingPrice.toLocaleString()}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Description */}
-                                                    <div className="p-6 bg-white/5 rounded-[32px] border border-white/10 italic text-xs leading-relaxed text-gray-400">
-                                                        "{analysisData.data.recyclingEstimate.conditionImpact}"
-                                                    </div>
-                                                </motion.div>
+                                    <CollapsibleCard
+                                        title="Tracking & History"
+                                        icon={MdHistory}
+                                        isOpen={expandedSection === 'timeline'}
+                                        onToggle={() => toggleSection('timeline')}
+                                        colorClass="emerald"
+                                    >
+                                        <div className="space-y-10 py-4">
+                                            {!statusHistory.length ? (
+                                                <div className="text-center py-12 bg-white/40 rounded-[32px] border-2 border-dashed border-emerald-100">
+                                                    <MdHistory className="text-5xl text-emerald-100 mx-auto mb-4" />
+                                                    <p className="text-gray-400 font-black text-sm uppercase tracking-widest">No Log Data Found</p>
+                                                </div>
                                             ) : (
-                                                <div className="flex-1 flex flex-col items-center justify-center">
-                                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 relative">
-                                                        <MdAnalytics className="text-4xl text-gray-700" />
-                                                        <div className="absolute inset-0 border-2 border-dashed border-gray-700 rounded-full animate-spin-slow"></div>
-                                                    </div>
-                                                    <p className="text-gray-500 font-bold text-center max-w-[200px]">AI Engine is analyzing device composition...</p>
+                                                <div className="grid grid-cols-1 gap-12">
+                                                    {statusHistory.some(h => h.statusType === 'RECYCLE_STATUS') && (
+                                                        <div className="space-y-6">
+                                                            <div
+                                                                className="flex items-center justify-between cursor-pointer group/header bg-emerald-50/30 p-4 rounded-3xl border border-emerald-100/50 hover:bg-emerald-50 transition-colors"
+                                                                onClick={() => toggleSubTimeline('recycle')}
+                                                            >
+                                                                <div className="flex items-center gap-5">
+                                                                    <div className="w-14 h-14 bg-emerald-500 text-white rounded-[20px] flex items-center justify-center shadow-lg shadow-emerald-100 transition-transform group-hover/header:rotate-3">
+                                                                        <MdCheckCircle className="text-3xl" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h5 className="text-lg font-black text-gray-800 uppercase tracking-widest leading-none mb-1.5">Request Journey</h5>
+                                                                        <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-[0.2em]">Lifecycle Tracking Logs</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={`w-10 h-10 rounded-2xl border border-emerald-200 flex items-center justify-center transition-all ${expandedSubTimelines.includes('recycle') ? 'rotate-180 bg-emerald-600 text-white' : 'bg-white text-emerald-400'}`}>
+                                                                    <MdExpandMore className="text-2xl" />
+                                                                </div>
+                                                            </div>
+                                                            <AnimatePresence>
+                                                                {expandedSubTimelines.includes('recycle') && (
+                                                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                                                        <div className="relative pl-14 border-l-2 border-dashed border-emerald-100/50 ml-11 space-y-12 pb-10 mt-6">
+                                                                            {statusHistory.filter(h => h.statusType === 'RECYCLE_STATUS').map((h, i) => (
+                                                                                <div key={i} className="relative group/log">
+                                                                                    <div className={`absolute -left-[63px] top-0 w-11 h-11 bg-white border-2 rounded-full flex items-center justify-center transition-all duration-500 ${i === 0 ? "border-emerald-500 text-emerald-500 shadow-md z-10 scale-105" : "border-gray-100 text-gray-300"}`}>
+                                                                                        <MdHistory className="text-xl" />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-4">
+                                                                                        <div className="flex items-center gap-4">
+                                                                                            <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${h.newStatus === 'RECYCLED' ? 'bg-emerald-600 text-white border-emerald-600' : ['VERIFIED', 'APPROVED'].includes(h.newStatus) ? 'bg-emerald-100 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                                                                                                {h.newStatus}
+                                                                                            </span>
+                                                                                            <span className="text-[11px] font-bold text-gray-400">{new Date(h.changedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                        </div>
+                                                                                        {h.comments && <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm w-full"><p className="text-sm font-bold text-gray-500 italic">"{h.comments}"</p></div>}
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </div>
+                                                    )}
+                                                    {statusHistory.some(h => h.statusType === 'FULFILLMENT_STATUS') && (
+                                                        <div className="space-y-6">
+                                                            <div
+                                                                className="flex items-center justify-between cursor-pointer group/header bg-indigo-50/30 p-4 rounded-3xl border border-indigo-100/50 hover:bg-indigo-50 transition-colors"
+                                                                onClick={() => toggleSubTimeline('fulfillment')}
+                                                            >
+                                                                <div className="flex items-center gap-5">
+                                                                    <div className="w-14 h-14 bg-indigo-500 text-white rounded-[20px] flex items-center justify-center shadow-lg shadow-indigo-100 transition-transform group-hover/header:rotate-3">
+                                                                        <MdLocalShipping className="text-3xl" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h5 className="text-lg font-black text-gray-800 uppercase tracking-widest leading-none mb-1.5">Logistics Operations</h5>
+                                                                        <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-[0.2em]">Asset Movement Logs</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={`w-10 h-10 rounded-2xl border border-indigo-200 flex items-center justify-center transition-all ${expandedSubTimelines.includes('fulfillment') ? 'rotate-180 bg-indigo-600 text-white' : 'bg-white text-indigo-400'}`}>
+                                                                    <MdExpandMore className="text-2xl" />
+                                                                </div>
+                                                            </div>
+                                                            <AnimatePresence>
+                                                                {expandedSubTimelines.includes('fulfillment') && (
+                                                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                                                        <div className="relative pl-14 border-l-2 border-dashed border-indigo-100/50 ml-11 space-y-12 pb-10 mt-6">
+                                                                            {statusHistory.filter(h => h.statusType === 'FULFILLMENT_STATUS').map((h, i) => (
+                                                                                <div key={i} className="relative group/log-ops">
+                                                                                    <div className={`absolute -left-[63px] top-0 w-11 h-11 bg-white border-2 rounded-full flex items-center justify-center transition-all duration-500 ${i === 0 ? "border-indigo-500 text-indigo-500 shadow-md z-10 scale-105" : "border-gray-100 text-gray-300"}`}>
+                                                                                        <MdLayers className="text-xl" />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-4">
+                                                                                        <div className="flex items-center gap-4">
+                                                                                            <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${i === 0 ? "bg-indigo-600 text-white border-indigo-600 shadow-md" : "bg-indigo-50 text-indigo-700 border-indigo-100"}`}>
+                                                                                                {h.newStatus}
+                                                                                            </span>
+                                                                                            <span className="text-[11px] font-bold text-gray-400">{new Date(h.changedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                        </div>
+                                                                                        {h.comments && <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm w-full"><p className="text-sm font-bold text-gray-500 italic">"{h.comments}"</p></div>}
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                    </CollapsibleCard>
 
-                                    {/* Marketplace Links Card */}
-                                    <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/50">
-                                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                            <MdInfo className="text-lg text-blue-500" />
-                                            Retail Reference
-                                        </h4>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {analysisData?.data?.devicePricing.platformLinks.map((link, idx) => (
-                                                <a
-                                                    key={idx}
-                                                    href={link.link}
-                                                    target="_blank"
-                                                    rel="noopener"
-                                                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-400 hover:bg-blue-50/30 transition-all group"
-                                                >
-                                                    <img src={link.icon} alt={link.platformName} className="w-6 h-6 object-contain" />
-                                                    <span className="text-xs font-bold text-gray-600 group-hover:text-blue-600 truncate">{link.platformName}</span>
-                                                </a>
-                                            ))}
-                                        </div>
-
-                                        {selectedRequest.status === "completed" && (
-                                            <button
-                                                onClick={() => downloadReceipt(selectedRequest)}
-                                                className="w-full mt-8 py-4 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-gray-900/10"
-                                            >
-                                                <MdDownload className="text-xl" />
-                                                Download Receipt
+                                    <CollapsibleCard
+                                        title="Communications"
+                                        icon={MdNotifications}
+                                        isOpen={expandedSection === 'reminders'}
+                                        onToggle={() => toggleSection('reminders')}
+                                        colorClass="orange"
+                                    >
+                                        <div className="flex flex-col md:flex-row items-center gap-8">
+                                            <div className="flex-1">
+                                                <h5 className="text-lg font-black text-gray-900 tracking-tight mb-2">Internal Reminder</h5>
+                                                <p className="text-sm text-gray-500 font-bold leading-relaxed">Is your request delayed? Send a high-priority push notification to the assigned recycler or logistics agent.</p>
+                                            </div>
+                                            <button onClick={handleSendReminder} disabled={sendingReminder} className="w-full md:w-auto px-10 py-5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-[24px] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-2xl shadow-orange-900/20 disabled:opacity-50 transition-all">
+                                                {sendingReminder ? 'Transmitting...' : <><MdNotifications className="text-xl" />Notify Agent</>}
                                             </button>
-                                        )}
-                                    </div>
+                                        </div>
+                                    </CollapsibleCard>
                                 </div>
                             </motion.div>
                         ) : (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="flex-1 flex flex-col items-center justify-center bg-white/40 border border-white p-20 rounded-[60px] shadow-xl shadow-gray-200/50"
-                            >
-                                <div className="w-24 h-24 bg-white rounded-[40px] flex items-center justify-center mb-8 shadow-inner shadow-gray-100">
-                                    <MdLayers className="text-5xl text-gray-200" />
-                                </div>
-                                <h3 className="text-3xl font-black text-gray-900 tracking-tight">Select a Request</h3>
-                                <p className="text-gray-400 font-semibold mt-3 text-center max-w-sm leading-relaxed">Pick a recycling order from the left to view its detailed timeline and AI analysis dashboard.</p>
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="h-full flex flex-col items-center justify-center bg-white/60 border-2 border-dashed border-gray-100 rounded-[60px] p-20 text-center shadow-inner">
+                                <div className="relative mb-10"><div className="absolute inset-0 bg-emerald-500 blur-3xl opacity-10 animate-pulse"></div><div className="relative w-32 h-32 bg-white rounded-[40px] shadow-2xl flex items-center justify-center"><MdLayers className="text-6xl text-gray-200" /></div></div>
+                                <h3 className="text-4xl font-black text-gray-900 tracking-tighter mb-4">Unlock Order Intelligence</h3>
+                                <p className="text-gray-400 font-black text-[12px] uppercase tracking-[0.3em] max-w-sm">Select a recycling manifest from the portal to view full lifecycle analysis and logistics tracking.</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
             </div>
 
-            <style jsx global>{`
-                .customize-scrollbar::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .customize-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .customize-scrollbar::-webkit-scrollbar-thumb {
-                    background: #e2e8f0;
-                    border-radius: 10px;
-                }
-                .customize-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #cbd5e1;
-                }
-                @keyframes spin-slow {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-                .animate-spin-slow {
-                    animation: spin-slow 8s linear infinite;
-                }
-            `}</style>
         </div>
     );
 };

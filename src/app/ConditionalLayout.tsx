@@ -22,7 +22,7 @@ export default function ConditionalLayout({
 
     const isAuthRoute = pathname.startsWith('/sign-in') || pathname?.startsWith('/sign-up') || pathname === '/citizen/sign-up' || pathname === '/citizen/sign-in' || pathname === '/citizen/sign-up/verify-email';
     const isAdminRoute = pathname?.startsWith('/admin');
-    const isPublicRoute = pathname === '/' || pathname === '/citizen/sign-up' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/recycle') || pathname?.startsWith('/citizen/education') || pathname?.startsWith('/citizen/rules') || pathname?.startsWith('/citizen/e-facilities');
+    const isPublicRoute = pathname === '/' || pathname === '/citizen/sign-up' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/recycle') || pathname?.startsWith('/citizen/education') || pathname?.startsWith('/citizen/rules') || pathname?.startsWith('/citizen/e-facilities') || pathname?.startsWith('/driver/pickup/');
 
     useEffect(() => {
         if (mounted && !isAuthRoute && !isPublicRoute && !isAuthenticated()) {
@@ -50,6 +50,15 @@ export default function ConditionalLayout({
 
         // Admin routes
         if (isAdminRoute) return children;
+
+        // Driver pickup routes (public, no navbar/footer)
+        if (pathname?.startsWith('/driver/pickup/')) {
+            return (
+                <div className="flex flex-col min-h-screen bg-gray-50">
+                    <main className="flex-grow">{children}</main>
+                </div>
+            );
+        }
 
         // Intermediary routes
         if (pathname?.startsWith('/intermediary')) {

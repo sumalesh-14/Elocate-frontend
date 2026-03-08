@@ -48,11 +48,13 @@ export default function CollectionDetailsPage() {
 
     const [drivers, setDrivers] = useState<any[]>([]);
     const [selectedDriverId, setSelectedDriverId] = useState<string>("");
-
+    const [driverComments, setDriverComments] = useState<string>("");
 
     const [adjustmentReason, setAdjustmentReason] = useState<string>("");
 
     const [conditionCode, setConditionCode] = useState<string>("GOOD");
+    const [verificationNotes, setVerificationNotes] = useState<string>("");
+    const [finalAmount, setFinalAmount] = useState<string>("");
     
     // State for material analysis condition override
     const [analysisCondition, setAnalysisCondition] = useState<string>("");
@@ -149,8 +151,12 @@ export default function CollectionDetailsPage() {
         }
         try {
             setActionLoading(true);
-            await intermediaryApi.requests.assignDriver(params.id as string, selectedDriverId);
-            showToast("Success\nDriver assigned successfully! Email sent.", "success");
+            await intermediaryApi.requests.assignDriver(
+                params.id as string, 
+                selectedDriverId, 
+                driverComments || undefined
+            );
+            showToast("Success\nDriver assigned successfully! Email sent with instructions.", "success");
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
             showToast("Error\nFailed to assign driver. Check console.", "error");
@@ -191,7 +197,13 @@ export default function CollectionDetailsPage() {
     const handleVerifyCondition = async () => {
         try {
             setActionLoading(true);
-            await intermediaryApi.requests.verifyCondition(params.id as string, conditionCode, "Condition verified on receipt.");
+            const finalAmountNum = finalAmount ? parseFloat(finalAmount) : undefined;
+            await intermediaryApi.requests.verifyCondition(
+                params.id as string, 
+                conditionCode, 
+                verificationNotes || "Condition verified on receipt.",
+                finalAmountNum
+            );
             showToast("Success\nCondition verified successfully.", "success");
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
@@ -995,7 +1007,7 @@ export default function CollectionDetailsPage() {
                                         </svg>
                                     </button>
                                 </div>
-                                <div className={`transition-all duration-300 overflow-hidden ${isAssignDriverOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                <div className={`transition-all duration-300 overflow-hidden ${isAssignDriverOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
                                     <div className="px-5 pb-5">
                                         <p className="text-xs text-blue-700 mb-3 font-medium">Trigger pickup workflow</p>
                                         <div className="space-y-3">
@@ -1016,6 +1028,22 @@ export default function CollectionDetailsPage() {
                                             </svg>
                                         </div>
                                     </div>
+                                    
+                                    {/* Driver Instructions/Comments */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-blue-700 mb-1.5">
+                                            📝 Special Instructions for Driver (Optional)
+                                        </label>
+                                        <textarea
+                                            value={driverComments}
+                                            onChange={e => setDriverComments(e.target.value)}
+                                            placeholder="e.g., Call customer 30 minutes before arrival. Building has parking restrictions. Handle with care - screen is cracked."
+                                            className="w-full p-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                                            rows={3}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">These instructions will be sent to the driver via email</p>
+                                    </div>
+                                    
                                     <button
                                         onClick={handleAssignDriver}
                                         disabled={actionLoading}
@@ -1137,7 +1165,7 @@ export default function CollectionDetailsPage() {
                                         </svg>
                                     </button>
                                 </div>
-                                <div className={`transition-all duration-300 overflow-hidden ${isVerifyConditionOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                <div className={`transition-all duration-300 overflow-hidden ${isVerifyConditionOpen ? 'max-h-[700px] opacity-100' : 'max-h-0 opacity-0'}`}>
                                     <div className="px-5 pb-5">
                                 <div className="space-y-3">
                                     <div>
@@ -1160,6 +1188,40 @@ export default function CollectionDetailsPage() {
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    {/* Verification Notes */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-orange-700 mb-1.5">
+                                            📝 Verification Notes
+                                        </label>
+                                        <textarea
+                                            value={verificationNotes}
+                                            onChange={e => setVerificationNotes(e.target.value)}
+                                            placeholder="e.g., Device in excellent condition. All accessories included. Battery health at 85%. Minor scratches on back panel."
+                                            className="w-full p-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all resize-none"
+                                            rows={3}
+                                        />
+                                    </div>
+                                    
+                                    {/* Final Amount */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-orange-700 mb-1.5">
+                                            💰 Final Amount (Optional)
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₹</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={finalAmount}
+                                                onChange={e => setFinalAmount(e.target.value)}
+                                                placeholder="Enter final amount"
+                                                className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">Leave empty to use estimated amount. This will be the final payment.</p>
+                                    </div>
+                                    
                                     <button
                                         onClick={handleVerifyCondition}
                                         disabled={actionLoading}

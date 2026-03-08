@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import Script from "next/script";
 import NextTopLoader from 'nextjs-toploader';
-import { ChatWidget } from "@/components/ChatBot/ChatWidget";
 import ConditionalLayout from "./ConditionalLayout";
 import { ToastProvider } from "@/context/ToastContext";
+import ConditionalChatWidget from "./ConditionalChatWidget";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -62,7 +62,7 @@ export default function RootLayout({
         <ToastProvider>
           <NextTopLoader color="#28af60" showSpinner={false} />
           <ConditionalLayout>{children}</ConditionalLayout>
-          <ChatWidget />
+          <ConditionalChatWidget />
         </ToastProvider>
       </body>
     </html>

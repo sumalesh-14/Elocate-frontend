@@ -217,6 +217,18 @@ export const recycleRequestApi = {
         });
         return response;
     },
+    
+    sendReminder: async (id: string, userId: string, comment?: string) => {
+        const response = await adminApiClient.post(`/recycle-requests/${id}/send-reminder`, 
+            { comment: comment || 'Reminder: Please process this recycle request' },
+            {
+                params: { userId },
+                headers: getAuthHeaders(),
+            }
+        );
+        return response;
+    },
+    
     cancel: async (id: string, userId: string) => {
         const response = await adminApiClient.put(`/recycle-requests/${id}/cancel`, null, {
             params: { userId },
