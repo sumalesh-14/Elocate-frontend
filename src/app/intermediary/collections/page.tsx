@@ -34,19 +34,20 @@ const CollectionsPage = () => {
     }, [facilityOwnerId, filterStatus, searchTerm]);
 
     const getStatusClass = (status: string) => {
-        const lower = (status || "").toLowerCase();
-        if (lower === "pending") return "status-pending";
-        if (lower === "approved" || lower === "scheduled") return "status-scheduled";
-        if (lower === "completed" || lower === "recycled") return "status-completed";
-        if (lower === "cancelled" || lower === "rejected") return "status-cancelled";
+        const upper = (status || "").toUpperCase();
+        if (upper === "CREATED") return "status-pending";
+        if (upper === "APPROVED") return "status-scheduled";
+        if (upper === "VERIFIED") return "status-scheduled";
+        if (upper === "RECYCLED") return "status-completed";
+        if (upper === "REJECTED" || upper === "CANCELLED") return "status-cancelled";
         return "status-pending";
     };
 
     return (
         <>
             <div className="page-header">
-                <h1>Collections Management</h1>
-                <p>View and manage your scheduled waste pick-ups.</p>
+                <h1 style={{ fontSize: "2rem" }}>Collections Management</h1>
+                <p style={{ fontSize: "1.1rem" }}>View and manage your scheduled waste pick-ups.</p>
             </div>
 
             {/* Controls */}
@@ -59,17 +60,19 @@ const CollectionsPage = () => {
                         className="search-input"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ fontSize: "1rem" }}
                     />
                 </div>
 
                 <div className="filter-group">
-                    {["All", "Pending", "Scheduled", "Completed", "Cancelled"].map((status) => (
+                    {["All", "CREATED", "APPROVED", "VERIFIED", "RECYCLED", "REJECTED", "CANCELLED"].map((status) => (
                         <button
                             key={status}
                             className={`filter-btn ${filterStatus === status ? "active" : ""}`}
                             onClick={() => setFilterStatus(status)}
+                            style={{ fontSize: "1rem", padding: "0.6rem 1.2rem" }}
                         >
-                            {status}
+                            {status === "All" ? "All" : status.charAt(0) + status.slice(1).toLowerCase()}
                         </button>
                     ))}
                 </div>
@@ -77,47 +80,45 @@ const CollectionsPage = () => {
 
             {/* Table */}
             <div className="table-container">
-                <table className="data-table">
+                <table className="data-table" style={{ fontSize: "1rem" }}>
                     <thead>
                         <tr>
-                            <th>Request ID</th>
-                            <th>Customer</th>
-                            <th>Items</th>
-                            <th>Weight (Est.)</th>
-                            <th>Location</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Request ID</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Customer</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Items</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Location</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Date</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Status</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)" }}>
+                                <td colSpan={7} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)", fontSize: "1.1rem" }}>
                                     Loading collections...
                                 </td>
                             </tr>
                         ) : collections.length > 0 ? (
                             collections.map((item) => (
                                 <tr key={item.id}>
-                                    <td><strong>{item.id.substring(0, 8).toUpperCase()}</strong></td>
-                                    <td>User Data Int.</td>
-                                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                    <td style={{ padding: "1rem" }}><strong style={{ fontSize: "1rem" }}>{item.id.substring(0, 8).toUpperCase()}</strong></td>
+                                    <td style={{ padding: "1rem", fontSize: "1rem" }}>User Data Int.</td>
+                                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", padding: "1rem", fontSize: "1rem" }}>
                                         {item.deviceModelName || "Unknown"}
                                     </td>
-                                    <td>—</td>
-                                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", padding: "1rem", fontSize: "1rem" }}>
                                         {item.pickupAddress || item.facilityName}
                                     </td>
-                                    <td>{new Date(item.createdAt).toLocaleDateString()}</td>
-                                    <td>
-                                        <span className={`status-badge ${getStatusClass(item.status)}`}>
+                                    <td style={{ padding: "1rem", fontSize: "1rem" }}>{new Date(item.createdAt).toLocaleDateString()}</td>
+                                    <td style={{ padding: "1rem" }}>
+                                        <span className={`status-badge ${getStatusClass(item.status)}`} style={{ fontSize: "0.95rem", padding: "0.5rem 1rem" }}>
                                             {item.status}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td style={{ padding: "1rem" }}>
                                         <div style={{ display: "flex", gap: "0.5rem" }}>
-                                            <a href={`/intermediary/collections/${item.id}`} className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", textDecoration: "none" }}>
+                                            <a href={`/intermediary/collections/${item.id}`} className="btn btn-secondary" style={{ padding: "0.6rem 1.2rem", fontSize: "1rem", textDecoration: "none" }}>
                                                 Manage
                                             </a>
                                         </div>
@@ -126,7 +127,7 @@ const CollectionsPage = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)" }}>
+                                <td colSpan={7} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)", fontSize: "1.1rem" }}>
                                     No collections found matching your criteria.
                                 </td>
                             </tr>

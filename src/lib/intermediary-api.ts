@@ -199,6 +199,14 @@ export const intermediaryApi = {
             });
             if (!response.ok) throw new Error("Failed to verify drop-off");
             return response.json();
+        },
+
+        getStatusHistory: async (id: string): Promise<any[]> => {
+            const response = await fetch(`${BASE_URL}/api/v1/recycle-requests/${id}/status-history`, {
+                headers: getHeaders()
+            });
+            if (!response.ok) throw new Error("Failed to fetch status history");
+            return response.json();
         }
     }
 };

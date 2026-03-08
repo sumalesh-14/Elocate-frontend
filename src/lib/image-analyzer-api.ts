@@ -27,8 +27,8 @@ export interface MaterialAnalysisRequestPayload {
     model_id: string;
     model_name: string;
     country: string;
-    deviceCondition: string;
-    conditionNotes: string;
+    deviceCondition?: string;
+    conditionNotes?: string;
 }
 
 export interface MaterialData {
