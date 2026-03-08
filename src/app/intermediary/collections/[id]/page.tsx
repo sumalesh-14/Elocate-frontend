@@ -534,77 +534,84 @@ export default function CollectionDetailsPage() {
                                     <p>Loading history...</p>
                                 </div>
                             ) : statusHistory.length > 0 ? (
-                                <div className="relative">
-                                    {/* Timeline Line */}
-                                    <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 via-blue-200 to-green-200"></div>
-                                    
-                                    {/* Timeline Items */}
-                                    <div className="space-y-6">
-                                        {statusHistory.map((item, idx) => (
-                                            <div key={item.id} className="relative pl-16 animate-fadeIn" style={{animationDelay: `${idx * 0.1}s`}}>
-                                                {/* Timeline Dot */}
-                                                <div className={`absolute left-3 w-6 h-6 rounded-full bg-gradient-to-br ${getStatusColor(item.newStatus)} shadow-lg flex items-center justify-center text-white text-xs font-bold border-4 border-white`}>
-                                                    {getStatusIcon(item.newStatus)}
-                                                </div>
-                                                
-                                                {/* Content Card */}
-                                                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border-2 border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-md">
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                {item.oldStatus && (
-                                                                    <>
-                                                                        <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-semibold">
-                                                                            {item.oldStatus}
-                                                                        </span>
-                                                                        <span className="text-gray-400">→</span>
-                                                                    </>
-                                                                )}
-                                                                <span className={`px-3 py-1 bg-gradient-to-r ${getStatusColor(item.newStatus)} text-white rounded-full text-xs font-bold shadow-sm`}>
-                                                                    {item.newStatus}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-sm text-gray-600 mt-2">
-                                                                Status changed {item.oldStatus ? `from ${item.oldStatus} ` : ''}to {item.newStatus}
-                                                            </p>
-                                                            
-                                                            {/* Comments Section */}
-                                                            {item.comments && (
-                                                                <div className="mt-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg p-3">
-                                                                    <div className="flex items-start gap-2">
-                                                                        <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                                                        </svg>
-                                                                        <div className="flex-1">
-                                                                            <p className="text-xs font-semibold text-blue-700 mb-1">Comments:</p>
-                                                                            <p className="text-sm text-blue-900 leading-relaxed">{item.comments}</p>
+                                <div>
+                                    {/* Filter/Group Status History */}
+                                    {(() => {
+                                        const recycleStatusHistory = statusHistory.filter((item: any) => item.statusType === 'RECYCLE_STATUS');
+                                        const fulfillmentHistory = statusHistory.filter((item: any) => item.statusType === 'FULFILLMENT_STATUS');
+                                        
+                                        return (
+                                            <div className="space-y-6">
+                                                {/* Main Request Status Timeline */}
+                                                {recycleStatusHistory.length > 0 && (
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-purple-200">
+                                                            <span className="text-lg">🎯</span>
+                                                            <h3 className="text-base font-bold text-gray-800">Request Status</h3>
+                                                            <span className="text-xs text-gray-500">({recycleStatusHistory.length} updates)</span>
+                                                        </div>
+                                                        <div className="relative">
+                                                            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 to-green-200"></div>
+                                                            <div className="space-y-4">
+                                                                {recycleStatusHistory.map((item: any, idx: number) => (
+                                                                    <div key={item.id} className="relative pl-16 animate-fadeIn" style={{animationDelay: `${idx * 0.1}s`}}>
+                                                                        <div className={`absolute left-3 w-6 h-6 rounded-full bg-gradient-to-br ${getStatusColor(item.newStatus)} shadow-lg flex items-center justify-center text-white text-xs font-bold border-4 border-white`}>
+                                                                            {getStatusIcon(item.newStatus)}
+                                                                        </div>
+                                                                        <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-4 border-2 border-purple-200 hover:border-purple-400 transition-all duration-300 hover:shadow-md">
+                                                                            <div className="flex items-center gap-2 mb-2">
+                                                                                <span className={`px-3 py-1 bg-gradient-to-r ${getStatusColor(item.newStatus)} text-white rounded-full text-sm font-bold shadow-sm`}>
+                                                                                    {item.newStatus}
+                                                                                </span>
+                                                                                <span className="text-xs text-gray-500">{new Date(item.changedAt).toLocaleString()}</span>
+                                                                            </div>
+                                                                            {item.comments && (
+                                                                                <p className="text-sm text-gray-700 leading-relaxed">{item.comments}</p>
+                                                                            )}
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-200">
-                                                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            <span>{new Date(item.changedAt).toLocaleString()}</span>
-                                                        </div>
-                                                        {item.changedBy && (
-                                                            <div className="flex items-center gap-1 text-xs text-gray-500">
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                                </svg>
-                                                                <span>By: {item.changedBy.substring(0, 8)}</span>
+                                                                ))}
                                                             </div>
-                                                        )}
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                )}
+
+                                                {/* Fulfillment/Operational Timeline */}
+                                                {fulfillmentHistory.length > 0 && (
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-blue-200">
+                                                            <span className="text-lg">🚚</span>
+                                                            <h3 className="text-base font-bold text-gray-800">Fulfillment Status</h3>
+                                                            <span className="text-xs text-gray-500">({fulfillmentHistory.length} updates)</span>
+                                                        </div>
+                                                        <div className="relative">
+                                                            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 to-cyan-200"></div>
+                                                            <div className="space-y-4">
+                                                                {fulfillmentHistory.map((item: any, idx: number) => (
+                                                                    <div key={item.id} className="relative pl-16 animate-fadeIn" style={{animationDelay: `${idx * 0.1}s`}}>
+                                                                        <div className={`absolute left-3 w-6 h-6 rounded-full bg-gradient-to-br ${getStatusColor(item.newStatus)} shadow-lg flex items-center justify-center text-white text-xs font-bold border-4 border-white`}>
+                                                                            {getStatusIcon(item.newStatus)}
+                                                                        </div>
+                                                                        <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border-2 border-blue-200 hover:border-blue-400 transition-all duration-300 hover:shadow-md">
+                                                                            <div className="flex items-center gap-2 mb-2">
+                                                                                <span className={`px-3 py-1 bg-gradient-to-r ${getStatusColor(item.newStatus)} text-white rounded-full text-sm font-bold shadow-sm`}>
+                                                                                    {item.newStatus}
+                                                                                </span>
+                                                                                <span className="text-xs text-gray-500">{new Date(item.changedAt).toLocaleString()}</span>
+                                                                            </div>
+                                                                            {item.comments && (
+                                                                                <p className="text-sm text-gray-700 leading-relaxed">{item.comments}</p>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        ))}
-                                    </div>
+                                        );
+                                    })()}
                                 </div>
                             ) : (
                                 <div className="text-center py-8 text-gray-500">
