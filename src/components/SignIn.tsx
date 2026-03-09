@@ -13,6 +13,7 @@ interface SignInProps {
   isOpen: boolean;
   onClose: () => void;
   onSignIn: () => void;
+  initialView?: AuthView;
 }
 
 type AuthView = 'login' | 'role-selection' | 'register-citizen' | 'register-intermediary' | 'otp-verify' | 'pending-approval' | 'account-pending';
@@ -55,7 +56,7 @@ interface IntermediaryPayload {
   facilityServiceAreas: ServiceArea[];
 }
 
-export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => {
+export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initialView = 'login' }) => {
   const { showToast } = useToast();
 
   // State Machine
@@ -106,8 +107,8 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn }) => 
       // Lock body scroll
       document.body.style.overflow = 'hidden';
 
-      // Reset state on open
-      setView('login');
+      // Set the initial view (may be 'role-selection' when coming from Register button)
+      setView(initialView);
       const items = Array.from({ length: 20 }).map((_, i) => ({
         id: i,
         type: ['phone', 'battery', 'laptop'][Math.floor(Math.random() * 3)],
