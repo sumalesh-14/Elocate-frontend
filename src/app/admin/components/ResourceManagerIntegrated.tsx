@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, X, Save, Eye, Layers, Tag, Smartphone, Loader2, Link2, XCircle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Save, Eye, Layers, Tag, Smartphone, Loader2, Link2, XCircle, Activity, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { deviceCategoriesApi, deviceBrandsApi, deviceModelsApi } from '@/lib/admin-api';
 import { categoryBrandApi } from '@/lib/category-brand-api';
@@ -24,6 +24,89 @@ interface FormFieldProps {
   setCurrentItem: (item: any) => void;
 }
 
+const SearchableSelect = ({ label, value, options, onChange, disabled, placeholder }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt: any) => opt.value === value || opt === value);
+  const displayValue = selectedOption ? (selectedOption.label || selectedOption) : '';
+
+  const filteredOptions = options.filter((opt: any) => {
+    const labelStr = String(opt.label || opt).toLowerCase();
+    return labelStr.includes(searchTerm.toLowerCase());
+  });
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm flex items-center justify-between cursor-pointer transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:border-tech-lime focus:ring-2 focus:ring-tech-lime/50'
+          } ${isOpen ? 'ring-2 ring-tech-lime/50 border-tech-lime' : ''}`}
+      >
+        <span className={displayValue ? 'text-gray-900' : 'text-gray-400'}>
+          {displayValue || placeholder || `Select ${label}`}
+        </span>
+        <ChevronRight size={16} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-[120] w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden animate-scale-in origin-top">
+          <div className="p-2 border-b border-gray-50">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border-none rounded-lg focus:ring-0"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto custom-scrollbar p-1">
+            {filteredOptions.length === 0 ? (
+              <div className="px-4 py-3 text-xs text-center text-gray-400">No results found</div>
+            ) : (
+              filteredOptions.map((opt: any, i: number) => {
+                const optValue = opt.value ?? opt;
+                const optLabel = opt.label ?? opt;
+                const isSelected = optValue === value;
+                return (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      onChange(optValue);
+                      setIsOpen(false);
+                      setSearchTerm('');
+                    }}
+                    className={`px-4 py-2.5 text-sm rounded-lg cursor-pointer transition-colors flex items-center justify-between ${isSelected ? 'bg-eco-900 text-white font-bold' : 'hover:bg-eco-50 text-gray-700'
+                      }`}
+                  >
+                    <span>{optLabel}</span>
+                    {isSelected && <Save size={14} />}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const FormField: React.FC<FormFieldProps> = ({
   label,
   value,
@@ -41,26 +124,36 @@ const FormField: React.FC<FormFieldProps> = ({
       <span>{label}</span>
       {required && <span className="text-red-500">*</span>}
     </label>
-    {options.length > 0 ? (
+    {options.length > 0 && field !== 'isActive' ? (
+      <SearchableSelect
+        label={label}
+        value={value}
+        options={options}
+        disabled={modalMode === 'view'}
+        onChange={(val: any) => setCurrentItem({ ...currentItem, [field]: val })}
+        placeholder={`Choose ${label}...`}
+      />
+    ) : options.length > 0 ? (
       <div className="relative">
         <select
-          value={value || ''}
+          value={value ?? ''}
           disabled={modalMode === 'view'}
-          onChange={(e) => setCurrentItem({ ...currentItem, [field]: e.target.value })}
+          onChange={(e) => {
+            const val = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value;
+            setCurrentItem({ ...currentItem, [field]: val });
+          }}
           className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 appearance-none text-gray-700 disabled:bg-gray-100 disabled:text-gray-500"
           required={required && modalMode !== 'view'}
         >
           <option value="">Select {label}</option>
           {options.map((opt: any) => (
-            <option key={opt.value || opt} value={opt.value || opt}>
-              {opt.label || opt}
+            <option key={opt.value ?? opt} value={opt.value ?? opt}>
+              {opt.label ?? opt}
             </option>
           ))}
         </select>
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
+          <ChevronRight size={16} className="rotate-90" />
         </div>
       </div>
     ) : type === 'textarea' ? (
@@ -102,9 +195,15 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
   // Category-Brand associations state
   const [linkedItems, setLinkedItems] = useState<any[]>([]);
   const [loadingLinks, setLoadingLinks] = useState(false);
+  const [selectedForLink, setSelectedForLink] = useState<string>('');
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [availableForLink, setAvailableForLink] = useState<any[]>([]);
-  const [selectedForLink, setSelectedForLink] = useState<string>('');
+
+  // Pagination State
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(7);
+  const [totalElements, setTotalElements] = useState(0);
 
   // Configuration for titles and form fields
   const config = {
@@ -128,28 +227,42 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
     }
   }[type];
 
-  // Fetch data on component mount
+  // Fetch data on component mount or page change
   useEffect(() => {
-    fetchData();
-    if (type === 'models') {
-      fetchCategories();
-      fetchBrands();
-    }
-  }, [type]);
+    fetchData(page);
+    fetchCategories();
+    fetchBrands();
+  }, [type, page]);
 
-  const fetchData = async () => {
+  const fetchData = async (pageNumber = 0) => {
     setLoading(true);
     try {
       let response;
+      const params = { page: pageNumber, size: pageSize };
+
       if (type === 'categories') {
-        response = await deviceCategoriesApi.getAll();
+        response = await deviceCategoriesApi.getAll(params);
       } else if (type === 'brands') {
-        response = await deviceBrandsApi.getAll();
+        response = await deviceBrandsApi.getAll(params);
       } else {
-        response = await deviceModelsApi.getAll();
+        response = await deviceModelsApi.getAll(params);
       }
+
       const raw = response.data;
-      setData(Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : []);
+
+      if (raw?.content) {
+        // Pageable response
+        setData(raw.content);
+        setTotalPages(raw.totalPages || 1);
+        setTotalElements(raw.totalElements || 0);
+      } else if (Array.isArray(raw)) {
+        // Simple list response
+        setData(raw);
+        setTotalPages(1);
+        setTotalElements(raw.length);
+      } else {
+        setData([]);
+      }
     } catch (error: any) {
       console.error(`Error fetching ${type}:`, error);
       showToast(`Failed to load ${type}. ${error.response?.data?.message || error.message}`, 'error');
@@ -276,22 +389,33 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
   const handleOpenLinkModal = async () => {
     setShowLinkModal(true);
     setSelectedForLink('');
+    setLoadingLinks(true);
 
-    // Get available items to link
     try {
+      let freshOptions: any[] = [];
       const linkedIds = linkedItems.map(item =>
         type === 'categories' ? item.brand?.id : item.category?.id
       );
 
       if (type === 'categories') {
-        const available = brands.filter(b => !linkedIds.includes(b.id));
+        const response = await deviceBrandsApi.getAll();
+        const raw = response.data;
+        freshOptions = Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : [];
+        setBrands(freshOptions);
+        const available = freshOptions.filter(b => !linkedIds.includes(b.id));
         setAvailableForLink(available);
       } else {
-        const available = categories.filter(c => !linkedIds.includes(c.id));
+        const response = await deviceCategoriesApi.getAll();
+        const raw = response.data;
+        freshOptions = Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : [];
+        setCategories(freshOptions);
+        const available = freshOptions.filter(c => !linkedIds.includes(c.id));
         setAvailableForLink(available);
       }
     } catch (error) {
-      console.error('Error loading available items:', error);
+      console.error('Error loading fresh items for link:', error);
+    } finally {
+      setLoadingLinks(false);
     }
   };
 
@@ -578,7 +702,7 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(page)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-sm font-medium"
           >
             Refresh
@@ -613,10 +737,53 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
               )}
             </div>
 
-            {/* Pagination */}
-            {filteredData.length > 0 && (
-              <div className="px-6 py-4 border-t border-gray-100 text-sm text-gray-500">
-                Showing {filteredData.length} of {data.length} results
+            {/* Pagination Controls */}
+            {totalElements > 0 && (
+              <div className="px-8 py-6 border-t border-gray-100 flex flex-row items-center justify-between bg-white rounded-b-[2rem] gap-4">
+                <div className="flex flex-row items-center gap-4 flex-shrink-0">
+                  <span className="text-sm font-medium text-gray-500 whitespace-nowrap inline-block">
+                    Showing <span className="text-eco-900 font-bold inline-block">{data.length}</span> of <span className="text-eco-900 font-bold inline-block">{totalElements}</span> results
+                  </span>
+                  <div className="h-4 w-[1px] bg-gray-200 flex-shrink-0"></div>
+                  <span className="text-sm font-medium text-gray-400 whitespace-nowrap inline-block">
+                    Page <span className="text-gray-900 font-bold inline-block">{page + 1}</span> of {totalPages}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0 || loading}
+                    className="p-2.5 rounded-xl border border-gray-200 text-gray-400 hover:text-eco-900 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all active:scale-95"
+                  >
+                    <ChevronRight size={20} className="rotate-180" />
+                  </button>
+
+                  {/* Quick Page Jump */}
+                  <div className="flex items-center gap-1.5 px-2">
+                    {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                      const pageNum = i; // For simplicity, just shows first 5
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setPage(pageNum)}
+                          className={`w-10 h-10 rounded-xl text-sm font-bold transition-all active:scale-95 ${page === pageNum ? 'bg-eco-900 text-white shadow-lg' : 'text-gray-400 hover:bg-slate-50'
+                            }`}
+                        >
+                          {pageNum + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1 || loading}
+                    className="p-2.5 rounded-xl border border-gray-200 text-gray-400 hover:text-eco-900 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all active:scale-95"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
               </div>
             )}
           </>
@@ -624,376 +791,309 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
       </div>
 
       {/* Add/Edit/View Modal */}
-      {isModalOpen && currentItem && (
-        <div className="fixed inset-0 md:left-72 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-[3px] transition-opacity" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/5 overflow-hidden animate-fade-in-up max-h-[90vh] flex flex-col">
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-8 overflow-y-auto">
+          <div className="fixed inset-0 backdrop-blur-sm animate-fade-in" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative w-full max-w-6xl bg-white rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)] border border-black/5 overflow-hidden animate-scale-in max-h-[92vh] flex flex-col">
 
             {/* Header - Fixed */}
             <div className="px-8 py-6 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-eco-900 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                  <config.icon size={24} />
+                </div>
                 <div>
-                  <h3 className="text-xl font-display font-bold text-eco-900">
+                  <h3 className="text-xl font-display font-bold text-eco-900 leading-tight">
                     {modalMode === 'create' ? 'Create New' : modalMode === 'edit' ? 'Edit' : 'View'} {type === 'categories' ? 'Category' : type === 'brands' ? 'Brand' : 'Model'}
                   </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {modalMode === 'view' ? 'Viewing record details.' : 'Fill in the details below.'}
+                  <p className="text-sm text-gray-500 font-medium">
+                    {modalMode === 'view' ? `Entity ID: ${shortenId(currentItem.id)}` : 'Complete the information fields.'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {modalMode === 'view' && (
                   <button
                     onClick={() => setModalMode('edit')}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                    className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100 shadow-sm hover:shadow-md"
                     title="Edit Record"
                   >
-                    <Edit2 size={18} />
+                    <Edit2 size={20} />
                   </button>
                 )}
-                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+                <button onClick={() => setIsModalOpen(false)} className="p-2.5 hover:bg-red-50 rounded-xl text-gray-400 hover:text-red-500 transition-all border border-transparent hover:border-red-100">
                   <X size={20} />
                 </button>
               </div>
             </div>
 
             {/* Form Body - Scrollable */}
-            <div className="flex-1 overflow-y-auto">
-              <form onSubmit={handleSave} className="p-8 space-y-5" id="resource-form">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <form onSubmit={handleSave} className="p-8" id="resource-form">
+                <div className={modalMode === 'view' && (type === 'categories' || type === 'brands') ? "grid grid-cols-1 lg:grid-cols-12 gap-10" : "space-y-6"}>
 
-                {/* Conditional Fields based on Type */}
-                {type === 'categories' && (
-                  <>
-                    <FormField
-                      label="Category Code"
-                      value={currentItem.code}
-                      field="code"
-                      helpText="Unique code for the category (max 50 characters)"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                    <FormField
-                      label="Category Name"
-                      value={currentItem.name}
-                      field="name"
-                      helpText="Enter the device category name (max 100 characters)"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                    <FormField
-                      label="Description"
-                      value={currentItem.description}
-                      field="description"
-                      type="textarea"
-                      required={false}
-                      helpText="Brief description of this category (max 500 characters)"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                    <FormField
-                      label="Active Status"
-                      value={currentItem.isActive}
-                      field="isActive"
-                      options={[
-                        { value: true, label: 'Active' },
-                        { value: false, label: 'Inactive' }
-                      ]}
-                      required={false}
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                  </>
-                )}
+                  {/* Left Column: Details */}
+                  <div className={modalMode === 'view' && (type === 'categories' || type === 'brands') ? "lg:col-span-5 space-y-6" : "max-w-3xl mx-auto w-full space-y-8"}>
 
-                {type === 'brands' && (
-                  <>
-                    <FormField
-                      label="Brand Code"
-                      value={currentItem.code}
-                      field="code"
-                      helpText="Unique code for the brand (max 50 characters)"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                    <FormField
-                      label="Brand Name"
-                      value={currentItem.name}
-                      field="name"
-                      helpText="Enter the manufacturer/brand name (max 100 characters)"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                    <FormField
-                      label="Description"
-                      value={currentItem.description}
-                      field="description"
-                      type="textarea"
-                      required={false}
-                      helpText="Provide details about this brand (max 500 characters)"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                    <FormField
-                      label="Active Status"
-                      value={currentItem.isActive}
-                      field="isActive"
-                      options={[
-                        { value: true, label: 'Active' },
-                        { value: false, label: 'Inactive' }
-                      ]}
-                      required={false}
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                  </>
-                )}
-
-                {type === 'models' && (
-                  <>
-                    <FormField
-                      label="Model Name"
-                      value={currentItem.modelName}
-                      field="modelName"
-                      helpText="Enter the device model name (max 100 characters)"
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        label="Brand"
-                        value={currentItem.brandId}
-                        field="brandId"
-                        options={brands.map(b => ({ value: b.id, label: b.name }))}
-                        helpText="Select the brand"
-                        modalMode={modalMode}
-                        currentItem={currentItem}
-                        setCurrentItem={setCurrentItem}
-                      />
-                      <FormField
-                        label="Category"
-                        value={currentItem.categoryId}
-                        field="categoryId"
-                        options={categories.map(c => ({ value: c.id, label: c.name }))}
-                        helpText="Select the category"
-                        modalMode={modalMode}
-                        currentItem={currentItem}
-                        setCurrentItem={setCurrentItem}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        label="Release Year"
-                        value={currentItem.releaseYear}
-                        field="releaseYear"
-                        type="number"
-                        required={false}
-                        helpText="Year of release"
-                        modalMode={modalMode}
-                        currentItem={currentItem}
-                        setCurrentItem={setCurrentItem}
-                      />
-                      <FormField
-                        label="Avg Weight (grams)"
-                        value={currentItem.avgWeightGrams}
-                        field="avgWeightGrams"
-                        type="number"
-                        required={false}
-                        helpText="Average weight in grams"
-                        modalMode={modalMode}
-                        currentItem={currentItem}
-                        setCurrentItem={setCurrentItem}
-                      />
-                    </div>
-
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="text-sm font-bold text-gray-700 mb-3">Material Composition (Optional)</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          label="Gold (mg)"
-                          value={currentItem.goldMg}
-                          field="goldMg"
-                          type="number"
-                          required={false}
-                          helpText="Gold content in milligrams"
-                          modalMode={modalMode}
-                          currentItem={currentItem}
-                          setCurrentItem={setCurrentItem}
-                        />
-                        <FormField
-                          label="Silver (mg)"
-                          value={currentItem.silverMg}
-                          field="silverMg"
-                          type="number"
-                          required={false}
-                          helpText="Silver content in milligrams"
-                          modalMode={modalMode}
-                          currentItem={currentItem}
-                          setCurrentItem={setCurrentItem}
-                        />
-                        <FormField
-                          label="Copper (g)"
-                          value={currentItem.copperG}
-                          field="copperG"
-                          type="number"
-                          required={false}
-                          helpText="Copper content in grams"
-                          modalMode={modalMode}
-                          currentItem={currentItem}
-                          setCurrentItem={setCurrentItem}
-                        />
-                        <FormField
-                          label="Palladium (mg)"
-                          value={currentItem.palladiumMg}
-                          field="palladiumMg"
-                          type="number"
-                          required={false}
-                          helpText="Palladium content in milligrams"
-                          modalMode={modalMode}
-                          currentItem={currentItem}
-                          setCurrentItem={setCurrentItem}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        label="Recyclability Score"
-                        value={currentItem.recyclabilityScore}
-                        field="recyclabilityScore"
-                        type="number"
-                        required={false}
-                        helpText="Score from 0-100"
-                        modalMode={modalMode}
-                        currentItem={currentItem}
-                        setCurrentItem={setCurrentItem}
-                      />
-                      <FormField
-                        label="Base Points"
-                        value={currentItem.basePoints}
-                        field="basePoints"
-                        type="number"
-                        required={false}
-                        helpText="Base reward points"
-                        modalMode={modalMode}
-                        currentItem={currentItem}
-                        setCurrentItem={setCurrentItem}
-                      />
-                    </div>
-
-                    <FormField
-                      label="Active Status"
-                      value={currentItem.isActive}
-                      field="isActive"
-                      options={[
-                        { value: true, label: 'Active' },
-                        { value: false, label: 'Inactive' }
-                      ]}
-                      required={false}
-                      modalMode={modalMode}
-                      currentItem={currentItem}
-                      setCurrentItem={setCurrentItem}
-                    />
-                  </>
-                )}
-
-                {/* Linked Items Section - Only show in view mode for categories and brands */}
-                {modalMode === 'view' && (type === 'categories' || type === 'brands') && (
-                  <div className="border-t pt-6 mt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                        <Link2 size={16} className="text-eco-600" />
-                        Linked {type === 'categories' ? 'Brands' : 'Categories'}
-                        <span className="ml-2 px-2 py-0.5 bg-eco-100 text-eco-700 rounded-full text-xs font-medium">
-                          {linkedItems.length}
-                        </span>
+                    {/* Header for View Mode */}
+                    {modalMode === 'view' && (
+                      <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <Activity size={14} className="text-eco-500" />
+                        Details & Configuration
                       </h4>
-                      <button
-                        type="button"
-                        onClick={handleOpenLinkModal}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-eco-600 text-white rounded-lg text-xs font-medium hover:bg-eco-700 transition-colors shadow-sm"
-                      >
-                        <Plus size={14} />
-                        Add Link
-                      </button>
-                    </div>
+                    )}
 
-                    {loadingLinks ? (
-                      <div className="flex items-center justify-center py-12 bg-gray-50 rounded-xl">
-                        <Loader2 className="animate-spin text-eco-600" size={24} />
-                      </div>
-                    ) : linkedItems.length === 0 ? (
-                      <div className="text-center py-12 bg-gray-50 rounded-xl">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Link2 size={20} className="text-gray-400" />
+                    {type === 'categories' && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField
+                            label="Category Code"
+                            value={currentItem.code}
+                            field="code"
+                            helpText="Internal system code"
+                            modalMode={modalMode}
+                            currentItem={currentItem}
+                            setCurrentItem={setCurrentItem}
+                          />
+                          <FormField
+                            label="Category Name"
+                            value={currentItem.name}
+                            field="name"
+                            modalMode={modalMode}
+                            currentItem={currentItem}
+                            setCurrentItem={setCurrentItem}
+                          />
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">No {type === 'categories' ? 'brands' : 'categories'} linked yet</p>
-                        <p className="text-gray-400 text-xs mt-1">Click "Add Link" to create associations</p>
+                        <FormField
+                          label="Description"
+                          value={currentItem.description}
+                          field="description"
+                          type="textarea"
+                          required={false}
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
+                        <FormField
+                          label="Active Status"
+                          value={currentItem.isActive}
+                          field="isActive"
+                          options={[
+                            { value: true, label: 'Active' },
+                            { value: false, label: 'Inactive' }
+                          ]}
+                          required={false}
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
                       </div>
-                    ) : (
-                      <div className="grid grid-cols-1 gap-2">
-                        {linkedItems.map((link: any) => {
-                          const displayItem = type === 'categories' ? link.brand : link.category;
-                          return (
-                            <div
-                              key={link.id}
-                              className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-xl hover:shadow-sm transition-all group"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-eco-100 to-eco-50 rounded-xl flex items-center justify-center shadow-sm">
-                                  {type === 'categories' ?
-                                    <Tag size={18} className="text-eco-600" /> :
-                                    <Layers size={18} className="text-eco-600" />
-                                  }
-                                </div>
-                                <div>
-                                  <div className="text-sm font-semibold text-gray-900">{displayItem?.name}</div>
-                                  <div className="text-xs text-gray-500 font-mono">{displayItem?.code}</div>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteLink(link.id)}
-                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                title="Remove link"
-                              >
-                                <XCircle size={18} />
-                              </button>
-                            </div>
-                          );
-                        })}
+                    )}
+
+                    {type === 'brands' && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField
+                            label="Brand Code"
+                            value={currentItem.code}
+                            field="code"
+                            modalMode={modalMode}
+                            currentItem={currentItem}
+                            setCurrentItem={setCurrentItem}
+                          />
+                          <FormField
+                            label="Brand Name"
+                            value={currentItem.name}
+                            field="name"
+                            modalMode={modalMode}
+                            currentItem={currentItem}
+                            setCurrentItem={setCurrentItem}
+                          />
+                        </div>
+                        <FormField
+                          label="Description"
+                          value={currentItem.description}
+                          field="description"
+                          type="textarea"
+                          required={false}
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
+                        <FormField
+                          label="Active Status"
+                          value={currentItem.isActive}
+                          field="isActive"
+                          options={[
+                            { value: true, label: 'Active' },
+                            { value: false, label: 'Inactive' }
+                          ]}
+                          required={false}
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
+                      </div>
+                    )}
+
+                    {type === 'models' && (
+                      <div className="space-y-8">
+                        <FormField
+                          label="Model Name"
+                          value={currentItem.modelName}
+                          field="modelName"
+                          modalMode={modalMode}
+                          currentItem={currentItem}
+                          setCurrentItem={setCurrentItem}
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <FormField
+                            label="Brand"
+                            value={currentItem.brandId}
+                            field="brandId"
+                            options={brands.map(b => ({ value: b.id, label: b.name }))}
+                            modalMode={modalMode}
+                            currentItem={currentItem}
+                            setCurrentItem={setCurrentItem}
+                          />
+                          <FormField
+                            label="Category"
+                            value={currentItem.categoryId}
+                            field="categoryId"
+                            options={categories.map(c => ({ value: c.id, label: c.name }))}
+                            modalMode={modalMode}
+                            currentItem={currentItem}
+                            setCurrentItem={setCurrentItem}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <FormField
+                            label="Release Year"
+                            value={currentItem.releaseYear}
+                            field="releaseYear"
+                            type="number"
+                            required={false}
+                            modalMode={modalMode}
+                            currentItem={currentItem}
+                            setCurrentItem={setCurrentItem}
+                          />
+                          <FormField
+                            label="Avg Weight (grams)"
+                            value={currentItem.avgWeightGrams}
+                            field="avgWeightGrams"
+                            type="number"
+                            required={false}
+                            modalMode={modalMode}
+                            currentItem={currentItem}
+                            setCurrentItem={setCurrentItem}
+                          />
+                        </div>
+                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Material Analysis</h4>
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                            <FormField label="Gold (mg)" value={currentItem.goldMg} field="goldMg" type="number" required={false} modalMode={modalMode} currentItem={currentItem} setCurrentItem={setCurrentItem} />
+                            <FormField label="Silver (mg)" value={currentItem.silverMg} field="silverMg" type="number" required={false} modalMode={modalMode} currentItem={currentItem} setCurrentItem={setCurrentItem} />
+                            <FormField label="Copper (g)" value={currentItem.copperG} field="copperG" type="number" required={false} modalMode={modalMode} currentItem={currentItem} setCurrentItem={setCurrentItem} />
+                            <FormField label="Palladium (mg)" value={currentItem.palladiumMg} field="palladiumMg" type="number" required={false} modalMode={modalMode} currentItem={currentItem} setCurrentItem={setCurrentItem} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                          <FormField label="Recyclability Score" value={currentItem.recyclabilityScore} field="recyclabilityScore" type="number" required={false} modalMode={modalMode} currentItem={currentItem} setCurrentItem={setCurrentItem} />
+                          <FormField label="Base Points" value={currentItem.basePoints} field="basePoints" type="number" required={false} modalMode={modalMode} currentItem={currentItem} setCurrentItem={setCurrentItem} />
+                        </div>
                       </div>
                     )}
                   </div>
-                )}
+
+                  {/* Right Column: Linked Items */}
+                  {modalMode === 'view' && (type === 'categories' || type === 'brands') && (
+                    <div className="lg:col-span-7 lg:border-l lg:border-slate-100 lg:pl-10 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                          <Link2 size={16} className="text-eco-600" />
+                          Linked {type === 'categories' ? 'Brands' : 'Categories'}
+                          <span className="ml-2 px-2 py-0.5 bg-eco-100 text-eco-700 rounded-full text-[10px] font-black">
+                            {linkedItems.length}
+                          </span>
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={handleOpenLinkModal}
+                          className="flex items-center gap-2 px-4 py-2 bg-eco-900 text-white rounded-xl text-xs font-bold hover:bg-eco-800 transition-all shadow-md hover:shadow-eco-900/20"
+                        >
+                          <Plus size={14} />
+                          <span>Link New</span>
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100 min-h-[300px]">
+                        {loadingLinks ? (
+                          <div className="flex flex-col items-center justify-center py-24 gap-4">
+                            <div className="w-10 h-10 border-4 border-eco-200 border-t-eco-600 rounded-full animate-spin"></div>
+                            <span className="text-xs font-medium text-slate-400">Loading connections...</span>
+                          </div>
+                        ) : linkedItems.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                              <XCircle size={32} className="text-slate-200" />
+                            </div>
+                            <div>
+                              <p className="text-slate-900 font-bold">No Associations Found</p>
+                              <p className="text-xs text-slate-400 mt-1">Start by linking a {type === 'categories' ? 'brand' : 'category'} to this profile.</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {linkedItems.map((link: any) => {
+                              const displayItem = type === 'categories' ? link.brand : link.category;
+                              return (
+                                <div
+                                  key={link.id}
+                                  className="group relative flex items-center gap-4 p-4 bg-white rounded-2xl border border-transparent hover:border-eco-200 shadow-sm hover:shadow-xl hover:shadow-eco-900/5 transition-all animate-fade-in"
+                                >
+                                  <div className="w-12 h-12 bg-slate-50 group-hover:bg-eco-50 rounded-xl flex items-center justify-center transition-colors">
+                                    {type === 'categories' ? <Tag size={20} className="text-slate-400 group-hover:text-eco-600" /> : <Layers size={20} className="text-slate-400 group-hover:text-eco-600" />}
+                                  </div>
+                                  <div className="min-w-0 pr-8">
+                                    <div className="text-sm font-bold text-slate-900 truncate group-hover:text-eco-900 transition-colors uppercase">{displayItem?.name}</div>
+                                    <div className="text-[10px] font-mono font-bold text-slate-400 mt-0.5">{displayItem?.code}</div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteLink(link.id)}
+                                    className="absolute top-2 right-2 p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </form>
             </div>
 
-            {/* Footer Buttons - Fixed */}
-            <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex gap-3 shrink-0">
+            {/* Footer - Fixed */}
+            <div className="px-8 py-5 bg-white border-t border-slate-100 flex items-center gap-4 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3.5 px-6 rounded-2xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all active:scale-95"
               >
-                {modalMode === 'view' ? 'Close' : 'Cancel'}
+                {modalMode === 'view' ? 'Close Window' : 'Cancel Changes'}
               </button>
               {modalMode !== 'view' && (
                 <button
                   type="submit"
                   form="resource-form"
-                  className="flex-1 py-3 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 transition-colors flex items-center justify-center gap-2 shadow-lg"
+                  className="flex-[1.5] py-3.5 px-6 bg-eco-900 text-white rounded-2xl font-bold hover:bg-eco-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-eco-900/20 active:scale-95"
                 >
                   <Save size={18} />
-                  {modalMode === 'create' ? 'Create Item' : 'Save Changes'}
+                  <span>{modalMode === 'create' ? 'Confirm Create' : 'Save Update'}</span>
                 </button>
               )}
             </div>
@@ -1004,57 +1104,97 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
 
       {/* Link Modal */}
       {showLinkModal && (
-        <div className="fixed inset-0 md:left-72 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-[3px]" onClick={() => setShowLinkModal(false)}></div>
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-black/5 overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 backdrop-blur-sm animate-fade-in" onClick={() => setShowLinkModal(false)}></div>
+          <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-black/5 overflow-hidden animate-scale-in">
+            <div className="px-7 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-lg font-display font-bold text-eco-900 flex items-center gap-2">
-                <Link2 size={18} />
-                Link {type === 'categories' ? 'Brand' : 'Category'}
+                <Link2 size={20} className="text-eco-600" />
+                Create Association
               </h3>
-              <button onClick={() => setShowLinkModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
+              <button onClick={() => setShowLinkModal(false)} className="p-2 hover:bg-white rounded-xl text-slate-300 hover:text-red-500 transition-all shadow-sm">
                 <X size={18} />
               </button>
             </div>
-
-            <div className="p-6 space-y-4">
+            <div className="p-8 space-y-6">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
-                  Select {type === 'categories' ? 'Brand' : 'Category'}
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                  Search & Select {type === 'categories' ? 'Brand' : 'Category'}
                 </label>
-                <select
-                  value={selectedForLink}
-                  onChange={(e) => setSelectedForLink(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
-                >
-                  <option value="">-- Select --</option>
-                  {availableForLink.map((item: any) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} ({item.code})
-                    </option>
-                  ))}
-                </select>
-                {availableForLink.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-2">All items are already linked</p>
+
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Search items..."
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-tech-lime/20 focus:border-tech-lime transition-all"
+                      onChange={(e) => {
+                        const term = e.target.value.toLowerCase();
+                        const baseOptions = type === 'categories' ? brands : categories;
+                        const filtered = baseOptions.filter(item =>
+                          !linkedItems.some(linked => (type === 'categories' ? linked.brand?.id : linked.category?.id) === item.id) &&
+                          (item.name.toLowerCase().includes(term) || item.code.toLowerCase().includes(term))
+                        );
+                        setAvailableForLink(filtered);
+                      }}
+                    />
+                  </div>
+
+                  <div className="max-h-[250px] overflow-y-auto custom-scrollbar space-y-1 pr-1">
+                    {availableForLink.length === 0 ? (
+                      <div className="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <p className="text-xs text-slate-400 font-medium tracking-tight">No results found.</p>
+                      </div>
+                    ) : (
+                      availableForLink.map((item: any) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setSelectedForLink(item.id)}
+                          className={`w-full text-left p-4 rounded-[1.25rem] transition-all flex items-center justify-between group ${selectedForLink === item.id
+                            ? 'bg-eco-900 text-white shadow-xl shadow-eco-900/20'
+                            : 'bg-white hover:bg-slate-50 border border-slate-100'
+                            }`}
+                        >
+                          <div className="min-w-0 pr-4">
+                            <div className={`text-sm font-bold truncate ${selectedForLink === item.id ? 'text-white' : 'text-slate-900'}`}>{item.name}</div>
+                            <div className={`text-[10px] font-mono mt-0.5 truncate ${selectedForLink === item.id ? 'text-eco-200' : 'text-slate-400'}`}>{item.code}</div>
+                          </div>
+                          {selectedForLink === item.id && (
+                            <div className="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                              <Save size={14} className="text-white" />
+                            </div>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {availableForLink.length === 0 && Array.from(document.querySelectorAll('input[placeholder="Search items..."]')).map(el => (el as HTMLInputElement).value).join('') === '' && (
+                  <div className="mt-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center gap-3">
+                    <AlertTriangle size={16} className="text-amber-500" />
+                    <p className="text-xs text-amber-700 font-medium tracking-tight">Everything is already linked.</p>
+                  </div>
                 )}
               </div>
-
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-4 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowLinkModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50"
+                  className="flex-1 py-3 text-slate-500 font-bold hover:text-slate-800 transition-colors"
                 >
-                  Cancel
+                  Go Back
                 </button>
                 <button
                   type="button"
                   onClick={handleCreateLink}
                   disabled={!selectedForLink}
-                  className="flex-1 py-2.5 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-[2] py-3.5 bg-eco-900 text-white rounded-[1.25rem] font-bold hover:bg-eco-800 disabled:opacity-20 disabled:grayscale transition-all flex items-center justify-center gap-2 shadow-xl shadow-eco-900/10 active:scale-95"
                 >
                   <Link2 size={16} />
-                  Create Link
+                  <span>Finalize Link</span>
                 </button>
               </div>
             </div>

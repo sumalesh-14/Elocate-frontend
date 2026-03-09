@@ -39,16 +39,16 @@ const getAuthHeaders = () => {
 // Helper to check if token is expired or about to expire
 const isTokenExpired = (): boolean => {
     if (typeof window === 'undefined') return false;
-    
+
     const token = localStorage.getItem('token');
     const tokenTimestamp = localStorage.getItem('tokenTimestamp');
-    
+
     if (!token || !tokenTimestamp) return true;
-    
+
     const expirationTime = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
     const currentTime = Date.now();
     const tokenAge = currentTime - parseInt(tokenTimestamp);
-    
+
     // Refresh if token is older than 23 hours (1 hour before expiry)
     return tokenAge > (expirationTime - 60 * 60 * 1000);
 };
@@ -63,7 +63,7 @@ const refreshToken = async (): Promise<string | null> => {
         }
 
         console.log('🔄 [TOKEN REFRESH] Attempting to refresh token...');
-        
+
         const response = await axios.post('/api/v1/auth/refresh', {
             refreshToken: currentRefreshToken
         });
@@ -71,15 +71,15 @@ const refreshToken = async (): Promise<string | null> => {
         if (response.data && response.data.tokens) {
             const newAccessToken = response.data.tokens.accessToken;
             const newRefreshToken = response.data.tokens.refreshToken;
-            
+
             localStorage.setItem('token', newAccessToken);
             localStorage.setItem('refreshToken', newRefreshToken);
             localStorage.setItem('tokenTimestamp', Date.now().toString());
-            
+
             console.log('✅ [TOKEN REFRESH] Token refreshed successfully');
             return newAccessToken;
         }
-        
+
         return null;
     } catch (error) {
         console.error('❌ [TOKEN REFRESH] Failed to refresh token:', error);
@@ -151,7 +151,7 @@ adminApiClient.interceptors.response.use(
 
             try {
                 const newToken = await refreshToken();
-                
+
                 if (newToken) {
                     processQueue(null, newToken);
                     if (originalRequest.headers) {
@@ -203,7 +203,7 @@ adminApiClient.interceptors.response.use(
                 window.location.replace("/sign-in");
             }
         }
-        
+
         return Promise.reject(error);
     }
 );
@@ -221,7 +221,7 @@ export const deviceCategoriesApi = {
     },
 
     getById: async (id: string | number) => {
-        const response = await adminApiClient.get(`/api/device-categories/${id}`, {
+        const response = await adminApiClient.get(`/device-categories/${id}`, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -235,14 +235,14 @@ export const deviceCategoriesApi = {
     },
 
     update: async (id: string | number, categoryData: any) => {
-        const response = await adminApiClient.put(`/api/device-categories/${id}`, categoryData, {
+        const response = await adminApiClient.put(`/device-categories/${id}`, categoryData, {
             headers: getAuthHeaders(),
         });
         return response;
     },
 
     delete: async (id: string | number) => {
-        const response = await adminApiClient.delete(`/api/device-categories/${id}?action=delete-category`, {
+        const response = await adminApiClient.delete(`/device-categories/${id}?action=delete-category`, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -253,15 +253,16 @@ export const deviceCategoriesApi = {
  * Device Brands API
  */
 export const deviceBrandsApi = {
-    getAll: async () => {
+    getAll: async (params?: { page?: number; size?: number; search?: string; isActive?: boolean }) => {
         const response = await adminApiClient.get("/device-brands", {
+            params,
             headers: getAuthHeaders(),
         });
         return response;
     },
 
     getById: async (id: string | number) => {
-        const response = await adminApiClient.get(`/api/device-brands/${id}`, {
+        const response = await adminApiClient.get(`/device-brands/${id}`, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -275,14 +276,14 @@ export const deviceBrandsApi = {
     },
 
     update: async (id: string | number, brandData: any) => {
-        const response = await adminApiClient.put(`/api/device-brands/${id}`, brandData, {
+        const response = await adminApiClient.put(`/device-brands/${id}`, brandData, {
             headers: getAuthHeaders(),
         });
         return response;
     },
 
     delete: async (id: string | number) => {
-        const response = await adminApiClient.delete(`/api/device-brands/${id}?action=delete-brand`, {
+        const response = await adminApiClient.delete(`/device-brands/${id}?action=delete-brand`, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -302,7 +303,7 @@ export const deviceModelsApi = {
     },
 
     getById: async (id: string | number) => {
-        const response = await adminApiClient.get(`/api/device-models/${id}`, {
+        const response = await adminApiClient.get(`/device-models/${id}`, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -316,14 +317,14 @@ export const deviceModelsApi = {
     },
 
     update: async (id: string | number, modelData: any) => {
-        const response = await adminApiClient.put(`/api/device-models/${id}`, modelData, {
+        const response = await adminApiClient.put(`/device-models/${id}`, modelData, {
             headers: getAuthHeaders(),
         });
         return response;
     },
 
     delete: async (id: string | number) => {
-        const response = await adminApiClient.delete(`/api/device-models/${id}?action=delete-model`, {
+        const response = await adminApiClient.delete(`/device-models/${id}?action=delete-model`, {
             headers: getAuthHeaders(),
         });
         return response;
@@ -373,9 +374,9 @@ export const recycleRequestApi = {
         });
         return response;
     },
-    
+
     sendReminder: async (id: string, userId: string, comment?: string) => {
-        const response = await adminApiClient.post(`/recycle-requests/${id}/send-reminder`, 
+        const response = await adminApiClient.post(`/recycle-requests/${id}/send-reminder`,
             { comment: comment || 'Reminder: Please process this recycle request' },
             {
                 params: { userId },
@@ -384,7 +385,7 @@ export const recycleRequestApi = {
         );
         return response;
     },
-    
+
     cancel: async (id: string, userId: string) => {
         const response = await adminApiClient.put(`/recycle-requests/${id}/cancel`, null, {
             params: { userId },
@@ -406,6 +407,20 @@ export const userProfileApi = {
     },
     update: async (data: any) => {
         const response = await adminApiClient.put("/profile", data, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+    requestEmailChange: async (newEmail: string) => {
+        const response = await adminApiClient.post("/profile/change-email-request", null, {
+            params: { newEmail },
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+    verifyEmailChange: async (newEmail: string, otp: string) => {
+        const response = await adminApiClient.post("/profile/verify-email-change", null, {
+            params: { newEmail, otp },
             headers: getAuthHeaders(),
         });
         return response;
