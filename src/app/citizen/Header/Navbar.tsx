@@ -296,7 +296,7 @@ const Header = () => {
                         ) : mounted ? (
                             <div className="flex items-center gap-4">
                                 <Link href="/sign-in" className="text-base font-black text-slate-700 hover:text-emerald-600 transition-all duration-300 uppercase tracking-widest px-8">SignIn</Link>
-                                <Link href="/citizen/sign-up" className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-3.5 rounded-2xl text-base font-black shadow-xl shadow-emerald-200/50 transition-all duration-300 hover:scale-105 active:scale-95 uppercase">
+                                <Link href="/sign-in?view=role-selection" className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-3.5 rounded-2xl text-base font-black shadow-xl shadow-emerald-200/50 transition-all duration-300 hover:scale-105 active:scale-95 uppercase">
                                     Register
                                 </Link>
                             </div>
