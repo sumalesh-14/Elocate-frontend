@@ -9,10 +9,12 @@ export async function GET(request: NextRequest) {
     const size = searchParams.get('size') || '10';
     const search = searchParams.get('search');
     const isVerified = searchParams.get('isVerified');
+    const isActive = searchParams.get('isActive');
+
 
     // Get authorization token from request headers
     const authHeader = request.headers.get('authorization');
-    
+
     console.log('=== LIST PARTNERS ===');
     console.log('Auth Header:', authHeader ? 'Present' : 'Missing');
     console.log('====================');
@@ -20,11 +22,12 @@ export async function GET(request: NextRequest) {
     const params = new URLSearchParams({ page, size });
     if (search) params.append('search', search);
     if (isVerified) params.append('isVerified', isVerified);
+    if (isActive) params.append('isActive', isActive);
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
+
     if (authHeader) {
       headers['Authorization'] = authHeader;
     }

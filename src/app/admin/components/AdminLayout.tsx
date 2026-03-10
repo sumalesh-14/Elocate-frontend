@@ -199,7 +199,7 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
 
         {/* Top Header */}
-        <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-200 shrink-0 px-6 flex items-center justify-between z-30">
+        <header className="h-16 bg-white/70 backdrop-blur-md border-b border-gray-200/50 shrink-0 px-8 flex items-center justify-between z-30 sticky top-0">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(true)}

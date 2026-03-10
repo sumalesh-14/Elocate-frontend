@@ -793,8 +793,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
       {/* Add/Edit/View Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-8 overflow-y-auto">
-          <div className="fixed inset-0 backdrop-blur-sm animate-fade-in" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative w-full max-w-6xl bg-white rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)] border border-black/5 overflow-hidden animate-scale-in max-h-[92vh] flex flex-col">
+          <div className="fixed inset-0 md:left-80 bg-black/40 animate-fade-in" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative w-full max-w-6xl md:ml-80 bg-white rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)] border border-black/5 overflow-hidden animate-scale-in max-h-[92vh] flex flex-col">
 
             {/* Header - Fixed */}
             <div className="px-8 py-6 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between shrink-0">
@@ -1105,8 +1105,8 @@ export const ResourceManagerIntegrated: React.FC<ResourceManagerProps> = ({ type
       {/* Link Modal */}
       {showLinkModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-          <div className="fixed inset-0 backdrop-blur-sm animate-fade-in" onClick={() => setShowLinkModal(false)}></div>
-          <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-black/5 overflow-hidden animate-scale-in">
+          <div className="fixed inset-0 md:left-80 bg-black/40 animate-fade-in" onClick={() => setShowLinkModal(false)}></div>
+          <div className="relative w-full max-w-md md:ml-80 bg-white rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-black/5 overflow-hidden animate-scale-in">
             <div className="px-7 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-lg font-display font-bold text-eco-900 flex items-center gap-2">
                 <Link2 size={20} className="text-eco-600" />

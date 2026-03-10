@@ -88,7 +88,7 @@ export default function ConditionalLayout({
 
         // Default shell
         return (
-            <div className="flex flex-col min-h-screen bg-white pt-[80px]">
+            <div className="flex flex-col min-h-screen bg-white">
                 {children}
             </div>
         );
