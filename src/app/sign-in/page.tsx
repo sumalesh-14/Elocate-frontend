@@ -21,7 +21,7 @@ function SignInPageInner() {
       const role = getRole();
       if (role === 'ADMIN') {
         window.location.href = '/admin';
-      } else if (role === 'INTERMEDIARY') {
+      } else if (role === 'INTERMEDIARY' || role === 'PARTNER') {
         window.location.href = '/intermediary/dashboard';
       } else {
         window.location.href = '/citizen';

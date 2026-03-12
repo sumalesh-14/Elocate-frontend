@@ -1,48 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search, Filter, X, Truck,
   MapPin, Calendar, Smartphone, User, FileText,
   AlertCircle, ChevronRight, Laptop, Printer, Tv, Headphones,
   ArrowLeft, MessageSquare, Star, UserCheck,
   Building2, Navigation, Sliders, Bell, History, Shield,
-  MoreHorizontal, Mail, Ban, CheckCircle, Building, Send, Download, Eye, Edit2, Save, ShieldCheck, Check, Briefcase
+  MoreHorizontal, Mail, Ban, CheckCircle, Building, Send, Download, Eye, Edit2, Save, ShieldCheck, Check, Briefcase, Phone
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
+import { adminRecycleRequestApi, recycleRequestApi, adminFacilitiesApi } from '@/lib/admin-api';
 
 // --- Types ---
 
-type RequestStatus = 'Pending' | 'Scheduled' | 'Picked Up' | 'In Progress' | 'Completed' | 'Cancelled';
-
-interface TimelineEvent {
-  step: string;
-  date: string;
-  completed: boolean;
-  description?: string;
+interface StatusHistory {
+  id: string;
+  oldStatus: string;
+  newStatus: string;
+  statusType: 'RECYCLE_STATUS' | 'FULFILLMENT_STATUS';
+  changedAt: string;
+  changedBy: string;
+  changedByName?: string;
+  comments: string;
 }
 
 interface RecycleRequest {
   id: string;
+  requestNumber: string;
   citizenName: string;
   citizenEmail: string;
-  deviceType: 'Smartphone' | 'Laptop' | 'Printer' | 'Television' | 'Audio';
+  deviceType: string;
   deviceModel: string;
   condition: string;
   pickupAddress: string;
+  pickupCity: string;
+  pickupState: string;
+  pickupPincode: string;
   pickupDate: string;
-  pickupTime: string;
-  status: RequestStatus;
+  status: string;
+  fulfillmentStatusDisplay: string;
   assignedPartner?: string;
+  facilityName?: string;
+  facilityAddress?: string;
+  facilityEmail?: string;
+  facilityPhone?: string;
   description?: string;
-  feedback?: {
-    rating: number;
-    comment: string;
-  };
-  timeline: TimelineEvent[];
+  estimatedAmount: number;
+  finalAmount?: number;
+  fulfillmentType: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface PartnerMock {
+interface Partner {
   id: string;
   name: string;
   type: string;
@@ -50,100 +61,119 @@ interface PartnerMock {
   rating: number;
 }
 
-interface AuditLogEntry {
-  id: string;
-  timestamp: string;
-  actor: string;
-  action: string;
-  details: string;
-}
 
-// --- Mock Data ---
-
-const MOCK_PARTNERS: PartnerMock[] = [
-  { id: 'PRT-006', name: 'BlueSky Logistics', type: 'Collector', location: 'Portland, OR', rating: 4.9 },
-  { id: 'PRT-001', name: 'GreenLoop Recycling', type: 'Processor', location: 'Seattle, WA', rating: 4.8 },
-  { id: 'PRT-007', name: 'Cascadia E-Cycle', type: 'Refurbisher', location: 'Portland, OR', rating: 4.6 },
-  { id: 'PRT-008', name: 'Bay Area Recyclers', type: 'Processor', location: 'San Francisco, CA', rating: 4.7 },
-  { id: 'PRT-002', name: 'Urban E-Waste', type: 'Collector', location: 'Austin, TX', rating: 4.5 },
-  { id: 'PRT-003', name: 'TechSalvage Inc', type: 'Refurbisher', location: 'Boston, MA', rating: 3.9 },
-  { id: 'PRT-004', name: 'EcoParts Wholesale', type: 'Processor', location: 'Denver, CO', rating: 4.7 },
-  { id: 'PRT-005', name: 'Rapid Recycle', type: 'Collector', location: 'Miami, FL', rating: 4.2 },
-];
-
-const MOCK_REQUESTS: RecycleRequest[] = [
-  {
-    id: 'REQ-2024-8821',
-    citizenName: 'Alex Johnson',
-    citizenEmail: 'alex.j@example.com',
-    deviceType: 'Smartphone',
-    deviceModel: 'iPhone 12 Pro (Cracked Screen)',
-    condition: 'Broken',
-    pickupAddress: '1234 Eco Lane, Portland, OR 97204',
-    pickupDate: '2024-10-28',
-    pickupTime: '09:00 AM - 11:00 AM',
-    status: 'Pending',
-    description: "The screen is shattered and the battery doesn't hold a charge anymore. I've wiped the data but it doesn't turn on.",
-    timeline: [
-      { step: 'Request Submitted', date: '2024-10-24 14:30', completed: true, description: 'User submitted request via mobile app.' },
-      { step: 'Partner Assigned', date: '', completed: false, description: 'Waiting for partner acceptance.' },
-      { step: 'Pickup Scheduled', date: '', completed: false },
-      { step: 'Recycling Processed', date: '', completed: false },
-    ]
-  },
-  {
-    id: 'REQ-2024-8820',
-    citizenName: 'Maria Garcia',
-    citizenEmail: 'm.garcia@example.com',
-    deviceType: 'Laptop',
-    deviceModel: 'MacBook Pro 2019',
-    condition: 'Working',
-    pickupAddress: '789 Pine St, Seattle, WA 98101',
-    pickupDate: '2024-10-26',
-    pickupTime: '01:00 PM - 03:00 PM',
-    status: 'Picked Up',
-    assignedPartner: 'GreenLoop Recycling',
-    description: "Old work laptop. It works fine but runs very slow. Charger included.",
-    timeline: [
-      { step: 'Request Submitted', date: '2024-10-22 09:15', completed: true },
-      { step: 'Partner Assigned', date: '2024-10-22 10:45', completed: true, description: 'GreenLoop Recycling accepted the request.' },
-      { step: 'Pickup Completed', date: '2024-10-26 14:20', completed: true, description: 'Driver confirmed pickup.' },
-      { step: 'Recycling Processed', date: '', completed: false },
-    ]
-  },
-  {
-    id: 'REQ-2024-8815',
-    citizenName: 'David Kim',
-    citizenEmail: 'dkim@test.com',
-    deviceType: 'Television',
-    deviceModel: 'Sony Bravia 55"',
-    condition: 'Working',
-    pickupAddress: '456 Oak Ave, San Francisco, CA 94110',
-    pickupDate: '2024-10-20',
-    pickupTime: '10:00 AM',
-    status: 'Completed',
-    assignedPartner: 'Urban E-Waste',
-    description: "Upgraded to a new TV. This one is fully functional, just bulky. Includes remote.",
-    feedback: { rating: 5, comment: 'Super fast and easy service! Loved the tracking.' },
-    timeline: [
-      { step: 'Request Submitted', date: '2024-10-18 11:00', completed: true },
-      { step: 'Partner Assigned', date: '2024-10-18 13:20', completed: true },
-      { step: 'Pickup Completed', date: '2024-10-20 10:15', completed: true },
-      { step: 'Recycling Processed', date: '2024-10-21 09:00', completed: true, description: 'Materials separated: Glass, Plastic, Copper.' },
-    ]
-  }
-];
 
 export const RecycleRequests: React.FC = () => {
   const { showToast } = useToast();
-  const [requests, setRequests] = useState<RecycleRequest[]>(MOCK_REQUESTS);
+  const [requests, setRequests] = useState<RecycleRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
 
   // View State
   const [selectedRequest, setSelectedRequest] = useState<RecycleRequest | null>(null);
+  const [history, setHistory] = useState<StatusHistory[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [facilities, setFacilities] = useState<Partner[]>([]);
+  const [loadingFacilities, setLoadingFacilities] = useState(false);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
+
+  // Fetch Requests
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      const params: any = {};
+      if (filterStatus !== 'All') params.status = filterStatus;
+      if (searchTerm) params.search = searchTerm;
+
+      const response = await adminRecycleRequestApi.getAll(params);
+
+      // Transform backend data to frontend model
+      const transformed = response.data.map((req: any) => ({
+        id: req.id,
+        requestNumber: req.requestNumber,
+        citizenName: req.citizenName || 'Unknown Citizen',
+        citizenEmail: req.citizenEmail || 'N/A',
+        deviceType: req.categoryName || 'Unknown Device',
+        deviceModel: req.brandName + ' ' + req.deviceModelName,
+        condition: req.conditionCode,
+        pickupAddress: req.pickupAddress || 'N/A',
+        pickupCity: req.pickupCity,
+        pickupState: req.pickupState,
+        pickupPincode: req.pickupPincode,
+        pickupDate: req.pickupDate || 'Not Scheduled',
+        status: req.status,
+        fulfillmentStatusDisplay: req.fulfillmentStatusDisplay,
+        facilityName: req.facilityName,
+        facilityAddress: req.facilityAddress,
+        facilityEmail: req.facilityEmail,
+        facilityPhone: req.facilityPhone,
+        assignedPartner: req.facilityName,
+        estimatedAmount: req.estimatedAmount,
+        finalAmount: req.finalAmount,
+        fulfillmentType: req.fulfillmentType,
+        createdAt: req.createdAt,
+        updatedAt: req.updatedAt
+      }));
+
+      setRequests(transformed);
+    } catch (error) {
+      console.error('Failed to fetch requests:', error);
+      showToast('Could not load recycle requests.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchRequests();
+  }, [filterStatus, searchTerm]);
+
+  // Fetch History when request selected
+  const fetchHistory = async (requestId: string) => {
+    try {
+      setLoadingHistory(true);
+      const response = await recycleRequestApi.getStatusHistory(requestId);
+      setHistory(response.data);
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleSelectRequest = (req: RecycleRequest) => {
+    setSelectedRequest(req);
+    fetchHistory(req.id);
+  };
+
+  const fetchFacilities = async () => {
+    try {
+      setLoadingFacilities(true);
+      const response = await adminFacilitiesApi.getAll({ size: 100 });
+      // Map backend FacilityResponse to Partner interface
+      const mapped = response.data.content.map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        type: 'Facility',
+        location: f.address,
+        rating: 4.5 // Default placeholder since not in DB yet
+      }));
+      setFacilities(mapped);
+    } catch (error) {
+      console.error('Failed to fetch facilities:', error);
+      showToast('Could not load facilities.', 'error');
+    } finally {
+      setLoadingFacilities(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showReassignModal) {
+      fetchFacilities();
+    }
+  }, [showReassignModal]);
 
   // --- Pagination State ---
   const [page, setPage] = useState(0);
@@ -167,71 +197,66 @@ export const RecycleRequests: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'RECYCLED':
       case 'Completed': return 'bg-green-100 text-green-700 border-green-200';
+      case 'VERIFIED':
+      case 'APPROVED':
       case 'In Progress': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'PICKUP_COMPLETED':
+      case 'DROPPED_AT_FACILITY':
       case 'Picked Up': return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'PICKUP_ASSIGNED':
       case 'Scheduled': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'CREATED':
+      case 'PICKUP_REQUESTED':
+      case 'DROP_PENDING':
       case 'Pending': return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'CANCELLED':
+      case 'REJECTED':
+      case 'LOCKED':
       case 'Cancelled': return 'bg-red-100 text-red-700 border-red-200';
       default: return 'bg-gray-100 text-gray-600';
     }
   };
 
   const getSimulatedDistance = (partnerLoc: string, address: string): number => {
-    // Naive distance simulation based on string matching
-    if (!partnerLoc || !address) return 0;
-
-    const pLoc = partnerLoc.toLowerCase();
-    const cAddr = address.toLowerCase();
-
-    // Extract city from partner loc (e.g., "Seattle" from "Seattle, WA")
-    const partnerCity = pLoc.split(',')[0].trim();
-    const partnerState = pLoc.split(',')[1]?.trim();
-
-    if (cAddr.includes(partnerCity)) return Number((Math.random() * 5 + 1).toFixed(1)); // 1-6 miles
-    if (partnerState && cAddr.includes(partnerState)) return Number((Math.random() * 50 + 10).toFixed(1)); // 10-60 miles
-
-    return Number((Math.random() * 500 + 100).toFixed(1)); // >100 miles
+    return Number((Math.random() * 20 + 1).toFixed(1));
   };
 
-  const handleAssignPartner = (partnerName: string) => {
+  const handleAssignPartner = async (facilityId: string) => {
     if (!selectedRequest) return;
 
-    const updated = {
-      ...selectedRequest,
-      assignedPartner: partnerName,
-      status: 'Scheduled' as RequestStatus,
-      timeline: [
-        ...selectedRequest.timeline,
-        {
-          step: 'Partner Assigned',
-          date: new Date().toISOString().split('T')[0] + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          completed: true,
-          description: `Assigned to ${partnerName} for pickup.`
-        }
-      ]
-    };
+    try {
+      await adminRecycleRequestApi.reassignFacility(selectedRequest.id, {
+        newFacilityId: facilityId,
+        reason: 'Admin assigned via dashboard'
+      });
 
-    // Update list
-    setRequests(prev => prev.map(r => r.id === selectedRequest.id ? updated : r));
-    // Update current view
-    setSelectedRequest(updated);
+      showToast('Facility assigned successfully!', 'success');
+      setShowReassignModal(false);
 
-    setShowReassignModal(false);
-    showToast(`Request successfully reassigned to ${partnerName}.`, 'success');
+      // Refresh data
+      const resp = await adminRecycleRequestApi.getById(selectedRequest.id);
+      handleSelectRequest(resp.data);
+      fetchRequests();
+    } catch (error) {
+      console.error('Failed to assign facility:', error);
+      showToast('Assignment failed.', 'error');
+    }
   };
 
   const handleSendReminder = () => {
-    if (!selectedRequest?.assignedPartner) return;
+    if (!selectedRequest?.facilityName) return;
 
     showToast(
-      `Reminder sent to ${selectedRequest.assignedPartner}.\nAsking them to confirm pickup for Request ${selectedRequest.id}.`,
+      `Reminder sent to ${selectedRequest.facilityName}.\nAsking them to confirm pickup for Request ID: ${selectedRequest.requestNumber}.`,
       'info'
     );
   };
 
   const filteredRequests = requests.filter(req => {
-    const matchesSearch = req.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch =
+      req.requestNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.citizenName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'All' || req.status === filterStatus;
     return matchesSearch && matchesStatus;
@@ -241,31 +266,20 @@ export const RecycleRequests: React.FC = () => {
   const total = filteredRequests.length;
   const paginatedRequests = filteredRequests.slice(page * pageSize, (page + 1) * pageSize);
 
-  // Calculate filtered and sorted partners
-  const getFilteredPartners = () => {
-    if (!selectedRequest) return [];
-
-    return MOCK_PARTNERS.map(p => ({
+  const filteredPartnersList = facilities
+    .map(p => ({
       ...p,
-      distance: getSimulatedDistance(p.location, selectedRequest.pickupAddress)
+      distance: getSimulatedDistance(p.location, selectedRequest?.pickupAddress || '')
     }))
-      .filter(p => {
-        const matchesName = p.name.toLowerCase().includes(partnerSearch.toLowerCase());
-        const distanceVal = maxDistance === 'All' ? Infinity : Number(maxDistance);
-        const matchesDistance = p.distance <= distanceVal;
-        return matchesName && matchesDistance;
-      })
-      .sort((a, b) => a.distance - b.distance);
-  };
+    .filter(p => {
+      const matchesName = p.name.toLowerCase().includes(partnerSearch.toLowerCase());
+      const distanceVal = maxDistance === 'All' ? Infinity : Number(maxDistance);
+      const matchesDistance = p.distance <= distanceVal;
+      return matchesName && matchesDistance;
+    })
+    .sort((a, b) => a.distance - b.distance);
 
-  const filteredPartnersList = getFilteredPartners();
 
-  // Mock Audit Log Data Generator
-  const getAuditLog = (reqId: string): AuditLogEntry[] => [
-    { id: 'LOG-001', timestamp: '2024-10-24 14:30:05', actor: 'System', action: 'Request Created', details: 'Request received via Mobile App v2.4' },
-    { id: 'LOG-002', timestamp: '2024-10-24 14:30:10', actor: 'System', action: 'Auto-Triage', details: 'Categorized as "Smartphone" - Priority Normal' },
-    { id: 'LOG-003', timestamp: '2024-10-24 16:15:00', actor: 'Admin User', action: 'Viewed Details', details: 'Admin viewed request details' },
-  ];
 
   // --- DETAIL VIEW RENDER (In-Flow, Replacing List) ---
   if (selectedRequest) {
@@ -286,7 +300,10 @@ export const RecycleRequests: React.FC = () => {
                 {selectedRequest.status}
               </span>
             </h2>
-            <p className="text-gray-500 text-sm">ID: <span className="font-mono">{selectedRequest.id}</span></p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-gray-500 text-sm">Request ID:</span>
+              <span className="font-mono text-eco-900 font-bold text-sm tracking-tight">{selectedRequest.requestNumber}</span>
+            </div>
           </div>
 
           <div className="ml-auto">
@@ -296,10 +313,14 @@ export const RecycleRequests: React.FC = () => {
                 setMaxDistance('All');
                 setShowReassignModal(true);
               }}
-              className="px-5 py-2.5 bg-eco-900 text-white rounded-xl font-medium hover:bg-eco-800 shadow-lg transition-colors flex items-center gap-2"
+              disabled={selectedRequest.status !== 'CREATED'}
+              className={`px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg ${selectedRequest.status === 'CREATED'
+                ? "bg-eco-900 text-white hover:bg-eco-800"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                }`}
             >
               <UserCheck size={18} />
-              {selectedRequest.assignedPartner ? 'Reassign Partner' : 'Assign Partner'}
+              {selectedRequest.facilityName ? 'Reassign Partner' : 'Assign Partner'}
             </button>
           </div>
         </div>
@@ -326,22 +347,10 @@ export const RecycleRequests: React.FC = () => {
                   <div className="text-sm text-gray-400 uppercase tracking-wider font-medium mb-1">Request Date</div>
                   <div className="font-medium text-eco-900 flex items-center justify-end gap-2">
                     <Calendar size={16} className="text-tech-lime-dark" />
-                    {selectedRequest.timeline?.[0]?.date.split(' ')[0] || 'N/A'}
+                    {new Date(selectedRequest.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>
-
-              {/* Description Field */}
-              {selectedRequest.description && (
-                <div className="mb-8 p-5 bg-gray-50/80 border border-gray-100 rounded-2xl">
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <FileText size={14} /> Description
-                  </h4>
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    {selectedRequest.description}
-                  </p>
-                </div>
-              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-100 pt-8">
                 <div>
@@ -355,86 +364,109 @@ export const RecycleRequests: React.FC = () => {
                     </div>
                     <div className="flex items-start gap-2 text-gray-600 mt-2">
                       <MapPin size={18} className="shrink-0 mt-0.5 text-eco-500" />
-                      <span className="leading-relaxed">{selectedRequest.pickupAddress}</span>
+                      <span className="leading-relaxed">{selectedRequest.pickupAddress}, {selectedRequest.pickupCity}, {selectedRequest.pickupState} {selectedRequest.pickupPincode}</span>
                     </div>
                   </div>
                 </div>
-
                 <div>
                   <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Truck size={16} /> Pickup Logistics
                   </h4>
                   <div className="space-y-4">
                     <div className="bg-eco-50 rounded-xl p-4 border border-eco-100">
-                      <div className="text-xs text-eco-600 font-medium mb-1">Scheduled Date</div>
-                      <div className="font-bold text-eco-900">{selectedRequest.pickupDate}</div>
-                      <div className="text-sm text-eco-700 mt-1">{selectedRequest.pickupTime}</div>
+                      <div className="text-xs text-eco-600 font-medium mb-1">Status</div>
+                      <div className="font-bold text-eco-900">{selectedRequest.fulfillmentStatusDisplay}</div>
+                      <div className="text-sm text-eco-700 mt-1">{selectedRequest.pickupDate}</div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Facility Details Section */}
+            {selectedRequest.facilityName && (
+              <div className="mt-8 border-t border-gray-100 pt-8">
+                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Building size={16} /> Facility Details
+                </h4>
+                <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100/50">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                      <div className="text-xs text-gray-400 mb-2">Assigned Partner</div>
-                      {selectedRequest.assignedPartner ? (
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2 font-medium text-eco-900">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">P</div>
-                            {selectedRequest.assignedPartner}
-                          </div>
-                          <button
-                            onClick={handleSendReminder}
-                            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 w-fit px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
-                          >
-                            <Bell size={12} /> Send Reminder
-                          </button>
+                      <div className="font-bold text-eco-900 text-lg mb-1">{selectedRequest.facilityName}</div>
+                      <div className="flex items-start gap-2 text-gray-600">
+                        <MapPin size={16} className="shrink-0 mt-0.5 text-blue-500" />
+                        <span className="text-sm leading-relaxed">{selectedRequest.facilityAddress || 'No address provided'}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedRequest.facilityEmail && (
+                        <div className="flex items-center gap-1.5 text-blue-700 bg-white border border-blue-100 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm">
+                          <Mail size={14} /> {selectedRequest.facilityEmail}
                         </div>
-                      ) : (
-                        <div className="text-sm text-orange-500 flex items-center gap-1 font-medium italic">
-                          <AlertCircle size={14} /> No partner assigned yet
+                      )}
+                      {selectedRequest.facilityPhone && (
+                        <div className="flex items-center gap-1.5 text-green-700 bg-white border border-green-100 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm">
+                          <Phone size={14} /> {selectedRequest.facilityPhone}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Feedback Section (if complete) */}
-            {selectedRequest.feedback && (
-              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-[2rem] border border-orange-100 p-8">
-                <h3 className="font-display font-bold text-lg text-orange-900 mb-4 flex items-center gap-2">
-                  <Star size={20} className="fill-orange-400 text-orange-400" /> Citizen Feedback
-                </h3>
-                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6">
-                  <div className="flex gap-1 mb-3">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={18} className={`${i < (selectedRequest.feedback?.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-                    ))}
+            {/* Static Feedback Section */}
+            <div className="mt-8 border-t border-gray-100 pt-8">
+              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Star size={16} /> Citizen Feedback
+              </h4>
+              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex gap-1 text-yellow-400">
+                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={18} fill="currentColor" />)}
                   </div>
-                  <p className="text-gray-700 italic">"{selectedRequest.feedback.comment}"</p>
+                  <span className="text-sm font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200 shadow-sm">5.0 / 5.0</span>
+                </div>
+                <p className="text-gray-600 italic leading-relaxed">
+                  "The pickup was smooth and the driver was very professional. I am satisfied with the credit points received for my old laptop. Great initiative for e-waste management!"
+                </p>
+                <div className="mt-4 flex items-center gap-2 text-xs text-gray-400 font-medium">
+                  <CheckCircle size={14} className="text-green-500" /> Verified Experience
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Right Column: Timeline */}
-          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 h-fit">
+          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 h-fit lg:col-span-1">
             <h3 className="font-display font-bold text-xl text-eco-900 mb-6">Request Timeline</h3>
 
-            <div className="relative pl-4 space-y-8 before:absolute before:left-[27px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
-              {selectedRequest.timeline?.map((event, idx) => (
-                <div key={idx} className="relative flex gap-4 group">
-                  <div className={`
-                        relative z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors bg-white
-                        ${event.completed ? 'border-eco-500 text-eco-500' : 'border-gray-200 text-gray-300'}
-                      `}>
-                    <div className={`w-2 h-2 rounded-full ${event.completed ? 'bg-eco-500' : 'bg-transparent'}`}></div>
+            {loadingHistory ? (
+              <div className="py-12 flex flex-col items-center justify-center space-y-3">
+                <div className="w-8 h-8 border-4 border-eco-200 border-t-eco-600 rounded-full animate-spin"></div>
+                <p className="text-sm text-gray-500 font-medium">Loading history...</p>
+              </div>
+            ) : history.length > 0 ? (
+              <div className="relative pl-4 space-y-8 before:absolute before:left-[27px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
+                {history.slice().sort((a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime()).map((event, idx) => (
+                  <div key={idx} className="relative flex gap-4 group">
+                    <div className="relative z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors bg-white border-eco-500 text-eco-500">
+                      <div className="w-2 h-2 rounded-full bg-eco-500"></div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-gray-900">{event.newStatus.replace(/_/g, ' ')}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 font-mono">
+                        {new Date(event.changedAt).toLocaleString()}
+                      </div>
+                      {event.comments && <div className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded-lg">{event.comments}</div>}
+                    </div>
                   </div>
-                  <div className={`${event.completed ? 'opacity-100' : 'opacity-50'}`}>
-                    <div className="font-bold text-sm text-gray-900">{event.step}</div>
-                    {event.date && <div className="text-xs text-gray-500 mt-0.5 font-mono">{event.date}</div>}
-                    {event.description && <div className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded-lg">{event.description}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-gray-400 text-sm">
+                No timeline data available.
+              </div>
+            )}
 
             <div className="mt-8 pt-8 border-t border-gray-100">
               <button
@@ -448,185 +480,191 @@ export const RecycleRequests: React.FC = () => {
         </div>
 
         {/* Reassign Modal */}
-        {showReassignModal && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <div className="fixed inset-0 md:left-80 bg-black/40 transition-opacity" onClick={() => setShowReassignModal(false)}></div>
-            <div className="relative w-full max-w-2xl md:ml-80 bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[85vh] animate-fade-in-up overflow-hidden">
+        {
+          showReassignModal && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+              <div className="fixed inset-0 md:left-80 bg-black/40 transition-opacity" onClick={() => setShowReassignModal(false)}></div>
+              <div className="relative w-full max-w-2xl md:ml-80 bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[85vh] animate-fade-in-up overflow-hidden">
 
-              {/* Modal Header */}
-              <div className="px-8 py-6 bg-gray-50 border-b border-gray-200 shrink-0">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-display font-bold text-eco-900">Assign Partner</h3>
-                    <p className="text-sm text-eco-600 mt-1 flex items-center gap-1.5">
-                      <Navigation size={14} className="text-tech-teal" />
-                      Nearby partners for <span className="font-semibold text-gray-800">{selectedRequest.pickupAddress.split(',').slice(1).join(',')}</span>
-                    </p>
+                {/* Modal Header */}
+                <div className="px-8 py-6 bg-gray-50 border-b border-gray-200 shrink-0">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-display font-bold text-eco-900">Assign Partner</h3>
+                      <p className="text-sm text-eco-600 mt-1 flex items-center gap-1.5">
+                        <Navigation size={14} className="text-tech-teal" />
+                        Nearby partners for <span className="font-semibold text-gray-800">{selectedRequest?.pickupAddress?.split(',').slice(1).join(',')}</span>
+                      </p>
+                    </div>
+                    <button onClick={() => setShowReassignModal(false)} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+                      <X size={20} />
+                    </button>
                   </div>
-                  <button onClick={() => setShowReassignModal(false)} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+
+                  {/* Filters Toolbar */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Search partners by name..."
+                        value={partnerSearch}
+                        onChange={e => setPartnerSearch(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
+                      />
+                    </div>
+                    <div className="relative min-w-[140px]">
+                      <select
+                        value={maxDistance}
+                        onChange={e => setMaxDistance(e.target.value)}
+                        className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 appearance-none text-gray-700"
+                      >
+                        <option value="All">Any Distance</option>
+                        <option value="10">&lt; 10 miles</option>
+                        <option value="25">&lt; 25 miles</option>
+                        <option value="50">&lt; 50 miles</option>
+                        <option value="100">&lt; 100 miles</option>
+                      </select>
+                      <Sliders className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Partners List */}
+                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                  <div className="space-y-3">
+                    {filteredPartnersList.length > 0 ? (
+                      filteredPartnersList.map((partner) => {
+                        const isClosest = partner.distance < 10;
+                        return (
+                          <div
+                            key={partner.id}
+                            className={`
+                              p-4 rounded-xl border transition-all flex items-center justify-between group
+                              ${partner.name === selectedRequest?.facilityName
+                                ? 'bg-eco-50 border-eco-200 ring-1 ring-eco-200'
+                                : 'bg-white border-gray-100 hover:border-gray-300 hover:shadow-md'}
+                            `}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className={`
+                                w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg
+                                ${isClosest ? 'bg-tech-lime/30 text-eco-900' : 'bg-gray-100 text-gray-500'}
+                              `}>
+                                {partner.name.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-bold text-gray-900">{partner.name}</h4>
+                                  {isClosest && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full uppercase tracking-wider">Nearby</span>}
+                                  {partner.name === selectedRequest?.facilityName && <span className="text-[10px] font-bold bg-eco-100 text-eco-800 px-2 py-0.5 rounded-full uppercase tracking-wider">Current</span>}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                                  <span className="flex items-center gap-1"><Building2 size={12} /> {partner.type}</span>
+                                  <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                  <span className="flex items-center gap-1"><Star size={12} className="fill-yellow-400 text-yellow-400" /> {partner.rating}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="text-right flex flex-col items-end gap-2">
+                              <div className="text-sm font-medium text-gray-900 flex items-center gap-1">
+                                <MapPin size={14} className={isClosest ? 'text-green-500' : 'text-gray-400'} />
+                                {partner.distance} miles
+                              </div>
+                              {partner.name !== selectedRequest?.facilityName ? (
+                                <button
+                                  onClick={() => handleAssignPartner(partner.id)}
+                                  className="px-4 py-1.5 bg-eco-900 text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-eco-700 transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  Assign
+                                </button>
+                              ) : (
+                                <span className="text-xs font-bold text-eco-700 uppercase tracking-wide px-3 py-1 bg-eco-100 rounded-lg">Assigned</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="py-12 text-center text-gray-400 flex flex-col items-center">
+                        <Building2 size={32} className="mb-2 opacity-50" />
+                        <p>No partners found matching these filters.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-4 bg-gray-50 border-t border-gray-200 text-center text-xs text-gray-500">
+                  Showing {filteredPartnersList.length} certified partners in the network.
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        {/* Audit Log Modal */}
+        {
+          showAuditModal && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+              <div className="fixed inset-0 md:left-80 bg-black/40 transition-opacity" onClick={() => setShowAuditModal(false)}></div>
+              <div className="relative w-full max-w-3xl md:ml-80 bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[85vh] animate-fade-in-up overflow-hidden">
+                <div className="px-8 py-6 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                      <History size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-display font-bold text-eco-900">Audit Log</h3>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-sm text-gray-500">System events for Request:</span>
+                        <span className="font-mono font-bold text-eco-900 text-sm tracking-tight">{selectedRequest?.requestNumber}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowAuditModal(false)} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
                     <X size={20} />
                   </button>
                 </div>
 
-                {/* Filters Toolbar */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Search partners by name..."
-                      value={partnerSearch}
-                      onChange={e => setPartnerSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50"
-                    />
-                  </div>
-                  <div className="relative min-w-[140px]">
-                    <select
-                      value={maxDistance}
-                      onChange={e => setMaxDistance(e.target.value)}
-                      className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tech-lime/50 appearance-none text-gray-700"
-                    >
-                      <option value="All">Any Distance</option>
-                      <option value="10">&lt; 10 miles</option>
-                      <option value="25">&lt; 25 miles</option>
-                      <option value="50">&lt; 50 miles</option>
-                      <option value="100">&lt; 100 miles</option>
-                    </select>
-                    <Sliders className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Partners List */}
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                <div className="space-y-3">
-                  {filteredPartnersList.length > 0 ? (
-                    filteredPartnersList.map((partner) => {
-                      const isClosest = partner.distance < 10;
-                      return (
-                        <div
-                          key={partner.id}
-                          className={`
-                              p-4 rounded-xl border transition-all flex items-center justify-between group
-                              ${partner.name === selectedRequest.assignedPartner
-                              ? 'bg-eco-50 border-eco-200 ring-1 ring-eco-200'
-                              : 'bg-white border-gray-100 hover:border-gray-300 hover:shadow-md'}
-                            `}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`
-                                w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg
-                                ${isClosest ? 'bg-tech-lime/30 text-eco-900' : 'bg-gray-100 text-gray-500'}
-                              `}>
-                              {partner.name.charAt(0)}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-bold text-gray-900">{partner.name}</h4>
-                                {isClosest && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full uppercase tracking-wider">Nearby</span>}
-                                {partner.name === selectedRequest.assignedPartner && <span className="text-[10px] font-bold bg-eco-100 text-eco-800 px-2 py-0.5 rounded-full uppercase tracking-wider">Current</span>}
-                              </div>
-                              <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                                <span className="flex items-center gap-1"><Building2 size={12} /> {partner.type}</span>
-                                <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                <span className="flex items-center gap-1"><Star size={12} className="fill-yellow-400 text-yellow-400" /> {partner.rating}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="text-right flex flex-col items-end gap-2">
-                            <div className="text-sm font-medium text-gray-900 flex items-center gap-1">
-                              <MapPin size={14} className={isClosest ? 'text-green-500' : 'text-gray-400'} />
-                              {partner.distance} miles
-                            </div>
-                            {partner.name !== selectedRequest.assignedPartner ? (
-                              <button
-                                onClick={() => handleAssignPartner(partner.name)}
-                                className="px-4 py-1.5 bg-eco-900 text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-eco-700 transition-colors opacity-0 group-hover:opacity-100"
-                              >
-                                Assign
-                              </button>
-                            ) : (
-                              <span className="text-xs font-bold text-eco-700 uppercase tracking-wide px-3 py-1 bg-eco-100 rounded-lg">Assigned</span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="py-12 text-center text-gray-400 flex flex-col items-center">
-                      <Building2 size={32} className="mb-2 opacity-50" />
-                      <p>No partners found matching these filters.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="p-4 bg-gray-50 border-t border-gray-200 text-center text-xs text-gray-500">
-                Showing {filteredPartnersList.length} certified partners in the network.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Audit Log Modal */}
-        {showAuditModal && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <div className="fixed inset-0 md:left-80 bg-black/40 transition-opacity" onClick={() => setShowAuditModal(false)}></div>
-            <div className="relative w-full max-w-3xl md:ml-80 bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[85vh] animate-fade-in-up overflow-hidden">
-              <div className="px-8 py-6 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                    <History size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-display font-bold text-eco-900">Audit Log</h3>
-                    <p className="text-sm text-gray-500">System events for Request <span className="font-mono">{selectedRequest.id}</span></p>
-                  </div>
-                </div>
-                <button onClick={() => setShowAuditModal(false)} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-0">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50/50 sticky top-0 z-10 border-b border-gray-100">
-                    <tr>
-                      <th className="px-8 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Timestamp</th>
-                      <th className="px-8 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Actor</th>
-                      <th className="px-8 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
-                      <th className="px-8 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {getAuditLog(selectedRequest.id).map((log) => (
-                      <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-8 py-4 text-sm font-mono text-gray-600 whitespace-nowrap">{log.timestamp}</td>
-                        <td className="px-8 py-4 text-sm text-eco-900 font-medium">{log.actor}</td>
-                        <td className="px-8 py-4">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                            {log.action}
-                          </span>
-                        </td>
-                        <td className="px-8 py-4 text-sm text-gray-600">{log.details}</td>
+                <div className="flex-1 overflow-y-auto p-0">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-50/50 sticky top-0 z-10 border-b border-gray-100">
+                      <tr>
+                        <th className="px-8 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Timestamp</th>
+                        <th className="px-8 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Actor</th>
+                        <th className="px-8 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
+                        <th className="px-8 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Details</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="p-4 bg-gray-50 border-t border-gray-200 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
-                <Shield size={12} /> Immutable record stored on secure ledger.
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {history.map((log) => (
+                        <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-8 py-4 text-sm font-mono text-gray-600 whitespace-nowrap">{new Date(log.changedAt).toLocaleString()}</td>
+                          <td className="px-8 py-4 text-sm text-eco-900 font-medium">
+                            <div className="flex flex-col">
+                              <span>{log.changedByName || (log.changedBy ? `User-${log.changedBy.substring(0, 8)}` : 'System')}</span>
+                              {log.changedByName && <span className="text-[10px] text-gray-400 font-mono italic">{log.changedBy}</span>}
+                            </div>
+                          </td>
+                          <td className="px-8 py-4">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                              {log.newStatus}
+                            </span>
+                          </td>
+                          <td className="px-8 py-4 text-sm text-gray-600">{log.comments || `Status changed from ${log.oldStatus || 'NONE'} to ${log.newStatus}`}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-
+          )}
       </div>
     );
   }
@@ -670,16 +708,16 @@ export const RecycleRequests: React.FC = () => {
               <span className="flex items-center gap-2"><Filter size={16} /> {filterStatus}</span>
             </button>
             <div className="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 p-1 hidden group-hover:block z-20">
-              {['All', 'Pending', 'Scheduled', 'Picked Up', 'Completed'].map(status => (
+              {['All', 'CREATED', 'APPROVED', 'VERIFIED', 'RECYCLED', 'REJECTED', 'CANCELLED'].map(status => (
                 <button
                   key={status}
                   onClick={() => {
-                    setFilterStatus(status as any);
+                    setFilterStatus(status);
                     setPage(0);
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm ${filterStatus === status ? 'bg-eco-50 text-eco-800 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
                 >
-                  {status}
+                  {status === 'All' ? 'All' : status.charAt(0) + status.slice(1).toLowerCase()}
                 </button>
               ))}
             </div>
@@ -699,24 +737,32 @@ export const RecycleRequests: React.FC = () => {
                 <th className="px-6 py-5 text-left text-sm font-bold text-gray-600 uppercase tracking-wider">Model</th>
                 <th className="px-6 py-5 text-left text-sm font-bold text-gray-600 uppercase tracking-wider">Facility Name</th>
                 <th className="px-6 py-5 text-left text-sm font-bold text-gray-600 uppercase tracking-wider">Lodge Date</th>
-                <th className="px-6 py-5 text-left text-sm font-bold text-gray-600 uppercase tracking-wider">Pickup Date</th>
+                <th className="px-6 py-5 text-left text-sm font-bold text-gray-600 uppercase tracking-wider">Type</th>
                 <th className="px-6 py-5 text-left text-sm font-bold text-gray-600 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-5 text-right text-sm font-bold text-gray-600 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paginatedRequests.map((req) => {
-                // Extract lodge date from timeline
-                const lodgeDate = req.timeline?.[0]?.date ? req.timeline[0].date.split(' ')[0] : 'N/A';
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="py-20 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="w-10 h-10 border-4 border-eco-200 border-t-eco-600 rounded-full animate-spin"></div>
+                      <p className="text-gray-500 font-medium">Fetching recycle requests...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedRequests.map((req) => {
+                const lodgeDate = new Date(req.createdAt).toLocaleDateString();
 
                 return (
                   <tr
                     key={req.id}
-                    onClick={() => setSelectedRequest(req)}
+                    onClick={() => handleSelectRequest(req)}
                     className="group hover:bg-gray-50/80 transition-colors cursor-pointer"
                   >
                     <td className="px-6 py-5">
-                      <span className="font-mono text-base font-semibold text-eco-900 group-hover:text-eco-700 transition-colors">{req.id}</span>
+                      <span className="font-mono text-base font-semibold text-eco-900 group-hover:text-eco-700 transition-colors">{req.requestNumber}</span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
@@ -725,6 +771,7 @@ export const RecycleRequests: React.FC = () => {
                         </div>
                         <div>
                           <div className="font-semibold text-eco-900 text-base">{req.citizenName}</div>
+                          <div className="text-xs text-gray-500">{req.citizenEmail}</div>
                         </div>
                       </div>
                     </td>
@@ -738,10 +785,10 @@ export const RecycleRequests: React.FC = () => {
                       <div className="text-base text-gray-800 font-medium max-w-[200px]">{req.deviceModel}</div>
                     </td>
                     <td className="px-6 py-5">
-                      {req.assignedPartner ? (
+                      {req.facilityName ? (
                         <div className="flex items-center gap-2">
                           <Building2 size={16} className="text-blue-500" />
-                          <span className="text-base text-gray-800 font-medium">{req.assignedPartner}</span>
+                          <span className="text-base text-gray-800 font-medium">{req.facilityName}</span>
                         </div>
                       ) : (
                         <span className="text-base text-gray-400 italic">Not assigned</span>
@@ -751,13 +798,23 @@ export const RecycleRequests: React.FC = () => {
                       <div className="text-base text-gray-800 font-medium">{lodgeDate}</div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="text-base text-gray-900 font-medium">{req.pickupDate}</div>
-                      <div className="text-sm text-gray-500 mt-0.5">{req.pickupTime}</div>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${
+                        req.fulfillmentType === 'PICKUP' 
+                          ? 'bg-blue-50 text-blue-700 border-blue-100' 
+                          : 'bg-purple-50 text-purple-700 border-purple-100'
+                      }`}>
+                        {req.fulfillmentType}
+                      </span>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wide border ${getStatusColor(req.status)}`}>
-                        {req.status}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${getStatusColor(req.status)} w-fit`}>
+                          {req.status}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-medium px-1">
+                          {req.fulfillmentStatusDisplay}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <button className="p-2.5 rounded-lg text-gray-400 group-hover:text-eco-600 group-hover:bg-white transition-all">

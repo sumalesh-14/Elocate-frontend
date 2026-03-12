@@ -166,9 +166,9 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
           return;
         }
 
-        // Check if user account is active (for partners)
+        // Check if user account is active (for partners/intermediaries)
         const user = data.user;
-        if (user && user.role === 'PARTNER' && user.isActive === false) {
+        if (user && (user.role === 'PARTNER' || user.role === 'INTERMEDIARY') && user.isActive === false) {
           setView('account-pending');
           setIsLoading(false);
           return;

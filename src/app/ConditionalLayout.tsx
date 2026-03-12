@@ -60,8 +60,8 @@ export default function ConditionalLayout({
             );
         }
 
-        // Intermediary routes
-        if (pathname?.startsWith('/intermediary')) {
+        // Intermediary routes (handles both INTERMEDIARY and PARTNER roles)
+        if (pathname?.startsWith('/intermediary') || pathname?.startsWith('/partner')) {
             return (
                 <div className="flex flex-col min-h-screen bg-white">
                     <main className="flex-grow">{children}</main>

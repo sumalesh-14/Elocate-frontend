@@ -396,6 +396,65 @@ export const recycleRequestApi = {
 };
 
 /**
+ * Admin Recycle Requests API
+ */
+export const adminRecycleRequestApi = {
+    getAll: async (params?: { status?: string; search?: string; facilityId?: string }) => {
+        const response = await adminApiClient.get("/admin/recycle-requests", {
+            params,
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+
+    getById: async (id: string | number) => {
+        const response = await adminApiClient.get(`/admin/recycle-requests/${id}`, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+
+    reassignFacility: async (id: string, data: { newFacilityId: string; reason?: string }) => {
+        const response = await adminApiClient.post(`/admin/recycle-requests/${id}/reassign-facility`, data, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+
+    updatePricing: async (id: string, data: { newPrice: number; reason: string }) => {
+        const response = await adminApiClient.post(`/admin/recycle-requests/${id}/update-pricing`, data, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+};
+
+/**
+ * Admin Facilities API
+ */
+export const adminFacilitiesApi = {
+    getAll: async (params?: { page?: number; size?: number; search?: string; isVerified?: boolean; isActive?: boolean }) => {
+        const response = await adminApiClient.get("/admin/facilities", {
+            params,
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+    approve: async (id: string, notes?: string) => {
+        const response = await adminApiClient.patch(`/admin/facilities/${id}/approve`, { notes }, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+    reject: async (id: string, reason: string) => {
+        const response = await adminApiClient.patch(`/admin/facilities/${id}/reject`, { reason }, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    }
+};
+
+/**
  * User Profile API
  */
 export const userProfileApi = {
