@@ -22,7 +22,7 @@ export default function ConditionalLayout({
 
     const isAuthRoute = pathname.startsWith('/sign-in') || pathname?.startsWith('/sign-up') || pathname === '/citizen/sign-up' || pathname === '/citizen/sign-in' || pathname === '/citizen/sign-up/verify-email';
     const isAdminRoute = pathname?.startsWith('/admin');
-    const isPublicRoute = pathname === '/' || pathname === '/citizen/sign-up' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/recycle') || pathname?.startsWith('/citizen/education') || pathname?.startsWith('/citizen/rules') || pathname?.startsWith('/citizen/e-facilities') || pathname?.startsWith('/driver/pickup/');
+    const isPublicRoute = pathname === '/' || pathname === '/citizen/sign-up' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/analyze') || pathname?.startsWith('/citizen/recycle') || pathname?.startsWith('/citizen/education') || pathname?.startsWith('/citizen/rules') || pathname?.startsWith('/citizen/e-facilities') || pathname?.startsWith('/driver/pickup/');
 
     useEffect(() => {
         if (mounted && !isAuthRoute && !isPublicRoute && !isAuthenticated()) {
