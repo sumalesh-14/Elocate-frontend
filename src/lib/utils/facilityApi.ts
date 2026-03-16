@@ -25,7 +25,8 @@ export async function fetchFacilities(
     lon?: number,
     distance: number = 500,
     page: number = 0,
-    size: number = 5
+    size: number = 4,
+    verified?: boolean
 ): Promise<{ content: Facility[], totalPages: number, totalElements: number }> {
     try {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -33,6 +34,10 @@ export async function fetchFacilities(
 
         if (lat !== undefined && lon !== undefined) {
             apiUrl += `&userLatitude=${lat}&userLongitude=${lon}&distance=${distance}`;
+        }
+        
+        if (verified !== undefined) {
+            apiUrl += `&verified=${verified}`;
         }
 
         console.log('Attempting to fetch facilities from:', apiUrl);

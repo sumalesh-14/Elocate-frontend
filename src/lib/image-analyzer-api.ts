@@ -10,6 +10,36 @@
 // ✅ Toggle mock mode here
 const USE_MOCK = false;
 
+export function getErrorMessage(code: string): string {
+  const messages: Record<string, string> = {
+    // Image analyzer
+    MISSING_FILE:          "Please select an image to upload.",
+    INVALID_FILE_TYPE:     "Only JPEG, PNG, or WebP images are supported.",
+    INVALID_FILE_SIZE:     "Image must be under 10MB.",
+    INVALID_FILE_HEADERS:  "The file appears to be corrupted or misnamed.",
+    MALICIOUS_FILE:        "This file failed our security check.",
+    NOT_A_DEVICE:          "Please upload an image of an electronic device (phone, laptop, tablet, etc.).",
+
+    // Material analyzer
+    NOT_AN_EWASTE_DEVICE:  "Material analysis is only available for electronic devices.",
+    NO_MATERIALS_FOUND:    "No recyclable materials could be identified for this device.",
+    ALL_WORKERS_FAILED:    "Analysis service is temporarily unavailable. Try again later.",
+    SERVICE_UNAVAILABLE:   "Analysis service is temporarily unavailable. Try again later.",
+    ANALYSIS_TIMEOUT:      "Analysis timed out. Please try again.",
+    
+    // Server issues
+    NO_LLM_WORKERS:        "Analysis service is temporarily unavailable.",
+    LLM_NO_RESPONSE:       "Analysis failed to return results. Please try again.",
+    INVALID_LLM_RESPONSE:  "Analysis returned an unexpected result. Please try again.",
+    NO_VALID_MATERIALS:    "No valid material data could be extracted. Please try again.",
+    ANALYSIS_FAILED:       "Material analysis failed unexpectedly. Please try again.",
+    INTERNAL_ERROR:        "Something went wrong on our end. Please try again.",
+  };
+
+  return messages[code] ?? "Something went wrong. Please try again.";
+}
+
+
 const IMAGE_ANALYZER_URL =
     process.env.NEXT_PUBLIC_IMAGE_ANALYZER_URL ||
     'https://elocate-python-production.up.railway.app';

@@ -21,7 +21,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { calculateDistance } from '@/lib/utils/calculateLocation';
 import { fetchFacilities } from '@/lib/utils/facilityApi';
 import getLocation from '@/lib/utils/getLocation';
-import { analyzeDeviceImage, checkAnalyzerHealth, AnalysisResult } from '@/lib/image-analyzer-api';
+import { analyzeDeviceImage, checkAnalyzerHealth, AnalysisResult, getErrorMessage } from '@/lib/image-analyzer-api';
 import SuccessModal from '@/app/citizen/Components/SuccessModal';
 
 // --- Types ---
@@ -85,6 +85,7 @@ interface Step1Props extends StepProps {
     onUseAiResult: () => void;
     onDismissAiResult: () => void;
     aiFilledByAnalysis: boolean;
+    analysisError: string | null;
 }
 
 interface Step2Props extends StepProps {
@@ -429,6 +430,7 @@ const Step1_DeviceType: React.FC<Step1Props> = ({
     onUseAiResult,
     onDismissAiResult,
     aiFilledByAnalysis,
+    analysisError,
 }) => {
     // Category accordion open/close
     const [categoryGridOpen, setCategoryGridOpen] = useState(!formData.deviceType && !aiResult);
@@ -459,6 +461,12 @@ const Step1_DeviceType: React.FC<Step1Props> = ({
             )}
 
             {/* ── AI Upload Zone ── */}
+            {analysisError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 mb-2 max-w-lg mx-auto animate-fade-in">
+                    <AlertTriangle size={16} />
+                    <span className="text-sm font-bold">{analysisError}</span>
+                </div>
+            )}
             {!aiResult && (
                 <div
                     className={`bg-eco-50 border-2 border-dashed border-eco-200 rounded-[2rem] p-6 text-center hover:bg-eco-100 transition-all cursor-pointer group shadow-sm relative ${isAnalyzing ? 'opacity-60 pointer-events-none' : ''}`}
@@ -1332,6 +1340,7 @@ const RecycleRequestForm: React.FC = () => {
     // AI analysis state
     const [aiResult, setAiResult] = useState<AnalysisResult | null>(null);
     const [aiFilledByAnalysis, setAiFilledByAnalysis] = useState(false);
+    const [analysisError, setAnalysisError] = useState<string | null>(null);
 
     const STORAGE_KEY = 'elocate_recycle_form_session';
 
@@ -1517,6 +1526,7 @@ const RecycleRequestForm: React.FC = () => {
         setIsAnalyzing(true);
         // Clear any previous AI result
         setAiResult(null);
+        setAnalysisError(null);
         try {
             const result = await analyzeDeviceImage(file);
             if (result.success && result.data) {
@@ -1524,7 +1534,12 @@ const RecycleRequestForm: React.FC = () => {
                 setAiResult(result);
                 showToast('AI analysis complete. Review the result below.', 'success');
             } else {
-                showToast(result.error?.message || 'Failed to analyze image. Please try again.', 'error');
+                const msg = result.error?.code ? getErrorMessage(result.error.code) : (result.error?.message || 'Failed to analyze image. Please try again.');
+                if (result.error?.code === 'NOT_A_DEVICE' || result.error?.code === 'NOT_AN_EWASTE_DEVICE') {
+                    setAnalysisError(msg);
+                } else {
+                    showToast(msg, 'error');
+                }
             }
         } catch (error) {
             console.error('Analysis failed:', error);
@@ -1830,6 +1845,7 @@ const RecycleRequestForm: React.FC = () => {
                                     onUseAiResult={handleUseAiResult}
                                     onDismissAiResult={handleDismissAiResult}
                                     aiFilledByAnalysis={aiFilledByAnalysis}
+                                    analysisError={analysisError}
                                 />
                             )}
                             {currentStep === 2 && <Step2_DeviceDetails formData={formData} updateField={updateField} isLoadingBrands={isLoadingBrands} brands={brands} isLoadingModels={isLoadingModels} models={models} aiFilledByAnalysis={aiFilledByAnalysis} />}

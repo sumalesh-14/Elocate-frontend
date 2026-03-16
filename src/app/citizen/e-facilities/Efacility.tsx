@@ -32,6 +32,9 @@ const FacilityMap: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filterVerified, setFilterVerified] = useState<boolean>(false);
   const [filterDistance, setFilterDistance] = useState<number | null>(null);
+  const [page, setPage] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalElements, setTotalElements] = useState<number>(0);
   const cardContainerRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -98,29 +101,24 @@ const FacilityMap: React.FC = () => {
     }
   };
 
-  const filteredFacilities = () => {
-    if (!facilityData.length) return [];
-
-    let filtered = [...facilityData];
-
-    if (filterVerified) {
-      filtered = filtered.filter(f => f.verified);
-    }
-
-    if (filterDistance !== null) {
-      filtered = filtered.filter(f => f.distance <= filterDistance);
-    }
-
-    return filtered;
-  };
-
   useEffect(() => {
     if (clientLocation) {
-      // Fetch facilities from API (with automatic fallback to static data)
+      // Fetch facilities from API directly with filters to handle backend pagination properly
       const loadFacilities = async () => {
         try {
           setIsLoading(true);
-          const result = await fetchFacilities();
+          const result = await fetchFacilities(
+            clientLocation[1], 
+            clientLocation[0], 
+            filterDistance || 500, 
+            page, 
+            4, 
+            filterVerified ? true : undefined
+          );
+
+          setTotalPages(result.totalPages);
+          setTotalElements(result.totalElements);
+
           const sortedFacilities = result.content
             .map((facility) => ({
               ...facility,
@@ -144,11 +142,11 @@ const FacilityMap: React.FC = () => {
 
       loadFacilities();
     }
-  }, [clientLocation]);
+  }, [clientLocation, filterVerified, filterDistance, page]);
 
   // Separate useEffect for map initialization - runs after facilityData is loaded
   useEffect(() => {
-    if (!clientLocation || facilityData.length === 0) {
+    if (!clientLocation) {
       return;
     }
 
@@ -305,7 +303,7 @@ const FacilityMap: React.FC = () => {
       map.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientLocation, selectedFacility, facilityData.length]);
+  }, [clientLocation, facilityData]);
 
   // Update markers when selected facility changes
   useEffect(() => {
@@ -436,48 +434,67 @@ const FacilityMap: React.FC = () => {
           </div>
         </div>
       ) : clientLocation ? (
-        <div className="pt-8 pb-16 px-4 md:px-8">
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">E-Waste Recycling Facility Locator</h1>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Find certified e-waste collection and recycling centers near you. Get directions, check facility details, and book recycling services.
+        <div className="pt-32 pb-12 px-4 md:px-8 w-full">
+          <div className="mb-10 text-center relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold uppercase tracking-wider mb-4 shadow-sm border border-emerald-100">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Live Tracking
+            </div>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+              E-Waste Recycling <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">Locator</span>
+            </h1>
+            <p className="text-base md:text-lg text-gray-500 max-w-2xl mx-auto font-medium">
+              Find certified e-waste collection and recycling centers near you. Get directions, check facility details, and book recycling services effortlessly.
             </p>
           </div>
 
-          <div className="mb-6 flex flex-wrap gap-4 justify-center">
-            <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
-              <span className="w-4 h-4 rounded-full bg-green-500 mr-2"></span>
-              <span className="text-gray-700">Verified Facility</span>
+          <div className="mb-8 flex flex-wrap gap-4 justify-center">
+            <div className="bg-white border border-gray-100 px-4 py-2 rounded-full shadow-sm flex items-center hover:shadow-md transition-shadow">
+              <span className="w-3 h-3 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              <span className="text-gray-700 font-medium text-sm">Verified Facility</span>
             </div>
-            <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
-              <span className="w-4 h-4 rounded-full bg-orange-500 mr-2"></span>
-              <span className="text-gray-700">Unverified Facility</span>
+            <div className="bg-white border border-gray-100 px-4 py-2 rounded-full shadow-sm flex items-center hover:shadow-md transition-shadow">
+              <span className="w-3 h-3 rounded-full bg-orange-500 mr-2 shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
+              <span className="text-gray-700 font-medium text-sm">Unverified Facility</span>
             </div>
-            <div className="bg-white p-3 rounded-lg shadow-sm flex items-center">
-              <span className="w-4 h-4 rounded-full bg-blue-500 mr-2"></span>
-              <span className="text-gray-700">Your Location</span>
+            <div className="bg-white border border-gray-100 px-4 py-2 rounded-full shadow-sm flex items-center hover:shadow-md transition-shadow">
+              <span className="w-3 h-3 rounded-full bg-blue-500 mr-2 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+              <span className="text-gray-700 font-medium text-sm">Your Location</span>
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="lg:w-1/3 flex flex-col">
-              <div className="bg-white p-4 rounded-lg shadow-md mb-4">
-                <h2 className="font-bold text-xl mb-3 text-gray-800">Filter Facilities</h2>
+          <div className="flex flex-col lg:flex-row gap-6 w-full">
+            <div className="lg:w-[55%] lg:min-w-[500px] flex flex-col gap-5">
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    Filters
+                  </h2>
+                  <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{totalElements} results</span>
+                </div>
 
-                <div className="flex gap-4 mb-4 flex-wrap">
+                <div className="flex gap-3">
                   <button
-                    className={`px-4 py-2 rounded-md ${filterVerified ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-700'}`}
-                    onClick={() => setFilterVerified(!filterVerified)}
+                    className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${filterVerified ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm' : 'bg-gray-50 text-gray-600 border border-transparent hover:bg-gray-100'}`}
+                    onClick={() => { setFilterVerified(!filterVerified); setPage(0); }}
                   >
+                    {filterVerified && <FaCheckCircle className="text-emerald-500" />}
                     Verified Only
                   </button>
 
                   <select
-                    className="px-4 py-2 rounded-md border border-gray-200 bg-gray-100"
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-700 border border-gray-200 bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all shadow-sm appearance-none cursor-pointer"
                     value={filterDistance || ""}
-                    onChange={(e) => setFilterDistance(e.target.value ? parseInt(e.target.value) : null)}
+                    onChange={(e) => { setFilterDistance(e.target.value ? parseInt(e.target.value) : null); setPage(0); }}
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right .75rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em`, paddingRight: `2.5rem` }}
                   >
-                    <option value="">Distance - Any</option>
+                    <option value="">Any Distance</option>
                     <option value="5">Within 5 km</option>
                     <option value="10">Within 10 km</option>
                     <option value="20">Within 20 km</option>
@@ -488,55 +505,72 @@ const FacilityMap: React.FC = () => {
 
               <div
                 ref={cardContainerRef}
-                className="flex-grow bg-gray-50 rounded-lg overflow-y-auto max-h-[70vh] p-1"
-                style={{ scrollbarWidth: 'thin' }}
+                className="flex-grow rounded-2xl overflow-y-auto max-h-[calc(75vh-100px)] lg:max-h-[75vh] p-1 flex flex-col gap-4"
+                style={{ scrollbarWidth: 'none' }}
               >
-                {filteredFacilities().length > 0 ? (
-                  filteredFacilities().map((info, index) => (
+                {facilityData.length > 0 ? (
+                  <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {facilityData.map((info, index) => {
+                    const isSelected = selectedFacility === index;
+                    return (
                     <div
                       key={index}
-                      className={`p-4 bg-white rounded-lg shadow-sm cursor-pointer mb-4 border-l-4 transition-all duration-200 hover:shadow-md
-                          ${selectedFacility === index ? "border-l-emerald-500 shadow-md" : info.verified ? "border-l-green-500" : "border-l-orange-500"}`}
-                      onClick={() => {
-                        setSelectedFacility(index);
-                      }}
+                      className={`group relative p-5 bg-white rounded-2xl cursor-pointer transition-all duration-300 border ${
+                        isSelected 
+                          ? "border-emerald-500 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500" 
+                          : "border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200"
+                      }`}
+                      onClick={() => setSelectedFacility(index)}
                     >
-                      <div className="flex justify-between items-center mb-3">
-                        <h2 className="text-xl font-bold text-gray-800">{info.name}</h2>
+                      <div className="absolute -top-3 right-4">
                         {info.verified ? (
-                          <div className="flex items-center text-green-500 text-sm font-medium">
-                            <FaCheckCircle className="mr-1" />
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100 text-emerald-600 text-xs font-bold uppercase tracking-wider shadow-sm">
+                            <FaCheckCircle className="w-3.5 h-3.5" />
                             Verified
-                          </div>
+                          </span>
                         ) : (
-                          <div className="flex items-center text-orange-500 text-sm font-medium">
-                            <FaTimesCircle className="mr-1" />
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 text-orange-600 text-xs font-bold uppercase tracking-wider shadow-sm">
+                            <FaTimesCircle className="w-3.5 h-3.5" />
                             Unverified
-                          </div>
+                          </span>
                         )}
                       </div>
 
-                      <div className="mb-3 space-y-1 text-gray-600">
-                        <div className="flex items-start">
-                          <FaMapMarkerAlt className="text-gray-400 mt-1 mr-2 flex-shrink-0" />
-                          <p>{info.address}</p>
+                      <div className="mt-2 mb-4 flex gap-4">
+                        <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${isSelected ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-gray-50 text-emerald-500 group-hover:bg-emerald-50 group-hover:scale-105'}`}>
+                           <FaRecycle className="w-6 h-6" />
                         </div>
-                        <div className="flex items-center">
-                          <FaPhoneAlt className="text-gray-400 mr-2 flex-shrink-0" />
-                          <p>{info.contact}</p>
+                        <div className="flex-1 pt-0.5">
+                          <h2 className={`font-bold text-[15px] leading-tight transition-colors line-clamp-2 ${isSelected ? 'text-emerald-700' : 'text-gray-900 group-hover:text-emerald-600'}`}>{info.name}</h2>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                              {info.distance.toFixed(1)} km away
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center">
-                          <FaClock className="text-gray-400 mr-2 flex-shrink-0" />
-                          <p>{info.time}</p>
-                        </div>
-                        <p className="font-medium text-indigo-600">
-                          {info.distance.toFixed(2)} km away
-                        </p>
                       </div>
 
-                      <div className="flex space-x-2">
+                      <div className="space-y-2 mb-5 bg-gray-50/50 p-3 rounded-xl">
+                        <div className="flex items-start gap-2.5 text-xs text-gray-600">
+                          <FaMapMarkerAlt className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                          <p className="leading-snug font-medium text-gray-700 line-clamp-2">{info.address}</p>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-xs text-gray-600">
+                          <FaPhoneAlt className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                          <p className="font-medium text-gray-700">{info.contact}</p>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-xs text-gray-600">
+                          <FaClock className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                          <p className="font-medium text-gray-700">{info.time}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 text-xs">
                         <button
-                          className="flex-1 flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                          className={`flex-[0.8] flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl font-bold transition-all duration-200 ${
+                            isSelected ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+                          }`}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (clientLocation) {
@@ -544,23 +578,58 @@ const FacilityMap: React.FC = () => {
                             }
                           }}
                         >
-                          <FaDirections className="mr-2" />
+                          <FaDirections className={isSelected ? 'text-indigo-500 text-sm' : 'text-gray-400 text-sm'} />
                           Directions
                         </button>
 
                         <Link
                           href="/citizen/recycle"
-                          className="flex-1 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                          className="flex-[1.2] flex items-center justify-center gap-1.5 px-2 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl font-bold transition-all duration-200 shadow-sm hover:shadow"
                         >
-                          <FaRecycle className="mr-2" />
-                          Book Recycling
+                          <FaRecycle className="text-sm" />
+                          Book Pickup
                         </Link>
                       </div>
                     </div>
-                  ))
+                  )})}
+                  </div>
+                  
+                  {totalPages > 1 && (
+                    <div className="mt-4 flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                      <button 
+                        onClick={() => setPage(Math.max(0, page - 1))}
+                        disabled={page === 0}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${page === 0 ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
+                      >
+                        Previous
+                      </button>
+                      
+                      <div className="text-sm font-semibold text-gray-500 whitespace-nowrap flex items-center gap-1">
+                        Page <span className="text-gray-900">{page + 1}</span> of <span className="text-gray-900">{totalPages}</span>
+                      </div>
+                      
+                      <button 
+                        onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                        disabled={page >= totalPages - 1}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${page >= totalPages - 1 ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                  </>
                 ) : (
-                  <div className="p-8 text-center text-gray-600">
-                    No facilities match your current filters. Try adjusting your search criteria.
+                  <div className="flex flex-col items-center justify-center h-56 bg-white rounded-2xl border border-dashed border-gray-300 text-center px-6 shadow-sm">
+                    <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                      <FaMapMarkerAlt className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <p className="text-gray-600 text-base font-medium">No facilities match your filters.</p>
+                    <button 
+                      onClick={() => { setFilterVerified(false); setFilterDistance(null); setPage(0); }}
+                      className="mt-4 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-sm font-bold hover:bg-emerald-100 transition-colors"
+                    >
+                      Clear filters
+                    </button>
                   </div>
                 )}
               </div>
@@ -569,7 +638,7 @@ const FacilityMap: React.FC = () => {
             <div
               ref={mapContainerRef}
               id="map"
-              className="lg:w-2/3 h-[75vh] rounded-lg shadow-md"
+              className="flex-1 w-full min-h-[50vh] lg:min-h-0 lg:h-[75vh] rounded-2xl shadow-md border border-gray-200 overflow-hidden relative z-0"
             />
           </div>
         </div>

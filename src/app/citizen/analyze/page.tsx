@@ -5,12 +5,12 @@ import {
     Search, ArrowRight, ArrowLeft, Check, Package,
     Sparkles, Activity, Hammer, Cpu, Bot, Zap,
     RefreshCw, ShieldCheck, Layers, Info, Trash2,
-    ChevronDown, ChevronUp, Clock, MapPin, ExternalLink
+    ChevronDown, ChevronUp, Clock, MapPin, ExternalLink, AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { deviceCategoriesApi, deviceModelsApi } from '@/lib/admin-api';
 import { categoryBrandApi } from '@/lib/category-brand-api';
-import { analyzeDeviceMaterials, MaterialAnalysisResponse } from '@/lib/image-analyzer-api';
+import { analyzeDeviceMaterials, MaterialAnalysisResponse, getErrorMessage } from '@/lib/image-analyzer-api';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -67,6 +67,7 @@ export default function AnalyzePage() {
 
     // Result State
     const [analysisResult, setAnalysisResult] = useState<MaterialAnalysisResponse | null>(null);
+    const [analysisError, setAnalysisError] = useState<string | null>(null);
 
     // Initial Fetch
     useEffect(() => {
@@ -135,7 +136,10 @@ export default function AnalyzePage() {
     }, [brandId, categoryId, isManualInput]);
 
     const handleAnalyze = async () => {
-        const finalCategory = isManualInput ? manualCategory : categoryName;
+        setIsAnalyzing(true);
+        setAnalysisError(null);
+        
+        let finalCategory = isManualInput ? manualCategory : categoryName;
         const finalBrand = isManualInput ? manualBrand : brandName;
         const finalModel = isManualInput ? manualModel : modelName;
 
@@ -172,7 +176,12 @@ export default function AnalyzePage() {
                 setAnalysisResult(res);
                 showToast("Analysis Complete\nMaterial composition and value estimated successfully.", "success");
             } else {
-                showToast("Analysis Failed\n" + (res.error?.message || "Could not analyze device."), "error");
+                const msg = res.error?.code ? getErrorMessage(res.error.code) : (res.error?.message || "Could not analyze device.");
+                if (res.error?.code === 'NOT_A_DEVICE' || res.error?.code === 'NOT_AN_EWASTE_DEVICE') {
+                    setAnalysisError(msg);
+                } else {
+                    showToast("Analysis Failed\n" + msg, "error");
+                }
             }
         } catch (err) {
             console.error("Analysis Error:", err);
@@ -184,6 +193,7 @@ export default function AnalyzePage() {
 
     const resetAnalysis = () => {
         setAnalysisResult(null);
+        setAnalysisError(null);
         if (!isManualInput) {
             setCategoryId('');
             setCategoryName('');
@@ -341,6 +351,13 @@ export default function AnalyzePage() {
                                                 })}
                                             </div>
                                         </div>
+
+                                        {analysisError && (
+                                            <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 mt-4 animate-fade-in">
+                                                <AlertTriangle size={16} />
+                                                <span className="text-sm font-bold">{analysisError}</span>
+                                            </div>
+                                        )}
 
                                         <div className="pt-6">
                                             <button

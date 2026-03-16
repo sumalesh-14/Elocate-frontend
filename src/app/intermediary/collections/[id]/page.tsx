@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { intermediaryApi } from "@/lib/intermediary-api";
-import { analyzeDeviceMaterials } from "@/lib/image-analyzer-api";
+import { analyzeDeviceMaterials, getErrorMessage } from "@/lib/image-analyzer-api";
 import { useToast } from "@/context/ToastContext";
 
 // Platform Link Component to avoid hook violations in map
@@ -253,7 +253,8 @@ export default function CollectionDetailsPage() {
                 setMaterialsData(res.data);
                 showToast("Analysis Complete\nMaterial composition data updated with condition-based pricing.", "success");
             } else {
-                showToast("Analysis Failed\nCould not fetch material data.", "error");
+                const msg = res.error?.code ? getErrorMessage(res.error.code) : (res.error?.message || "Could not fetch material data.");
+                showToast("Analysis Failed\n" + msg, "error");
             }
         } catch (err) {
             console.error("Analysis Error:", err);
