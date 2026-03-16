@@ -6,7 +6,7 @@ import ClientIonIcon from "@/components/ClientIonIcon";
 import logo from "../../../assets/ELocate-s.png"
 import { getEmail, getUser, getUserName, handleLogout, isAuthenticated } from "../sign-in/auth";
 import { FiUser } from 'react-icons/fi';
-import { LayoutDashboard, Menu as MenuIcon, Recycle, LogOut, ChevronDown, Home, Info, Zap, BookOpen, Trash2, GraduationCap, Mail, FileText, MapPin } from "lucide-react";
+import { LayoutDashboard, Menu as MenuIcon, Recycle, LogOut, ChevronDown, Home, Info, Zap, BookOpen, Trash2, GraduationCap, Mail, FileText, MapPin, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 import getLocation from "@/lib/utils/getLocation";
 import Toast from "../Components/Toast";
@@ -343,6 +343,7 @@ const navItems = [
     { label: "Home", icon: Home },
     { label: "About", icon: Info },
     { label: "E-Facilities", icon: Zap },
+    { label: "Analyze", icon: Sparkles },
     { label: "Book-Recycle", icon: BookOpen },
     { label: "Recycle", icon: Trash2 },
     { label: "Education", icon: GraduationCap },

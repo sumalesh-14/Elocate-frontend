@@ -1335,28 +1335,50 @@ const RecycleRequestForm: React.FC = () => {
 
     const STORAGE_KEY = 'elocate_recycle_form_session';
 
-    // Load persisted state on mount
+    // Load persisted state or prefilled analysis on mount
     useEffect(() => {
-        const savedSession = localStorage.getItem(STORAGE_KEY);
-        if (savedSession) {
+        const prefilledAnalysis = localStorage.getItem('prefilled_analysis');
+
+        if (prefilledAnalysis) {
             try {
-                const { step, data } = JSON.parse(savedSession);
-                if (data) {
-                    setFormData(prev => ({
-                        ...prev,
-                        ...data,
-                        // Always refresh auth-linked fields from current session
-                        contactName: getUserName() || data.contactName || 'User',
-                        contactEmail: getEmail() || data.contactEmail || '',
-                        contactPhone: getPhoneNumber() || data.contactPhone || '',
-                    }));
-                }
-                if (step && step >= 1 && step <= 5) {
-                    setCurrentStep(step as Step);
-                }
+                const data = JSON.parse(prefilledAnalysis);
+                localStorage.removeItem('prefilled_analysis');
+
+                setFormData(prev => ({
+                    ...prev,
+                    deviceType: data.categoryName || prev.deviceType,
+                    brand: data.brandName || prev.brand,
+                    model: data.modelName || prev.model,
+                    condition: data.condition || prev.condition,
+                }));
+
+                // If we have category, try to find its ID
+                // Note: IDs will be fetched by the categories useEffect automatically
             } catch (error) {
-                console.error("Failed to restore form session:", error);
-                localStorage.removeItem(STORAGE_KEY);
+                console.error("Failed to parse prefilled analysis:", error);
+            }
+        } else {
+            const savedSession = localStorage.getItem(STORAGE_KEY);
+            if (savedSession) {
+                try {
+                    const { step, data } = JSON.parse(savedSession);
+                    if (data) {
+                        setFormData(prev => ({
+                            ...prev,
+                            ...data,
+                            // Always refresh auth-linked fields from current session
+                            contactName: getUserName() || data.contactName || 'User',
+                            contactEmail: getEmail() || data.contactEmail || '',
+                            contactPhone: getPhoneNumber() || data.contactPhone || '',
+                        }));
+                    }
+                    if (step && step >= 1 && step <= 5) {
+                        setCurrentStep(step as Step);
+                    }
+                } catch (error) {
+                    console.error("Failed to restore form session:", error);
+                    localStorage.removeItem(STORAGE_KEY);
+                }
             }
         }
     }, []);

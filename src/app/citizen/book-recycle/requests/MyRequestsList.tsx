@@ -8,12 +8,14 @@ import { recycleRequestApi } from "@/lib/admin-api";
 import { getUserID } from "@/app/citizen/sign-in/auth";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FeedbackForm } from "./FeedbackForm";
+import { FeedbackView } from "./FeedbackView";
 import {
     MdLaptopMac, MdSmartphone, MdPrint, MdTv, MdHeadphones, MdWatch,
     MdKeyboard, MdDevicesOther, MdSearch, MdAddCircle, MdDownload,
     MdRefresh, MdLocationOn, MdArrowForward, MdInfo, MdLayers,
     MdHistory, MdExpandMore, MdNotifications, MdChevronRight, MdCheckCircle,
-    MdMoreVert, MdCalendarToday, MdLocalShipping, MdEmojiEvents
+    MdMoreVert, MdCalendarToday, MdLocalShipping, MdEmojiEvents, MdRateReview
 } from "react-icons/md";
 
 // --- Sub-Components ---
@@ -98,6 +100,10 @@ const MyRequestsList = () => {
     // Collapsible sections state
     const [expandedSection, setExpandedSection] = useState<string | null>("timeline");
     const [expandedSubTimelines, setExpandedSubTimelines] = useState<string[]>(["recycle", "fulfillment"]);
+    
+    // Feedback state
+    const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+    const [feedbackRefreshKey, setFeedbackRefreshKey] = useState(0);
 
     const toggleSubTimeline = (id: string) => {
         setExpandedSubTimelines(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -546,6 +552,15 @@ const MyRequestsList = () => {
                                                     <MdDownload className="text-xl" />
                                                     Get Digital Receipt
                                                 </button>
+                                                {selectedRequest.status === "completed" && (
+                                                    <button
+                                                        onClick={() => setShowFeedbackForm(true)}
+                                                        className="flex-1 py-5 bg-blue-600 text-white rounded-[24px] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/10 active:scale-95"
+                                                    >
+                                                        <MdRateReview className="text-xl" />
+                                                        Share Feedback
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </CollapsibleCard>
@@ -677,6 +692,19 @@ const MyRequestsList = () => {
                                             </button>
                                         </div>
                                     </CollapsibleCard>
+
+                                    {selectedRequest.status === "completed" && (
+                                        <CollapsibleCard
+                                            title="Your Feedback"
+                                            icon={MdRateReview}
+                                            isOpen={expandedSection === 'feedback'}
+                                            onToggle={() => toggleSection('feedback')}
+                                            colorClass="rose"
+                                            badge={<span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Help Us Improve</span>}
+                                        >
+                                            <FeedbackView key={feedbackRefreshKey} recycleRequestId={selectedRequest.id} />
+                                        </CollapsibleCard>
+                                    )}
                                 </div>
                             </motion.div>
                         ) : (
@@ -690,6 +718,17 @@ const MyRequestsList = () => {
                 </div>
             </div>
 
+            {showFeedbackForm && selectedRequest && (
+                <FeedbackForm
+                    recycleRequestId={selectedRequest.id}
+                    userId={getUserID() || ""}
+                    onClose={() => setShowFeedbackForm(false)}
+                    onSubmitSuccess={() => {
+                        setFeedbackRefreshKey(prev => prev + 1);
+                        setExpandedSection('feedback');
+                    }}
+                />
+            )}
         </div>
     );
 };
