@@ -245,6 +245,7 @@ export default function AnalyzePage() {
                                                 </div>
                                             </div>
                                             <button
+                                                suppressHydrationWarning
                                                 onClick={() => setIsManualInput(!isManualInput)}
                                                 className={`text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all ${isManualInput ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
                                             >
@@ -257,6 +258,7 @@ export default function AnalyzePage() {
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-black text-slate-600 uppercase tracking-widest ml-1">Category</label>
                                                     <input
+                                                        suppressHydrationWarning
                                                         type="text"
                                                         placeholder="e.g. Smartphone"
                                                         value={manualCategory}
@@ -267,6 +269,7 @@ export default function AnalyzePage() {
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-black text-slate-600 uppercase tracking-widest ml-1">Brand</label>
                                                     <input
+                                                        suppressHydrationWarning
                                                         type="text"
                                                         placeholder="e.g. Apple"
                                                         value={manualBrand}
@@ -277,6 +280,7 @@ export default function AnalyzePage() {
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-black text-slate-600 uppercase tracking-widest ml-1">Model</label>
                                                     <input
+                                                        suppressHydrationWarning
                                                         type="text"
                                                         placeholder="e.g. iPhone 15 Pro"
                                                         value={manualModel}
@@ -329,6 +333,7 @@ export default function AnalyzePage() {
                                                     const isSelected = condition === opt.val;
                                                     return (
                                                         <button
+                                                            suppressHydrationWarning
                                                             key={opt.val}
                                                             onClick={() => setCondition(opt.val)}
                                                             className={`p-5 rounded-[1.5rem] border-2 text-left transition-all hover:-translate-y-1 ${isSelected
@@ -361,6 +366,7 @@ export default function AnalyzePage() {
 
                                         <div className="pt-6">
                                             <button
+                                                suppressHydrationWarning
                                                 onClick={handleAnalyze}
                                                 disabled={isAnalyzing}
                                                 className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 text-white rounded-[1.5rem] font-black text-lg uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-emerald-200 flex items-center justify-center gap-4 group/btn"
@@ -566,9 +572,10 @@ const SearchableDropdown: React.FC<{
                         <div className="relative">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
-                                autoFocus
-                                type="text"
-                                placeholder="Search..."
+                                                suppressHydrationWarning
+                                                autoFocus
+                                                type="text"
+                                                placeholder="Search..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500"
