@@ -26,7 +26,7 @@ interface Props {
 export default function AnalysisResultDisplay({ result, onReset, deviceDetails }: Props) {
     const router = useRouter();
     const [isInsightsOpen, setIsInsightsOpen] = useState(true);
-    const [isCompositionOpen, setIsCompositionOpen] = useState(true);
+    const [isCompositionOpen, setIsCompositionOpen] = useState(false);
     const [isMarketOpen, setIsMarketOpen] = useState(false);
 
     const data = result.data;

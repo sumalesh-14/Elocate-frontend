@@ -74,6 +74,7 @@ const FAQ = () => {
                 }`}
             >
               <button
+                suppressHydrationWarning
                 className="w-full text-left p-8 md:p-10 flex items-center justify-between group"
                 onClick={() => toggleQuestion(index)}
               >

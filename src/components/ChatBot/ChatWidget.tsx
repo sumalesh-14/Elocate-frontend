@@ -34,7 +34,7 @@ const FormattedText: React.FC<{ text: string }> = ({ text }) => {
                 if (isListItem) {
                     return (
                         <div key={i} className="flex gap-2 items-start pl-1">
-                            <span className="text-eco-1000 font-bold mt-1.5 text-[10px]">•</span>
+                            <span className="text-eco-1000 font-bold mt-1.5 text-sm">•</span>
                             <p className="flex-1">{content}</p>
                         </div>
                     )
@@ -151,7 +151,8 @@ export const ChatWidget: React.FC = () => {
         <>
             {/* Backdrop for Expanded State */}
             <div
-                className={`fixed inset-0 bg-eco-950/20 backdrop-blur-[2px] z-[45] transition-opacity duration-500
+                style={{ zIndex: 9998 }}
+                className={`fixed inset-0 bg-eco-950/20 backdrop-blur-[2px] transition-opacity duration-500
           ${isOpen && isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
         `}
                 onClick={() => setIsExpanded(false)}
@@ -159,8 +160,9 @@ export const ChatWidget: React.FC = () => {
 
             {/* Chat Window */}
             <div
+                style={{ zIndex: 9999 }}
                 className={`
-          fixed z-[50] flex flex-col overflow-hidden transition-all duration-700 cubic-bezier(0.19, 1, 0.22, 1) bg-white/80 backdrop-blur-xl border border-white/40 shadow-2xl
+          fixed flex flex-col overflow-hidden transition-all duration-700 cubic-bezier(0.19, 1, 0.22, 1) bg-white/80 backdrop-blur-xl border border-white/40 shadow-2xl
           ${isExpanded
                         ? 'top-[5vh] left-[5vw] w-[90vw] h-[90vh] rounded-[3rem] origin-center'
                         : `bottom-28 right-8 w-[90vw] md:w-[450px] h-[600px] rounded-[2rem] origin-bottom-right ${isOpen ? 'translate-y-0 opacity-100 scale-100 pointer-events-auto' : 'translate-y-12 opacity-0 scale-90 pointer-events-none'}`
@@ -180,12 +182,13 @@ export const ChatWidget: React.FC = () => {
                             <Sparkles className={`${isExpanded ? 'w-6 h-6' : 'w-5 h-5'} text-tech-lime`} />
                         </div>
                         <div>
-                            <h3 className={`font-display font-bold text-white leading-tight ${isExpanded ? 'text-xl' : 'text-lg'}`}>EcoBot AI</h3>
-                            <p className="text-eco-200 text-xs font-sans">Powered by Gemini</p>
+                            <h3 className={`font-display font-bold text-white leading-tight ${isExpanded ? 'text-2xl' : 'text-xl'}`}>EcoBot AI</h3>
+                            <p className="text-eco-200 text-sm font-sans">Powered by Gemini</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
                         <button
+                            suppressHydrationWarning
                             onClick={toggleExpand}
                             className="text-eco-200 hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors"
                             title={isExpanded ? "Minimize" : "Expand"}
@@ -193,6 +196,7 @@ export const ChatWidget: React.FC = () => {
                             {isExpanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                         </button>
                         <button
+                            suppressHydrationWarning
                             onClick={handleClose}
                             className="text-eco-200 hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors"
                         >
@@ -210,8 +214,8 @@ export const ChatWidget: React.FC = () => {
                         >
                             <div
                                 className={`
-                  p-4 rounded-2xl text-sm leading-relaxed font-sans shadow-sm transition-all duration-300
-                  ${isExpanded ? 'max-w-[70%] text-base p-6' : 'max-w-[85%]'}
+                  p-4 rounded-2xl text-base md:text-lg leading-relaxed font-sans shadow-sm transition-all duration-300
+                  ${isExpanded ? 'max-w-[70%] text-xl p-6' : 'max-w-[85%]'}
                   ${msg.role === 'user'
                                         ? 'bg-eco-800 text-white rounded-tr-none'
                                         : 'bg-white text-eco-900 border border-eco-100 rounded-tl-none'}
@@ -241,6 +245,7 @@ export const ChatWidget: React.FC = () => {
         `}>
                     <div className="relative flex items-center gap-2">
                         <input
+                            suppressHydrationWarning
                             ref={inputRef}
                             type="text"
                             value={input}
@@ -249,13 +254,14 @@ export const ChatWidget: React.FC = () => {
                             placeholder={isListening ? "Listening..." : "Ask about recycling..."}
                             className={`
                 w-full bg-eco-50 border-none rounded-full text-eco-900 placeholder-eco-400 focus:ring-2 focus:ring-eco-500/50 focus:outline-none transition-all font-sans
-                ${isExpanded ? 'py-4 pl-6 pr-24 text-lg' : 'py-3 pl-5 pr-20'}
+                ${isExpanded ? 'py-4 pl-6 pr-24 text-xl' : 'py-3 pl-5 pr-20 text-base md:text-lg'}
                 ${isListening ? 'ring-2 ring-red-400/50 bg-red-50' : ''}
               `}
                         />
 
                         <div className="absolute right-2 flex items-center gap-1">
                             <button
+                                suppressHydrationWarning
                                 onClick={toggleVoiceInput}
                                 className={`
                   rounded-full transition-all hover:bg-eco-100
@@ -268,6 +274,7 @@ export const ChatWidget: React.FC = () => {
                             </button>
 
                             <button
+                                suppressHydrationWarning
                                 onClick={handleSend}
                                 disabled={isLoading || !input.trim()}
                                 className={`
@@ -284,6 +291,8 @@ export const ChatWidget: React.FC = () => {
 
             {/* Toggle Button (Fixed to bottom right) */}
             <button
+                style={{ zIndex: 10000 }}
+                suppressHydrationWarning
                 onClick={() => {
                     if (isExpanded && isOpen) {
                         setIsOpen(false);
@@ -293,7 +302,7 @@ export const ChatWidget: React.FC = () => {
                     }
                 }}
                 className={`
-          fixed bottom-8 right-8 z-[60] group flex items-center justify-center w-20 h-20 rounded-full shadow-2xl transition-all duration-300 hover:scale-110
+          fixed bottom-8 right-8 group flex items-center justify-center w-20 h-20 rounded-full shadow-2xl transition-all duration-300 hover:scale-110
           ${isOpen ? 'bg-eco-800 rotate-90' : 'bg-gradient-to-br from-eco-500 to-eco-700 rotate-0'}
         `}
             >
