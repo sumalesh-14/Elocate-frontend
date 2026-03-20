@@ -8,39 +8,105 @@ export interface Message {
     role: 'user' | 'model';
     text: string;
     isError?: boolean;
+    suggestions?: string[];
 }
 
-// Simple text formatter component to handle bolding and lists
+// Text formatter — handles bold, bullet lists, numbered lists, inline code, and clickable paths
 const FormattedText: React.FC<{ text: string }> = ({ text }) => {
-    const lines = text.split('\n');
-    return (
-        <div className="space-y-1">
-            {lines.map((line, i) => {
-                if (!line.trim()) return <div key={i} className="h-2" />; // Spacing for empty lines
 
-                const isListItem = line.trim().startsWith('* ') || line.trim().startsWith('- ');
-                const cleanLine = isListItem ? line.trim().replace(/^[\*\-] /, '') : line;
-
-                // Split text by bold markers (**text**)
-                const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
-
-                const content = parts.map((part, j) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                        return <strong key={j} className="font-bold text-current">{part.slice(2, -2)}</strong>;
-                    }
-                    return <span key={j}>{part}</span>;
-                });
-
-                if (isListItem) {
+    // Render inline content: bold, inline code/paths (clickable if looks like a route)
+    const renderInline = (raw: string, keyPrefix: string) => {
+        const parts = raw.split(/(\*\*.*?\*\*|`[^`]+`)/g);
+        return parts.map((part, j) => {
+            if (part.startsWith('**') && part.endsWith('**'))
+                return <strong key={`${keyPrefix}-${j}`} className="font-semibold text-current">{part.slice(2, -2)}</strong>;
+            if (part.startsWith('`') && part.endsWith('`')) {
+                const inner = part.slice(1, -1);
+                if (inner.startsWith('/')) {
                     return (
-                        <div key={i} className="flex gap-2 items-start pl-1">
-                            <span className="text-eco-1000 font-bold mt-1.5 text-sm">•</span>
-                            <p className="flex-1">{content}</p>
+                        <a
+                            key={`${keyPrefix}-${j}`}
+                            href={inner}
+                            className="inline text-eco-600 hover:text-eco-800 underline underline-offset-2 font-medium"
+                        >
+                            {inner}
+                        </a>
+                    );
+                }
+                return <code key={`${keyPrefix}-${j}`} className="bg-eco-100 text-eco-800 px-1 rounded text-xs font-mono">{inner}</code>;
+            }
+            return <span key={`${keyPrefix}-${j}`}>{part}</span>;
+        });
+    };
+
+    const rawLines = text.split('\n');
+    const mergedLines: string[] = [];
+    for (const line of rawLines) {
+        const trimmed = line.trim();
+        const isNewBlock =
+            !trimmed ||
+            trimmed.startsWith('* ') ||
+            trimmed.startsWith('- ') ||
+            /^\d+\.\s/.test(trimmed);
+
+        const isOrphanFragment =
+            !isNewBlock && (
+                /^`[^`]+`[.,!?]?$/.test(trimmed) ||
+                /^\*\*[^*]+\*\*[.,!?]?$/.test(trimmed) ||
+                /^[.,!?]$/.test(trimmed)
+            );
+
+        if (isOrphanFragment && mergedLines.length > 0) {
+            mergedLines[mergedLines.length - 1] = mergedLines[mergedLines.length - 1].trimEnd() + ' ' + trimmed;
+        } else if (!isNewBlock && mergedLines.length > 0) {
+            const prev = mergedLines[mergedLines.length - 1].trim();
+            const prevIsBlock = !prev || prev.startsWith('* ') || prev.startsWith('- ') || /^\d+\.\s/.test(prev);
+            if (!prevIsBlock) {
+                mergedLines[mergedLines.length - 1] = mergedLines[mergedLines.length - 1].trimEnd() + ' ' + trimmed;
+            } else {
+                mergedLines.push(line);
+            }
+        } else {
+            mergedLines.push(line);
+        }
+    }
+
+    return (
+        <div className="space-y-1.5">
+            {mergedLines.map((line, i) => {
+                if (!line.trim()) return <div key={i} className="h-1" />;
+
+                const isBullet = line.trim().startsWith('* ') || line.trim().startsWith('- ');
+                const numberedMatch = line.trim().match(/^(\d+)\.\s+([\s\S]*)/);
+                const isNumbered = !!numberedMatch;
+
+                const rawLine = isBullet
+                    ? line.trim().replace(/^[\*\-] /, '')
+                    : isNumbered
+                    ? numberedMatch![2]
+                    : line.trim();
+
+                const content = renderInline(rawLine, String(i));
+
+                if (isBullet) {
+                    return (
+                        <div key={i} className="flex gap-2 items-baseline pl-1">
+                            <span className="text-eco-500 font-bold text-xs flex-shrink-0 mt-0.5">•</span>
+                            <span className="flex-1 leading-relaxed">{content}</span>
                         </div>
-                    )
+                    );
                 }
 
-                return <p key={i}>{content}</p>;
+                if (isNumbered) {
+                    return (
+                        <div key={i} className="flex gap-2 items-baseline pl-1">
+                            <span className="text-eco-500 font-semibold text-xs flex-shrink-0 w-4 mt-0.5">{numberedMatch![1]}.</span>
+                            <span className="flex-1 leading-relaxed">{content}</span>
+                        </div>
+                    );
+                }
+
+                return <p key={i} className="leading-relaxed">{content}</p>;
             })}
         </div>
     );
@@ -50,13 +116,21 @@ export const ChatWidget: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [input, setInput] = useState('');
+    const [sessionId, setSessionId] = useState<string | undefined>(undefined);
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'model', text: 'Hello! I\'m EcoBot. I can help you identify recyclable devices or find a drop-off point. How can I assist you today? 🌿' }
+        { role: 'model', text: 'Hi there! 👋 I\'m EcoBot, your e-waste recycling assistant. Here are some things you can ask me:' }
     ]);
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const SAMPLE_QUESTIONS = [
+        '♻️ How do I recycle my old phone?',
+        '🔋 Where can I drop off old batteries?',
+        '💻 What happens to recycled laptops?',
+        '🌿 Why is e-waste harmful to the environment?',
+    ];
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,20 +149,34 @@ export const ChatWidget: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // Convert internal message format to Gemini history format
-            const history = messages.map(m => ({
+            // Only send history if no session_id yet (first message)
+            const history = sessionId ? [] : messages.map(m => ({
                 role: m.role === 'user' ? 'user' : 'model',
                 parts: [{ text: m.text }]
             }));
 
-            const responseText = await sendMessageToGemini(userMessage.text, history);
+            const result = await sendMessageToGemini(userMessage.text, history, sessionId);
 
-            setMessages(prev => [...prev, { role: 'model', text: responseText }]);
+            if (result.sessionId && !sessionId) {
+                setSessionId(result.sessionId);
+            }
+
+            setMessages(prev => [...prev, { role: 'model', text: result.text, suggestions: result.suggestions }]);
         } catch (error) {
             setMessages(prev => [...prev, { role: 'model', text: "Sorry, I encountered an error.", isError: true }]);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleSampleQuestion = (question: string) => {
+        setInput(question);
+        inputRef.current?.focus();
+    };
+
+    const handleSuggestionClick = (question: string) => {
+        setInput(question);
+        inputRef.current?.focus();
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -210,7 +298,7 @@ export const ChatWidget: React.FC = () => {
                     {messages.map((msg, idx) => (
                         <div
                             key={idx}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                         >
                             <div
                                 className={`
@@ -224,8 +312,39 @@ export const ChatWidget: React.FC = () => {
                             >
                                 <FormattedText text={msg.text} />
                             </div>
+                            {/* Suggestion chips below bot messages */}
+                            {msg.role === 'model' && msg.suggestions && msg.suggestions.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2 max-w-[85%]">
+                                    {msg.suggestions.map((s, si) => (
+                                        <button
+                                            key={si}
+                                            suppressHydrationWarning
+                                            onClick={() => handleSuggestionClick(s)}
+                                            className="text-sm text-eco-700 bg-white hover:bg-eco-600 hover:text-white border border-eco-400 rounded-full px-3 py-1.5 transition-all font-sans shadow-sm hover:shadow-md active:scale-95"
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ))}
+
+                    {/* Sample questions — shown only before any user message */}
+                    {!messages.some(m => m.role === 'user') && (
+                        <div className="flex flex-wrap gap-2 pl-1">
+                            {SAMPLE_QUESTIONS.map((q, i) => (
+                                <button
+                                    key={i}
+                                    suppressHydrationWarning
+                                    onClick={() => handleSampleQuestion(q)}
+                                    className="text-sm text-eco-700 bg-white hover:bg-eco-600 hover:text-white border border-eco-400 rounded-full px-3 py-1.5 transition-all font-sans shadow-sm hover:shadow-md active:scale-95"
+                                >
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     {isLoading && (
                         <div className="flex justify-start">
                             <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-eco-100 shadow-sm flex gap-2 items-center">

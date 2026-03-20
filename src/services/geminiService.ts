@@ -1,7 +1,8 @@
 export const sendMessageToGemini = async (
     message: string,
-    history: { role: string; parts: { text: string }[] }[]
-): Promise<string> => {
+    history: { role: string; parts: { text: string }[] }[],
+    sessionId?: string
+): Promise<{ text: string; sessionId?: string; suggestions?: string[] }> => {
     try {
         const response = await fetch('/api/proxy/chat', {
             method: 'POST',
@@ -11,6 +12,7 @@ export const sendMessageToGemini = async (
             body: JSON.stringify({
                 message,
                 history,
+                session_id: sessionId,
             }),
         });
 
@@ -19,17 +21,16 @@ export const sendMessageToGemini = async (
         if (!response.ok || !data.success) {
             console.error("Chatbot Proxy Error:", data.error || data);
             
-            // Check if it's the specific missing API key error from our backend
             if (data.error?.code === 'NO_API_KEY') {
-                return "My AI ecosystem is offline: No API keys are configured on the EcoBot server.";
+                return { text: "My AI ecosystem is offline: No API keys are configured on the EcoBot server.", suggestions: [] };
             }
 
-            return "I'm having trouble connecting to the eco-network right now. Please try again in a moment.";
+            return { text: "I'm having trouble connecting to the eco-network right now. Please try again in a moment.", suggestions: [] };
         }
 
-        return data.text || "";
+        return { text: data.text || "", sessionId: data.session_id, suggestions: data.suggestions ?? [] };
     } catch (error: any) {
         console.error("Chatbot Fetch Error:", error);
-        return "I'm having trouble connecting to the eco-network right now. Please try again in a moment.";
+        return { text: "I'm having trouble connecting to the eco-network right now. Please try again in a moment.", suggestions: [] };
     }
 };
