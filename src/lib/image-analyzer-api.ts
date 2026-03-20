@@ -463,10 +463,9 @@ export async function analyzeDeviceMaterials(payload: MaterialAnalysisRequestPay
     }
 
     try {
-        const response = await fetch(`${IMAGE_ANALYZER_URL}/api/v1/analyze-materials`, {
+        const response = await fetch(`/api/proxy/analyze-materials`, {
             method: 'POST',
             headers: {
-                'X-API-Key': IMAGE_ANALYZER_API_KEY,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload),
