@@ -42,7 +42,7 @@ export function getErrorMessage(code: string): string {
 
 const IMAGE_ANALYZER_URL =
     process.env.NEXT_PUBLIC_IMAGE_ANALYZER_URL ||
-    'https://elocate-python-production.up.railway.app';
+    'https://web-production-ca2d4.up.railway.app';
 const IMAGE_ANALYZER_API_KEY =
     process.env.NEXT_PUBLIC_IMAGE_ANALYZER_API_KEY ||
     'XBZLmUDmGb0TxCGwkjPoHPAIuXPYTy0i5iOQ5HOR3Pk';
