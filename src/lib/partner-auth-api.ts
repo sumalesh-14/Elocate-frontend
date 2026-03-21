@@ -1,18 +1,11 @@
 import axios from 'axios';
+import { getToken } from '@/lib/sign-in-auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/elocate';
 
-// Helper to get auth token from localStorage
-const getAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
-  return null;
-};
-
 // Helper to get auth headers
 const getAuthHeaders = () => {
-  const token = getAuthToken();
+  const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

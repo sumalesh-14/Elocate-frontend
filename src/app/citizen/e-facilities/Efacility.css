@@ -2,7 +2,26 @@
   padding: 0;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mapboxgl-popup-close-button {
+  padding: 8px 10px;
+  border-radius: 0 8px 0 8px;
+  font-size: 16px;
+  color: #6b7280;
+  transition: all 0.2s;
+  outline: none !important;
+  border: none;
+}
+
+.mapboxgl-popup-close-button:hover {
+  background-color: #f3f4f6;
+  color: #ef4444;
+}
+
+.mapboxgl-popup-close-button:focus {
+  outline: none !important;
 }
 
 .mapboxgl-ctrl-geocoder {

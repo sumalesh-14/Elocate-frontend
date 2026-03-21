@@ -2,8 +2,6 @@
  * Facility API utility functions
  */
 
-import { facility as staticFacilityData } from '@/app/citizen/data/facility';
-
 interface Facility {
     id: string;
     address: string;
@@ -57,11 +55,11 @@ export async function fetchFacilities(
         });
 
         if (!response.ok) {
-            console.warn(`API returned ${response.status}. Falling back to static data.`);
+            console.warn(`API returned ${response.status}. Displaying empty state.`);
             return {
-                content: staticFacilityData.slice(page * size, (page + 1) * size) as Facility[],
-                totalPages: Math.ceil(staticFacilityData.length / size),
-                totalElements: staticFacilityData.length
+                content: [],
+                totalPages: 0,
+                totalElements: 0
             };
         }
 
@@ -84,9 +82,9 @@ export async function fetchFacilities(
     } catch (error) {
         console.error('Error fetching facilities:', error);
         return {
-            content: staticFacilityData.slice(page * size, (page + 1) * size) as Facility[],
-            totalPages: Math.ceil(staticFacilityData.length / size),
-            totalElements: staticFacilityData.length
+            content: [],
+            totalPages: 0,
+            totalElements: 0
         };
     }
 }

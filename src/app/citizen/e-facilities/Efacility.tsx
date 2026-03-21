@@ -40,6 +40,7 @@ const FacilityMap: React.FC = () => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const mapRef = useRef<Map | null>(null);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const routePopupRef = useRef<mapboxgl.Popup | null>(null);
 
   useEffect(() => {
     try {
@@ -53,15 +54,15 @@ const FacilityMap: React.FC = () => {
 
       setIsLoading(true);
       getLocation().then((coordinates) => {
-        if (coordinates) {
+        if (coordinates && coordinates.coordinates) {
           setClientLocation(coordinates.coordinates);
         } else {
-          setClientLocation([75.7139, 19.7515]);
+          setClientLocation(null);
         }
         setIsLoading(false);
       }).catch((err) => {
-        console.error("Error getting location:", err);
-        setClientLocation([75.7139, 19.7515]); // Default location
+        console.warn("Error getting location:", err);
+        setClientLocation(null);
         setIsLoading(false);
       });
     } catch (err) {
@@ -132,6 +133,11 @@ const FacilityMap: React.FC = () => {
             .sort((a, b) => a.distance - b.distance);
 
           setFacilityData(sortedFacilities);
+          if (sortedFacilities.length > 0) {
+            setSelectedFacility(0);
+          } else {
+            setSelectedFacility(null);
+          }
           setIsLoading(false);
         } catch (err) {
           console.error("Error loading facilities:", err);
@@ -215,7 +221,7 @@ const FacilityMap: React.FC = () => {
 
           // Find the nearest facility
           const nearestFacility = recalculatedFacilities[0];
-          getDirections(center, [nearestFacility.lon, nearestFacility.lat]);
+          getDirections(center, [nearestFacility.lon, nearestFacility.lat], nearestFacility.name);
           setSelectedFacility(0);
         }
       }
@@ -276,19 +282,36 @@ const FacilityMap: React.FC = () => {
         .setLngLat([facility.lon, facility.lat])
         .setPopup(popup);
 
+      // Append always-visible name label to the marker DOM element
+      const markerEl = marker.getElement();
+      markerEl.style.zIndex = selectedFacility === index ? "100" : "1";
+      
+      const labelDiv = document.createElement('div');
+      labelDiv.className = `absolute top-full left-1/2 -translate-x-1/2 mt-0.5 px-2 py-0.5 bg-white text-gray-800 text-[10px] sm:text-[11px] font-bold rounded shadow-md border border-gray-200 whitespace-nowrap pointer-events-none transition-all duration-200 ${selectedFacility === index ? 'opacity-0 invisible' : 'opacity-90 hover:opacity-100'}`;
+      labelDiv.innerText = facility.name.length > 25 ? facility.name.substring(0, 25) + '...' : facility.name;
+      markerEl.appendChild(labelDiv);
+
       markersRef.current.push(marker);
 
       marker.addTo(map);
 
       marker.getElement().addEventListener("click", () => {
-        const marker = markersRef.current[index];
-        const popup = marker.getPopup();
+        // Enforce singlular popup mode: Close any other open markers before rendering
+        markersRef.current.forEach((m, idx) => {
+          if (idx !== index) {
+            const extraPopup = m.getPopup();
+            if (extraPopup && extraPopup.isOpen()) extraPopup.remove();
+          }
+        });
 
-        if (popup) {
-          if (popup.isOpen()) {
-            popup.remove();
+        const activeMarker = markersRef.current[index];
+        const activePopup = activeMarker.getPopup();
+
+        if (activePopup) {
+          if (activePopup.isOpen()) {
+            activePopup.remove();
           } else {
-            popup.addTo(mapRef.current!);
+            activePopup.addTo(mapRef.current!);
           }
         }
         setSelectedFacility(index);
@@ -312,13 +335,23 @@ const FacilityMap: React.FC = () => {
         marker.getElement().className = `mapboxgl-marker mapboxgl-marker-anchor-center ${selectedFacility === index ? "pulse-marker" : ""
           }`;
 
-        // Update marker scale
+        // Update marker scale and bolden the label if selected
         if (selectedFacility === index) {
           marker.setDraggable(false);
           marker.getElement().style.transform = `translate(-50%, -50%) scale(1.2)`;
+          marker.getElement().style.zIndex = "100";
+          const label = marker.getElement().querySelector('div.whitespace-nowrap') as HTMLElement;
+          if (label) {
+            label.className = "absolute top-full left-1/2 -translate-x-1/2 mt-0.5 px-2 py-0.5 bg-white text-gray-800 text-[10px] sm:text-[11px] font-bold rounded shadow-md border border-gray-200 whitespace-nowrap pointer-events-none transition-all duration-200 opacity-0 invisible";
+          }
         } else {
           marker.setDraggable(false);
           marker.getElement().style.transform = `translate(-50%, -50%) scale(1.0)`;
+          marker.getElement().style.zIndex = "1";
+          const label = marker.getElement().querySelector('div.whitespace-nowrap') as HTMLElement;
+          if (label) {
+            label.className = "absolute top-full left-1/2 -translate-x-1/2 mt-0.5 px-2 py-0.5 bg-white text-gray-800 text-[10px] sm:text-[11px] font-bold rounded shadow-md border border-gray-200 whitespace-nowrap pointer-events-none transition-all duration-200 opacity-90 hover:opacity-100";
+          }
         }
       });
     }
@@ -326,7 +359,8 @@ const FacilityMap: React.FC = () => {
 
   const getDirections = async (
     origin: [number, number],
-    destination: [number, number]
+    destination: [number, number],
+    facilityName?: string
   ) => {
     try {
       const response = await fetch(
@@ -374,22 +408,6 @@ const FacilityMap: React.FC = () => {
           bounds.extend(coord)
         );
         mapRef.current.fitBounds(bounds, { padding: 60 });
-
-        const routePopup = new mapboxgl.Popup({
-          closeButton: true,
-          closeOnClick: false,
-          offset: 25,
-          className: "directions-popup",
-        })
-          .setLngLat(data.routes[0].geometry.coordinates[Math.floor(data.routes[0].geometry.coordinates.length / 2)])
-          .setHTML(
-            `<div class="p-3">
-              <h3 class="font-bold text-indigo-600 text-lg mb-1">Route Information</h3>
-              <p class="text-md mb-1">Distance: <span class="font-semibold">${distanceInKm.toFixed(2)} km</span></p>
-              <p class="text-md">Estimated time: <span class="font-semibold">${durationInMinutes} minutes</span></p>
-            </div>`
-          )
-          .addTo(mapRef.current);
       }
     } catch (error) {
       console.error("Error fetching directions:", error);
@@ -414,7 +432,7 @@ const FacilityMap: React.FC = () => {
       // Get directions from current location to selected facility
       if (clientLocation && selectedFacility < facilityData.length) {
         const selected = facilityData[selectedFacility];
-        getDirections(clientLocation, [selected.lon, selected.lat]);
+        getDirections(clientLocation, [selected.lon, selected.lat], selected.name);
       }
     }
   }, [selectedFacility, facilityData, clientLocation]);
@@ -574,7 +592,7 @@ const FacilityMap: React.FC = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (clientLocation) {
-                              getDirections(clientLocation, [info.lon, info.lat]);
+                              getDirections(clientLocation, [info.lon, info.lat], info.name);
                             }
                           }}
                         >

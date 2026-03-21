@@ -15,7 +15,7 @@ interface SignInProps {
   initialView?: AuthView;
 }
 
-type AuthView = 'login' | 'role-selection' | 'register-citizen' | 'register-intermediary' | 'otp-verify' | 'pending-approval' | 'account-pending';
+type AuthView = 'login' | 'role-selection' | 'register-citizen' | 'register-intermediary' | 'otp-verify' | 'pending-approval' | 'account-pending' | 'forgot-password';
 type LoginMethod = 'password' | 'otp';
 
 const INDIAN_STATES = [
@@ -97,7 +97,7 @@ const LeftPanel = () => (
         <div className="w-16 h-16 bg-gradient-to-br from-[#1c4b2c] to-[#0a2518] border border-[#2d663f] rounded-3xl flex items-center justify-center shadow-[0_16px_40px_rgba(34,136,62,0.25)] shrink-0 animate-float">
           <RecycleSVG />
         </div>
-        <span style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-white font-bold text-[28px] tracking-wide">
+        <span className="text-white font-bold text-[28px] tracking-wide">
           ELocate
         </span>
       </div>
@@ -107,7 +107,7 @@ const LeftPanel = () => (
         <span className="text-[10px] font-bold text-white/90 tracking-[1.5px] uppercase">Elocate Ecosystem</span>
       </div>
 
-      <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[42px] xl:text-[52px] font-bold text-white leading-[1.1] mb-6">
+      <h2 className="text-[42px] xl:text-[52px] font-bold text-white leading-[1.1] mb-6">
         The Future of<br />
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3bdf6f] to-[#a2f0be]">Waste Recovery.</span>
       </h2>
@@ -124,7 +124,7 @@ const LeftPanel = () => (
           { val: '4.9★', lbl: 'Rating', clr: 'text-[#eab308]' }
         ].map((stat) => (
           <div key={stat.lbl} className="flex flex-col items-center">
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[32px] xl:text-[36px] font-bold text-white leading-none mb-2 flex items-baseline">
+            <div className="text-[32px] xl:text-[36px] font-bold text-white leading-none mb-2 flex items-baseline">
               {stat.val.replace(/[+%★]/, '')}
               <span className={`text-[20px] ${stat.clr} ml-0.5`}>{stat.val.match(/[+%★]/)?.[0]}</span>
             </div>
@@ -149,10 +149,12 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [registrationType, setRegistrationType] = useState<'citizen' | 'partner'>('citizen');
   const [fileName, setFileName] = useState<string | null>(null);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [rememberMe, setRememberMe] = useState(true);
-
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPass, setLoginPass] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
 
   const [citizenData, setCitizenData] = useState({
     name: '', email: '', mobile: '', address: '', city: '', state: '',
@@ -224,6 +226,33 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
     }
   };
 
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      showToast('Please enter your email', 'error');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/v1/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to send reset link');
+      }
+      showToast(data.message || 'Password reset link sent to your email', 'success');
+      setView('login');
+      setForgotEmail('');
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (view === 'register-citizen' && citizenData.password !== citizenData.confirmPassword) {
@@ -234,9 +263,34 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
       const isCitizen = view === 'register-citizen';
       setRegistrationType(isCitizen ? 'citizen' : 'partner');
       const endpoint = isCitizen ? '/api/v1/auth/register' : '/api/v1/partner-auth/register';
+
+      // Upload documents first (partner only)
+      let documentUrls: string[] | undefined;
+      if (!isCitizen) {
+        if (documentFiles.length === 0) {
+          showToast('At least one verification document is required', 'error');
+          setIsLoading(false);
+          return;
+        }
+        const uploadedUrls: string[] = [];
+        for (const file of documentFiles) {
+          const fd = new FormData();
+          fd.append('file', file);
+          const uploadRes = await fetch('/api/v1/partner-auth/upload-document', { method: 'POST', body: fd });
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok) {
+            showToast(uploadData.error || `Failed to upload ${file.name}`, 'error');
+            setIsLoading(false);
+            return;
+          }
+          uploadedUrls.push(uploadData.documentUrl);
+        }
+        documentUrls = uploadedUrls;
+      }
+
       const payload = isCitizen
         ? { fullName: citizenData.name, email: citizenData.email, mobileNumber: citizenData.mobile, password: citizenData.password, role: 'CITIZEN', address: citizenData.address, latitude: parseFloat(citizenData.latitude) || 0, longitude: parseFloat(citizenData.longitude) || 0, pincode: citizenData.pincode, city: citizenData.city, state: citizenData.state }
-        : { fullName: facilityData.name, email: facilityData.email, password: facilityData.password, mobileNumber: facilityData.contactNumber, registrationNumber: facilityData.registrationNumber, facilityName: facilityData.name, address: facilityData.address.address, latitude: facilityData.address.latitude, longitude: facilityData.address.longitude, capacity: facilityData.capacity, contactNumber: facilityData.contactNumber, operatingHours: facilityData.operatingHours, state: facilityData.address.state, pincode: facilityData.address.pincode };
+        : { fullName: facilityData.name, email: facilityData.email, password: facilityData.password, mobileNumber: facilityData.contactNumber, registrationNumber: facilityData.registrationNumber, facilityName: facilityData.name, address: facilityData.address.address, latitude: facilityData.address.latitude, longitude: facilityData.address.longitude, capacity: facilityData.capacity, contactNumber: facilityData.contactNumber, operatingHours: facilityData.operatingHours, state: facilityData.address.state, pincode: facilityData.address.pincode, documentUrls };
       const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await response.json();
       if (!response.ok) { 
@@ -424,7 +478,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   // ══════════════════════════════════════════════════════════════════════════════
   const renderLoginView = () => renderRightShell(
       <div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.1] mb-2 flex items-center gap-2 flex-nowrap whitespace-nowrap">
+        <h1 className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.1] mb-2 flex items-center gap-2 flex-nowrap whitespace-nowrap">
           <span>Welcome</span><span className="text-[#22883e]">Back.</span>
         </h1>
         <p className="text-[13px] text-[#7a9e8a] font-normal mb-8 leading-relaxed max-w-[280px]">
@@ -449,7 +503,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
 
           {loginMethod === 'password' && (
             <Field label="Security Password" icon={Lock}
-              rightSlot={<a href="#" className="text-[11px] text-[#22883e] font-bold hover:underline underline-offset-2">Forgot?</a>}>
+              rightSlot={<button type="button" onClick={() => setView('forgot-password')} className="text-[11px] text-[#22883e] font-bold hover:underline underline-offset-2">Forgot?</button>}>
               <input type={showPass ? 'text' : 'password'} value={loginPass} onChange={e => setLoginPass(e.target.value)}
                 className={`${inputCls()} pr-10`} placeholder="Enter your password" required />
               <button type="button" onClick={() => setShowPass(!showPass)}
@@ -476,7 +530,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   // ══════════════════════════════════════════════════════════════════════════════
   const renderRoleView = () => renderRightShell(
       <div className="flex flex-col items-center text-center">
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.15] mb-2 flex justify-center items-center gap-2 flex-nowrap whitespace-nowrap">
+        <h1 className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.15] mb-2 flex justify-center items-center gap-2 flex-nowrap whitespace-nowrap">
           <span>Join</span><span className="text-[#22883e]">ELocate</span>
         </h1>
         <p className="text-[13px] text-[#7a9e8a] mb-8 text-center">Choose your role in the ecosystem.</p>
@@ -509,7 +563,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   // ══════════════════════════════════════════════════════════════════════════════
   const renderCitizenView = () => renderRightShell(
       <div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[34px] lg:text-[32px] font-bold text-[#0a2518] leading-[1.15] mb-1 flex items-center gap-2 flex-nowrap whitespace-nowrap">
+        <h1 className="text-[34px] lg:text-[32px] font-bold text-[#0a2518] leading-[1.15] mb-1 flex items-center gap-2 flex-nowrap whitespace-nowrap">
           <span>Create</span><span className="text-[#22883e]">Account</span>
         </h1>
         <p className="text-[12px] text-[#7a9e8a] mb-5">Join the sustainable revolution today.</p>
@@ -595,7 +649,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   // ══════════════════════════════════════════════════════════════════════════════
   const renderIntermediaryView = () => renderRightShell(
       <div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.15] mb-1 flex items-center gap-2 flex-nowrap whitespace-nowrap">
+        <h1 className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.15] mb-1 flex items-center gap-2 flex-nowrap whitespace-nowrap">
           <span>Facility</span><span className="text-[#22883e]">Portal</span>
         </h1>
         <p className="text-[13px] text-[#7a9e8a] mb-7">Register your organization as an official partner.</p>
@@ -674,17 +728,46 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
 
           {/* File upload */}
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.8px] uppercase text-[#3a5444] mb-1.5">Verification Documents</p>
-            <label className="flex flex-col items-center justify-center w-full min-h-[100px] border-2 border-dashed border-[#cfe0d3] rounded-xl cursor-pointer hover:border-[#3bdf6f] hover:bg-[#f6faf7] transition-all group">
-              <UploadCloud size={22} className="text-[#9ab5a2] group-hover:text-[#22883e] mb-2 transition-colors" />
-              <p className="text-[12px] font-semibold text-[#3a5444]">Upload documentation</p>
-              <p className="text-[11px] text-[#9ab5a2] mt-0.5">PDF, JPG or PNG — max 10MB</p>
-              <input type="file" className="hidden" onChange={e => e.target.files?.[0] && setFileName(e.target.files[0].name)} />
+            <p className="text-[11px] font-semibold tracking-[0.8px] uppercase text-[#3a5444] mb-1.5">
+              Verification Documents <span className="text-red-500">*</span>
+              <span className="text-[#9ab5a2] font-normal ml-1">(1–3 files)</span>
+            </p>
+            <label className={`flex flex-col items-center justify-center w-full min-h-[90px] border-2 border-dashed rounded-xl transition-all group ${documentFiles.length >= 3 ? 'border-[#cbd5e1] opacity-50 cursor-not-allowed' : 'border-[#cfe0d3] cursor-pointer hover:border-[#3bdf6f] hover:bg-[#f6faf7]'}`}>
+              <UploadCloud size={20} className="text-[#9ab5a2] group-hover:text-[#22883e] mb-1.5 transition-colors" />
+              <p className="text-[12px] font-semibold text-[#3a5444]">
+                {documentFiles.length >= 3 ? 'Maximum 3 files reached' : 'Click to add document'}
+              </p>
+              <p className="text-[11px] text-[#9ab5a2] mt-0.5">PDF, JPG or PNG — max 10MB each</p>
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png"
+                disabled={documentFiles.length >= 3}
+                onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (f && documentFiles.length < 3) {
+                    setDocumentFiles(prev => [...prev, f]);
+                    setFileName(f.name);
+                  }
+                  e.target.value = '';
+                }}
+              />
             </label>
-            {fileName && (
-              <div className="mt-2 flex items-center gap-2.5 p-2.5 bg-emerald-50 border border-emerald-100 rounded-lg">
-                <CheckCircle size={14} className="text-emerald-500 shrink-0" />
-                <span className="text-[12px] font-medium text-emerald-800 truncate">{fileName}</span>
+            {documentFiles.length > 0 && (
+              <div className="mt-2 flex flex-col gap-1.5">
+                {documentFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-100 rounded-lg">
+                    <CheckCircle size={13} className="text-emerald-500 shrink-0" />
+                    <span className="text-[11px] font-medium text-emerald-800 truncate flex-1">{f.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setDocumentFiles(prev => prev.filter((_, idx) => idx !== i))}
+                      className="text-emerald-400 hover:text-red-500 transition-colors shrink-0"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -704,7 +787,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
         <div className="w-16 h-16 bg-[#f0faf3] border-2 border-[#c5e8d0] rounded-2xl flex items-center justify-center mx-auto mb-6">
           <Mail size={28} className="text-[#22883e]" strokeWidth={1.5} />
         </div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[28px] font-bold text-[#0a2518] mb-2">
+        <h1 className="text-[28px] font-bold text-[#0a2518] mb-2">
           Verify Your <span className="text-[#22883e]">Identity</span>
         </h1>
         <p className="text-[13px] text-[#7a9e8a] mb-8 max-w-[280px] mx-auto">
@@ -745,7 +828,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
         <div className="w-16 h-16 bg-blue-50 border-2 border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
           <Building2 size={28} className="text-blue-500" strokeWidth={1.5} />
         </div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[28px] font-bold text-[#0a2518] mb-2">
+        <h1 className="text-[28px] font-bold text-[#0a2518] mb-2">
           Application <span className="text-blue-500">Received</span>
         </h1>
         <p className="text-[13px] text-[#7a9e8a] mb-8 max-w-[300px] mx-auto">
@@ -778,7 +861,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
         <div className="w-16 h-16 bg-amber-50 border-2 border-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
           <Lock size={28} className="text-amber-500" strokeWidth={1.5} />
         </div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[28px] font-bold text-[#0a2518] mb-2">
+        <h1 className="text-[28px] font-bold text-[#0a2518] mb-2">
           Access <span className="text-amber-500">Pending</span>
         </h1>
         <p className="text-[13px] text-[#7a9e8a] mb-8 max-w-[300px] mx-auto">
@@ -800,11 +883,36 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
       </div>
   );
 
+  // ══════════════════════════════════════════════════════════════════════════════
+  // VIEW: FORGOT PASSWORD
+  // ══════════════════════════════════════════════════════════════════════════════
+  const renderForgotPasswordView = () => renderRightShell(
+      <div>
+        <h1 className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.1] mb-2 flex flex-col whitespace-nowrap">
+          <span>Reset</span><span className="text-[#22883e]">Password.</span>
+        </h1>
+        <p className="text-[13px] text-[#7a9e8a] font-normal mb-8 leading-relaxed max-w-[280px]">
+          Enter your registered email and we will send you a link to reset your password.
+        </p>
+
+        <form onSubmit={handleForgotPasswordSubmit} className="flex flex-col gap-5">
+          <Field label="Email Address" icon={Mail}>
+            <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+              className={inputCls()} placeholder="name@example.com" required />
+          </Field>
+
+          <div className="pt-2">
+            {renderSubmitBtn('Send Reset Link')}
+          </div>
+        </form>
+      </div>
+  );
+
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-[100] flex bg-white" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div className="fixed inset-0 z-[100] flex bg-white" style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
         @keyframes float {
           0% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
@@ -820,6 +928,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
       {view === 'otp-verify' && renderOtpView()}
       {view === 'pending-approval' && renderPendingView()}
       {view === 'account-pending' && renderAccountPendingView()}
+      {view === 'forgot-password' && renderForgotPasswordView()}
     </div>
   );
 };

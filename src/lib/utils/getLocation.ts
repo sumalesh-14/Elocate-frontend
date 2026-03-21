@@ -29,13 +29,13 @@ const getLocation = (): Promise<{ coordinates: [number, number] | null; address:
               });
           },
           (error) => {
-            console.error(error);
+            console.warn("Location access denied or unavailable:", error.message);
             resolve({ coordinates: null, address: null });
           },
           options
         );
       } else {
-        console.error("Geolocation is not supported by this browser.");
+        console.warn("Geolocation is not supported by this browser.");
         resolve({ coordinates: null, address: null });
       }
     });

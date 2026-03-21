@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { partnerAuthApi } from '@/lib/partner-auth-api';
+import { getToken } from '@/lib/sign-in-auth';
 
 // --- Types ---
 
@@ -48,6 +49,7 @@ interface Application {
   isVerified?: boolean;
   createdAt?: string;
   remarks?: string;
+  documentUrls?: string[];
 }
 
 export const PartnerManagement: React.FC = () => {
@@ -127,7 +129,7 @@ export const PartnerManagement: React.FC = () => {
     setLoading(true);
     try {
       // Get auth token
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = getToken();
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
@@ -180,22 +182,23 @@ export const PartnerManagement: React.FC = () => {
       // Transform API data to match UI format
       const transformedApps: Application[] = (data.content || []).map((p: any) => ({
         id: p.id,
-        name: p.facilityName || 'Unknown',
+        name: p.facilityName || p.name || 'Unknown',
         regDate: p.createdAt ? new Date(p.createdAt).toISOString().split('T')[0] : '',
         city: `${p.state || ''}, ${p.pincode || ''}`.trim() || 'Unknown',
         status: (approvalTab === 'pending' ? 'pending' : 'rejected') as any,
         documents: p.isVerified ? 'Verified' : 'Review Needed',
         email: p.email || '',
-        phone: p.contactNumber || '',
+        phone: p.mobileNumber || '',
         registrationNumber: p.registrationNumber,
-        facilityName: p.facilityName,
+        facilityName: p.facilityName || p.name,
         address: p.address,
         state: p.state,
         pincode: p.pincode,
         approvalStatus: p.approvalStatus,
         isVerified: p.isVerified,
         createdAt: p.createdAt,
-        remarks: p.remarks
+        remarks: p.remarks,
+        documentUrls: p.documentUrls || (p.documentUrl ? [p.documentUrl] : []),
       }));
 
       setApplications(transformedApps);
@@ -1173,25 +1176,59 @@ export const PartnerManagement: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Document Status</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={selectedApp.documents}
-                          disabled={true}
-                          className="w-full px-5 py-3.5 bg-gray-100/50 border border-gray-100 rounded-2xl text-sm font-bold text-eco-600/70"
-                        />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                          {selectedApp.documents === 'Verified' ? (
-                            <ShieldCheck size={18} className="text-green-500" />
-                          ) : (
-                            <AlertCircle size={18} className="text-amber-500" />
-                          )}
-                        </div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Owner / Contact Person</label>
+                      <input
+                        type="text"
+                        value={selectedApp.phone || ''}
+                        disabled
+                        className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-sm font-medium text-eco-950/60"
+                      />
+                    </div>                  </div>
+                </div>
+
+                {/* Section: Uploaded Certificates */}
+                {selectedApp.documentUrls && selectedApp.documentUrls.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 mb-1">
+                      <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                        <FileText size={18} />
                       </div>
+                      <h4 className="text-sm font-black text-eco-950 uppercase tracking-widest">
+                        Uploaded Certificates
+                        <span className="ml-2 text-[10px] font-bold text-gray-400 normal-case tracking-normal">
+                          ({selectedApp.documentUrls.length} file{selectedApp.documentUrls.length > 1 ? 's' : ''})
+                        </span>
+                      </h4>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {selectedApp.documentUrls.map((url, i) => {
+                        const isPdf = url.toLowerCase().includes('.pdf');
+                        const filename = url.split('/').pop()?.split('?')[0] || `Document ${i + 1}`;
+                        return (
+                          <div key={i} className="flex items-center gap-3 p-3.5 bg-amber-50/50 border border-amber-100 rounded-2xl">
+                            <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                              <FileText size={16} className="text-amber-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-gray-700 truncate">
+                                {isPdf ? 'PDF Document' : 'Image'} {i + 1}
+                              </p>
+                              <p className="text-[10px] text-gray-400 truncate font-mono">{filename}</p>
+                            </div>
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-xl text-xs font-bold hover:bg-amber-50 transition-all shrink-0"
+                            >
+                              <Eye size={13} /> View
+                            </a>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                </div>
+                )}
 
                 {isEditing && (
                   <div className="pt-4 flex gap-4">
