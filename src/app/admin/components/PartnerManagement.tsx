@@ -1215,14 +1215,32 @@ export const PartnerManagement: React.FC = () => {
                               </p>
                               <p className="text-[10px] text-gray-400 truncate font-mono">{filename}</p>
                             </div>
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const token = getToken();
+                                  const headers: HeadersInit = {};
+                                  if (token) headers['Authorization'] = `Bearer ${token}`;
+                                  const res = await fetch(
+                                    `/api/v1/partner-auth/document-url?url=${encodeURIComponent(url)}`,
+                                    { headers }
+                                  );
+                                  const data = await res.json();
+                                  const presignedUrl = data.presignedUrl || data.url || data;
+                                  if (presignedUrl && typeof presignedUrl === 'string') {
+                                    window.open(presignedUrl, '_blank', 'noopener,noreferrer');
+                                  } else {
+                                    showToast('Failed to get document URL', 'error');
+                                  }
+                                } catch {
+                                  showToast('Error opening document', 'error');
+                                }
+                              }}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-xl text-xs font-bold hover:bg-amber-50 transition-all shrink-0"
                             >
                               <Eye size={13} /> View
-                            </a>
+                            </button>
                           </div>
                         );
                       })}
