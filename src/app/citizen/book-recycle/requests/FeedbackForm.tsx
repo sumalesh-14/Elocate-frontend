@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { MdStar, MdClose, MdSend, MdExpandMore } from "react-icons/md";
 import { toast } from "react-toastify";
+import { getToken } from "@/app/citizen/sign-in/auth";
 
 interface FeedbackFormProps {
     recycleRequestId: string;
@@ -53,10 +54,12 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
         setLoading(true);
 
         try {
+            const token = getToken();
             const response = await fetch(`/api/v1/feedback?userId=${userId}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    ...(token && { "Authorization": `Bearer ${token}` }),
                 },
                 body: JSON.stringify({
                     recycleRequestId,

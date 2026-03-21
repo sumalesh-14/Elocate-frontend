@@ -20,7 +20,13 @@ export async function POST(request: Request) {
             body: JSON.stringify(body),
         });
 
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            const errorText = await response.text();
+            data = { error: "Unknown Error", message: errorText || "Registration failed" };
+        }
 
         if (!response.ok) {
             return NextResponse.json(data, { status: response.status });

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MdStar, MdCalendarToday } from "react-icons/md";
 import { format } from "date-fns";
+import { getToken } from "@/app/citizen/sign-in/auth";
 
 interface Feedback {
     id: string;
@@ -17,22 +18,31 @@ interface Feedback {
 interface FeedbackViewProps {
     recycleRequestId: string;
     onAddFeedback?: () => void;
+    onFeedbackStatus?: (hasFeedback: boolean) => void;
 }
 
-export const FeedbackView: React.FC<FeedbackViewProps> = ({ recycleRequestId, onAddFeedback }) => {
+export const FeedbackView: React.FC<FeedbackViewProps> = ({ recycleRequestId, onAddFeedback, onFeedbackStatus }) => {
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        const abortController = new AbortController();
+
         const fetchFeedback = async () => {
             try {
+                const token = getToken();
                 const response = await fetch(`/api/v1/feedback/request/${recycleRequestId}`, {
+                    headers: {
+                        ...(token && { "Authorization": `Bearer ${token}` }),
+                    },
                     credentials: "include",
+                    signal: abortController.signal,
                 });
 
                 if (response.status === 404) {
                     setFeedback(null);
+                    if (onFeedbackStatus) onFeedbackStatus(false);
                     return;
                 }
 
@@ -44,7 +54,9 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ recycleRequestId, on
 
                 const data = await response.json();
                 setFeedback(data);
-            } catch (err) {
+                if (onFeedbackStatus) onFeedbackStatus(true);
+            } catch (err: any) {
+                if (err.name === 'AbortError') return;
                 console.error("Error fetching feedback:", err);
                 setError(err instanceof Error ? err.message : "Failed to load feedback");
             } finally {
@@ -53,15 +65,17 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ recycleRequestId, on
         };
 
         fetchFeedback();
+
+        return () => {
+            abortController.abort();
+        };
     }, [recycleRequestId]);
 
     if (loading) {
         return (
-            <div className="bg-white rounded-2xl p-6 border-2 border-gray-100">
-                <div className="animate-pulse space-y-3">
-                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                </div>
+            <div className="text-center py-12 bg-white/40 rounded-[32px] border-2 border-dashed border-blue-100/50 flex flex-col items-center justify-center">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-blue-500 font-black text-xs uppercase tracking-widest animate-pulse">Syncing Feedback...</p>
             </div>
         );
     }

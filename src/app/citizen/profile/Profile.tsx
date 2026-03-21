@@ -244,9 +244,7 @@ const ProfilePage = () => {
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-[2.5rem] shadow-2xl shadow-emerald-900/5 p-8 border border-emerald-50 relative overflow-hidden group h-full"
             >
-              <div className="absolute top-0 right-0 p-4">
-                <Sparkles className="text-emerald-200" size={24} />
-              </div>
+
 
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-6">
@@ -265,7 +263,7 @@ const ProfilePage = () => {
                 </div>
 
                 <h2 className="text-2xl font-black text-slate-900 mb-1">{profile?.user?.fullName}</h2>
-                <p className="text-emerald-600 font-bold uppercase tracking-widest text-[10px] mb-6">Citizen Advocate</p>
+                <p className="text-emerald-600 font-bold uppercase tracking-widest text-[10px] mb-6">Citizen</p>
 
                 <div className="grid grid-cols-1 gap-4 w-full pt-6 border-t border-slate-50">
                   <div className="bg-emerald-50/50 p-5 rounded-3xl text-center">
@@ -560,33 +558,7 @@ const ProfilePage = () => {
               </div>
             </motion.div>
 
-            {/* NEW: Referral Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-gradient-to-br from-emerald-900 to-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl"
-            >
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm">
-                    <Users className="text-emerald-400" size={20} />
-                  </div>
-                  <h3 className="text-lg font-bold uppercase tracking-tight">Citizen Network</h3>
-                </div>
-                <p className="text-emerald-100/60 text-xs leading-relaxed mb-6">Invite fellow citizens and unlock the <b>Premium Recycler</b> badge.</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-3">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="w-8 h-8 rounded-full border-2 border-slate-900 bg-emerald-800 flex items-center justify-center text-[10px] font-bold">U{i}</div>
-                    ))}
-                    <div className="w-8 h-8 rounded-full border-2 border-slate-900 bg-white/10 flex items-center justify-center text-[10px] font-bold">+</div>
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 ml-2">Progress: 66%</p>
-                </div>
-              </div>
-              <TrendingUp className="absolute bottom-[-20px] right-[-20px] text-white/5 w-40 h-40 -rotate-12" />
-            </motion.div>
+
           </div>
         </div>
       </div>

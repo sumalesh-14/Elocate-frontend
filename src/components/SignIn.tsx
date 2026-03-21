@@ -41,7 +41,7 @@ const Field = ({
   label: string; hint?: React.ReactNode; icon?: React.ElementType;
   rightSlot?: React.ReactNode; children: React.ReactNode;
 }) => (
-  <div className="flex flex-col gap-2">
+  <div className="flex flex-col gap-1.5">
     <div className="flex items-center justify-between">
       <label className="text-[11px] font-bold tracking-[0.8px] uppercase text-[#3a5444]">{label}</label>
       {rightSlot}
@@ -59,9 +59,9 @@ const Field = ({
 );
 
 const inputCls = (hasIcon = true) =>
-  `w-full min-h-[46px] bg-[#fdfdfd] border-2 border-solid !border-[#cbd5e1] rounded-xl text-[14px] text-[#0d2b1a] placeholder:text-[#94a3b8] outline-none transition-all focus:bg-white focus:!border-[#22883e] focus:ring-4 focus:ring-[#22883e]/10 relative z-0 ${hasIcon ? 'pl-10 pr-4' : 'px-4'}`;
+  `w-full min-h-[38px] bg-[#fdfdfd] border-2 border-solid !border-[#cbd5e1] rounded-[10px] text-[13px] text-[#0d2b1a] placeholder:text-[#94a3b8] outline-none transition-all focus:bg-white focus:!border-[#22883e] focus:ring-4 focus:ring-[#22883e]/10 relative z-0 ${hasIcon ? 'pl-11 pr-3' : 'px-3'}`;
 
-const selectCls = `w-full min-h-[46px] bg-[#fdfdfd] border-2 border-solid !border-[#cbd5e1] rounded-xl text-[14px] text-[#0d2b1a] pl-4 pr-10 outline-none appearance-none transition-all focus:bg-white focus:!border-[#22883e] focus:ring-4 focus:ring-[#22883e]/10 cursor-pointer relative z-0`;
+const selectCls = `w-full min-h-[38px] bg-[#fdfdfd] border-2 border-solid !border-[#cbd5e1] rounded-[10px] text-[13px] text-[#0d2b1a] pl-3 pr-8 outline-none appearance-none transition-all focus:bg-white focus:!border-[#22883e] focus:ring-4 focus:ring-[#22883e]/10 cursor-pointer relative z-0`;
 
 // ─── Recycle Icon SVG ─────────────────────────────────────────────────────────
 const RecycleSVG = () => (
@@ -239,7 +239,12 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
         : { fullName: facilityData.name, email: facilityData.email, password: facilityData.password, mobileNumber: facilityData.contactNumber, registrationNumber: facilityData.registrationNumber, facilityName: facilityData.name, address: facilityData.address.address, latitude: facilityData.address.latitude, longitude: facilityData.address.longitude, capacity: facilityData.capacity, contactNumber: facilityData.contactNumber, operatingHours: facilityData.operatingHours, state: facilityData.address.state, pincode: facilityData.address.pincode };
       const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await response.json();
-      if (!response.ok) { showToast(data.message || 'Registration failed', 'error'); return; }
+      if (!response.ok) { 
+          // Parse potential nested error bodies from the proxy or immediate backend error mappings
+          const errorMsg = data.message || (typeof data.error === 'string' ? data.error : data.error?.message) || 'Registration failed';
+          showToast(errorMsg, 'error'); 
+          return; 
+      }
       setView('otp-verify'); setOtp(['', '', '', '', '', '']);
       showToast('Verification code sent to your email.', 'info');
     } catch (error: any) {
@@ -265,17 +270,8 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
         setView('pending-approval'); 
       }
       else {
-        const displayName = data.user?.name || data.user?.fullName || 'User';
-        sessionStorage.setItem('pendingToast', JSON.stringify({ 
-          message: `Registration Complete!\nWelcome to ELocate, ${displayName}.`, 
-          type: 'success' 
-        }));
-        
-        const token = data.token || data.tokens?.accessToken;
-        const refreshToken = data.refreshToken || data.tokens?.refreshToken;
-        if (token) setToken(token, refreshToken, rememberMe);
-        if (data.user) { setUser(data.user, rememberMe); if (data.user.id) setUserID(data.user.id); if (data.user.name) setFullName(data.user.name); if (data.user.email) setEmail(data.user.email); if (data.user.mobileNumber) setMobileNumber(data.user.mobileNumber); if (data.user.role) setRole(data.user.role); }
-        onSignIn();
+        showToast('Registration Complete! Please sign in with your verified credentials.', 'success');
+        setView('login');
       }
     } catch (error: any) { showToast(error.message || 'An error occurred', 'error'); }
     finally { setIsLoading(false); }
@@ -299,10 +295,63 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   const cc = (f: string, v: any) => setCitizenData(p => ({ ...p, [f]: v }));
   const fc = (f: keyof IntermediaryPayload, v: any) => setFacilityData(p => ({ ...p, [f]: v }));
   const ac = (f: keyof Address, v: any) => setFacilityData(p => ({ ...p, address: { ...p.address, [f]: v } }));
-  const detectLocation = (isCitizen: boolean) => {
-    if (isCitizen) { cc('latitude', '12.9716'); cc('longitude', '77.5946'); cc('city', 'Bengaluru'); cc('state', 'Karnataka'); cc('pincode', '560001'); }
-    else { ac('latitude', 12.9716); ac('longitude', 77.5946); ac('city', 'Bengaluru'); ac('state', 'Karnataka'); ac('pincode', '560001'); }
-    showToast('Location detected!', 'success');
+  const detectLocation = async (isCitizen: boolean) => {
+    if (!navigator.geolocation) {
+      showToast('Geolocation is not supported by your browser', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+          const data = await response.json();
+
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || '';
+          const state = data.address?.state || '';
+          const pincode = data.address?.postcode || '';
+
+          // Build a detailed local street string, or fallback to the full generated display name (trimming the country)
+          let streetAddress = [data.address?.amenity, data.address?.house_number, data.address?.road, data.address?.neighbourhood, data.address?.suburb, data.address?.village, data.address?.town]
+                .filter(Boolean).join(', ');
+          
+          if (!streetAddress || streetAddress.length < 5) {
+            streetAddress = data.display_name ? data.display_name.replace(/,\s*India$/, '') : '';
+          }
+
+          const latStr = lat.toFixed(6);
+          const lngStr = lng.toFixed(6);
+
+          if (isCitizen) { 
+            cc('latitude', latStr); cc('longitude', lngStr);
+            if (city) cc('city', city);
+            if (state) cc('state', state); // Let the dropdown catch if valid
+            if (pincode) cc('pincode', pincode);
+          } else { 
+            ac('latitude', lat); ac('longitude', lng);
+            if (city) ac('city', city);
+            if (state) ac('state', state);
+            if (pincode) ac('pincode', pincode);
+          }
+          showToast('Real-time location and address detected!', 'success');
+        } catch {
+          if (isCitizen) { cc('latitude', lat.toFixed(6)); cc('longitude', lng.toFixed(6)); }
+          else { ac('latitude', lat); ac('longitude', lng); }
+          showToast('GPS detected, but address lookup failed.', 'info');
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      () => {
+        setIsLoading(false);
+        showToast('Failed to access location permissions.', 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   // ─── Shared layout wrapper ──────────────────────────────────────────────────
@@ -326,11 +375,13 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
         </div>
       </div>
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto w-full flex justify-center">
-        <div className="w-full flex flex-col min-h-full py-8 px-6 sm:px-10 lg:px-12">
-          <div className="w-full max-w-[360px] mx-auto mt-4 lg:mt-6">
+      <div className="flex-1 overflow-y-auto w-full relative">
+        <div className="w-full flex flex-col min-h-full px-6 sm:px-10 lg:px-12">
+          <div className="flex-grow min-h-[max(2rem,4vh)]" />
+          <div className="w-full max-w-[400px] mx-auto py-8">
             {content}
           </div>
+          <div className="flex-grow min-h-[max(2rem,8vh)]" />
         </div>
       </div>
     </div>
@@ -424,30 +475,29 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   // VIEW: ROLE SELECTION
   // ══════════════════════════════════════════════════════════════════════════════
   const renderRoleView = () => renderRightShell(
-      <div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.15] mb-2 flex items-center gap-2 flex-nowrap whitespace-nowrap">
+      <div className="flex flex-col items-center text-center">
+        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.15] mb-2 flex justify-center items-center gap-2 flex-nowrap whitespace-nowrap">
           <span>Join</span><span className="text-[#22883e]">ELocate</span>
         </h1>
-        <p className="text-[13px] text-[#7a9e8a] mb-8">Choose your role in the ecosystem.</p>
+        <p className="text-[13px] text-[#7a9e8a] mb-8 text-center">Choose your role in the ecosystem.</p>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 w-full max-w-[420px]">
           {[
             { view: 'register-citizen' as AuthView, icon: <User size={22} strokeWidth={1.5} />, iconBg: 'bg-blue-50', iconColor: 'text-blue-500', title: 'Citizen Account', badge: 'Individual', badgeColor: 'bg-blue-50 text-blue-600', desc: 'Recycle personal devices, earn eco-rewards, and track your environmental impact.' },
             { view: 'register-intermediary' as AuthView, icon: <Building2 size={22} strokeWidth={1.5} />, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', title: 'Facility / Partner', badge: 'Organization', badgeColor: 'bg-emerald-50 text-emerald-700', desc: 'Register as a recycling center, collector, or refurbisher to join our network.' },
           ].map(item => (
             <button key={item.view} onClick={() => setView(item.view)}
-              className="group w-full text-left flex items-start gap-4 p-5 bg-white border border-[#e8f0ea] rounded-2xl hover:border-[#3bdf6f] hover:shadow-[0_4px_20px_rgba(59,223,111,0.12)] transition-all">
-              <div className={`w-11 h-11 ${item.iconBg} ${item.iconColor} rounded-xl flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform`}>
-                {item.icon}
+              className="group w-full flex flex-col items-center justify-center text-center gap-3 p-7 bg-white border border-gray-200 rounded-[24px] hover:border-[#3bdf6f] hover:shadow-[0_8px_30px_rgba(59,223,111,0.12)] transition-all shadow-sm relative overflow-hidden">
+              <div className={`w-14 h-14 ${item.iconBg} ${item.iconColor} rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300`}>
+                {React.cloneElement(item.icon as React.ReactElement, { size: 28 })}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-[15px] font-semibold text-[#0a2518]">{item.title}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${item.badgeColor}`}>{item.badge}</span>
+              <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center gap-2 mb-2">
+                  <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${item.badgeColor}`}>{item.badge}</span>
+                  <span className="text-[18px] font-bold text-[#0a2518] -mt-1">{item.title}</span>
                 </div>
-                <p className="text-[12px] text-[#7a9e8a] leading-relaxed">{item.desc}</p>
+                <p className="text-[13px] text-[#7a9e8a] leading-relaxed max-w-[280px] font-medium">{item.desc}</p>
               </div>
-              <ArrowRight size={14} className="text-[#b0c4b8] group-hover:text-[#22883e] group-hover:translate-x-0.5 transition-all mt-1 shrink-0" />
             </button>
           ))}
         </div>
@@ -459,13 +509,13 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   // ══════════════════════════════════════════════════════════════════════════════
   const renderCitizenView = () => renderRightShell(
       <div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[34px] lg:text-[36px] font-bold text-[#0a2518] leading-[1.15] mb-1 flex items-center gap-2 flex-nowrap whitespace-nowrap">
+        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif" }} className="text-[34px] lg:text-[32px] font-bold text-[#0a2518] leading-[1.15] mb-1 flex items-center gap-2 flex-nowrap whitespace-nowrap">
           <span>Create</span><span className="text-[#22883e]">Account</span>
         </h1>
-        <p className="text-[13px] text-[#7a9e8a] mb-7">Join the sustainable revolution today.</p>
+        <p className="text-[12px] text-[#7a9e8a] mb-5">Join the sustainable revolution today.</p>
 
-        <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3.5 w-full">
+          <div className="grid grid-cols-2 gap-3 w-full">
             <Field label="Full Name" icon={User}>
               <input type="text" required value={citizenData.name} onChange={e => cc('name', e.target.value)}
                 className={inputCls()} placeholder="Alex Johnson" />
@@ -486,7 +536,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
               className={inputCls()} placeholder="Building, Street, Area..." />
           </Field>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 w-full">
             <Field label="City">
               <input type="text" value={citizenData.city} onChange={e => cc('city', e.target.value)}
                 className={inputCls(false)} placeholder="City" />
@@ -497,7 +547,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
                   <option value="">State</option>
                   {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ab5a2] pointer-events-none" />
+                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9ab5a2] pointer-events-none" />
               </div>
             </Field>
             <Field label="Pincode">
@@ -507,17 +557,17 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
           </div>
 
           {/* Location */}
-          <div className="bg-[#f6faf7] border border-[#e2ede6] rounded-xl p-4 flex items-center gap-4">
-            <div className="flex-1 grid grid-cols-2 gap-4">
-              {[['Latitude', citizenData.latitude], ['Longitude', citizenData.longitude]].map(([l, v]) => (
-                <div key={l}>
-                  <p className="text-[10px] font-semibold text-[#9ab5a2] uppercase tracking-wide mb-0.5">{l}</p>
-                  <p className="text-[13px] font-semibold text-[#0a2518]">{v || '—'}</p>
+          <div className="bg-[#f6faf7] border border-[#e2ede6] rounded-xl p-2.5 px-3 flex items-center justify-between w-full">
+            <div className="flex gap-4">
+              {[['Lat', citizenData.latitude], ['Lng', citizenData.longitude]].map(([l, v]) => (
+                <div key={l as string} className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-[#9ab5a2] uppercase">{l}:</span>
+                  <span className="text-[12px] font-bold text-[#0a2518]">{v || '—'}</span>
                 </div>
               ))}
             </div>
             <button type="button" onClick={() => detectLocation(true)}
-              className="flex items-center gap-1.5 text-[11px] font-semibold text-[#22883e] bg-white border border-[#c5dac9] rounded-lg px-3 h-8 hover:bg-[#22883e] hover:text-white hover:border-[#22883e] transition-all shrink-0">
+              className="flex items-center gap-1 text-[11px] font-bold text-[#22883e] hover:underline whitespace-nowrap shrink-0 relative z-20 pointer-events-auto">
               <MapPin size={12} />Auto-locate
             </button>
           </div>
@@ -550,13 +600,13 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
         </h1>
         <p className="text-[13px] text-[#7a9e8a] mb-7">Register your organization as an official partner.</p>
 
-        <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-5">
+        <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3.5 w-full">
           <Field label="Organization Name">
             <input type="text" required value={facilityData.name} onChange={e => fc('name', e.target.value)}
               className={inputCls(false)} placeholder="GreenCycle Hub" />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 w-full">
             <Field label="Registration ID">
               <input type="text" required value={facilityData.registrationNumber} onChange={e => fc('registrationNumber', e.target.value)}
                 className={inputCls(false)} placeholder="REG-123456" />
@@ -572,7 +622,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
               className={inputCls()} placeholder="contact@organization.com" />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 w-full">
             <Field label="Password" icon={Lock}>
               <input type="password" required value={facilityData.password} onChange={e => fc('password', e.target.value)}
                 className={inputCls()} placeholder="Min 8 characters" />
@@ -589,11 +639,11 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
           </Field>
 
           {/* HQ Location */}
-          <div className="bg-[#f6faf7] border border-[#e2ede6] rounded-xl p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold tracking-[0.8px] uppercase text-[#3a5444]">HQ Location</span>
+          <div className="bg-[#f6faf7] border border-[#e2ede6] rounded-xl p-3 flex flex-col gap-2.5 w-full">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-semibold tracking-[0.8px] text-[#3a5444] uppercase">HQ Location</span>
               <button type="button" onClick={() => detectLocation(false)}
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-[#22883e] bg-white border border-[#c5dac9] rounded-lg px-3 h-7 hover:bg-[#22883e] hover:text-white hover:border-[#22883e] transition-all">
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-[#22883e] bg-white border border-[#c5dac9] rounded-lg px-3 h-7 hover:bg-[#22883e] hover:text-white hover:border-[#22883e] transition-all relative z-20 pointer-events-auto">
                 <MapPin size={11} />Detect
               </button>
             </div>
@@ -612,11 +662,11 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
               <input type="text" value={facilityData.address.pincode} onChange={e => ac('pincode', e.target.value)}
                 className={`${inputCls(false)} bg-white text-[13px]`} placeholder="Pincode" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {[['Lat', facilityData.address.latitude], ['Long', facilityData.address.longitude]].map(([l, v]) => (
-                <div key={l as string} className="bg-white rounded-lg border border-[#e2ede6] px-3 py-2 text-center">
-                  <p className="text-[10px] font-bold text-[#9ab5a2] uppercase tracking-wider">{l}</p>
-                  <p className="text-[13px] font-semibold text-[#0a2518] mt-0.5">{(v as number) || '—'}</p>
+            <div className="flex items-center gap-4 mt-1 px-1">
+              {[['Lat', facilityData.address.latitude], ['Lng', facilityData.address.longitude]].map(([l, v]) => (
+                <div key={l as string} className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-[#9ab5a2] uppercase">{l}:</span>
+                  <span className="text-[12px] font-bold text-[#0a2518]">{v || '—'}</span>
                 </div>
               ))}
             </div>
@@ -667,7 +717,7 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
               <input key={i} id={`otp-${i}`} type="text" maxLength={1} value={d}
                 onChange={e => handleOtpChange(i, e.target.value)}
                 onKeyDown={e => handleOtpKeyDown(i, e)}
-                className="w-11 h-13 text-center text-[20px] font-bold text-[#0a2518] bg-[#f6faf7] border-2 border-[#e2ede6] rounded-xl outline-none focus:border-[#3bdf6f] focus:bg-white focus:ring-2 focus:ring-[#3bdf6f]/20 transition-all"
+                className="w-11 h-13 text-center text-[20px] font-bold text-[#0a2518] bg-[#f0faf3] border-2 border-[#22883e]/40 rounded-xl outline-none focus:border-[#22883e] focus:bg-white focus:ring-4 focus:ring-[#22883e]/20 transition-all shadow-sm"
                 style={{ height: '52px' }}
               />
             ))}

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Request, RecycleRequestApiResponse, mapApiResponseToRequest } from "./types";
 import { downloadReceipt } from "./receiptForm";
@@ -96,22 +97,26 @@ const MyRequestsList = () => {
     const [requests, setRequests] = useState<Request[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(searchParams.get("id"));
+
+    // Sync state with URL manually when URL back button is clicked!
+    useEffect(() => {
+        setSelectedRequestId(searchParams.get("id"));
+    }, [searchParams]);
 
     // Collapsible sections state
-    const [expandedSection, setExpandedSection] = useState<string | null>("timeline");
-    const [expandedSubTimelines, setExpandedSubTimelines] = useState<string[]>(["recycle", "fulfillment"]);
+    const [expandedSection, setExpandedSection] = useState<string | null>(null);
     
     // Feedback state
     const [showFeedbackForm, setShowFeedbackForm] = useState(false);
     const [feedbackRefreshKey, setFeedbackRefreshKey] = useState(0);
-
-    const toggleSubTimeline = (id: string) => {
-        setExpandedSubTimelines(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-    };
+    const [hasFeedback, setHasFeedback] = useState<boolean | null>(null);
 
     // Status history state
     const [statusHistory, setStatusHistory] = useState<any[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -153,11 +158,14 @@ const MyRequestsList = () => {
         } finally {
             setLoading(false);
         }
-    }, [selectedRequestId]);
+    }, []);
 
     useEffect(() => {
-        fetchRequests();
-    }, []);
+        // Only load the entire list if we aren't deep-linking into a specific request
+        if (!searchParams.get("id")) {
+            fetchRequests();
+        }
+    }, [searchParams]);
 
     const selectedRequest = useMemo(() =>
         requests.find(r => r.id === selectedRequestId),
@@ -166,20 +174,18 @@ const MyRequestsList = () => {
     const loadRequestDetails = useCallback(async (requestId: string) => {
         setDetailLoading(true);
         try {
-            const [requestRes, historyRes] = await Promise.all([
-                recycleRequestApi.getById(requestId),
-                recycleRequestApi.getStatusHistory(requestId)
-            ]);
+            const requestRes = await recycleRequestApi.getById(requestId);
 
             if (requestRes.data) {
                 const updatedRequest = mapApiResponseToRequest(requestRes.data);
-                setRequests(prev => prev.map(r => r.id === requestId ? updatedRequest : r));
-            }
-
-            if (historyRes.data) {
-                setStatusHistory(historyRes.data);
-            } else {
-                setStatusHistory([]);
+                setRequests(prev => {
+                    const exists = prev.some(r => r.id === requestId);
+                    if (exists) {
+                        return prev.map(r => r.id === requestId ? updatedRequest : r);
+                    } else {
+                        return [updatedRequest];
+                    }
+                });
             }
         } catch (err: any) {
             console.error('Error loading request details:', err);
@@ -191,9 +197,33 @@ const MyRequestsList = () => {
 
     useEffect(() => {
         if (selectedRequestId) {
+            setHasFeedback(null);
+            setStatusHistory([]); // Flush history when request changes
             loadRequestDetails(selectedRequestId);
         }
     }, [selectedRequestId, loadRequestDetails]);
+
+    // Dynamically fetch timeline info ONLY when the Tracking section is actually expanded
+    useEffect(() => {
+        let isRendered = true;
+        if (expandedSection === "timeline" && selectedRequestId && statusHistory.length === 0) {
+            setHistoryLoading(true);
+            recycleRequestApi.getStatusHistory(selectedRequestId)
+                .then(historyRes => {
+                    if (isRendered && historyRes.data) {
+                        setStatusHistory(historyRes.data);
+                    }
+                })
+                .catch(err => console.error("Error fetching history:", err))
+                .finally(() => {
+                    if (isRendered) setHistoryLoading(false);
+                });
+        }
+        return () => {
+            isRendered = false;
+            setHistoryLoading(false);
+        };
+    }, [expandedSection, selectedRequestId, statusHistory.length]);
 
     const handleSendReminder = async () => {
         if (!selectedRequestId) return;
@@ -352,9 +382,9 @@ const MyRequestsList = () => {
                                 className="pl-14 pr-12 py-5 bg-white border-2 border-gray-100 rounded-[24px] focus:border-emerald-500 text-base font-black text-gray-800 cursor-pointer shadow-md hover:bg-gray-50 transition-all outline-none appearance-none min-w-[200px]"
                             >
                                 <option value="all">View All</option>
-                                <option value="pending">Pending Only</option>
+                                <option value="pending">Pending</option>
                                 <option value="confirmed">Confirmed</option>
-                                <option value="completed">Success</option>
+                                <option value="completed">Recycled</option>
                             </select>
                             <MdExpandMore className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 text-2xl pointer-events-none" />
                         </div>
@@ -390,7 +420,12 @@ const MyRequestsList = () => {
                             {/* --- Details Header (Back Action & Facility Info) --- */}
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-20">
                                 <button
-                                    onClick={() => setSelectedRequestId(null)}
+                                    onClick={() => {
+                                        router.push('?');
+                                        if (requests.length === 0 || requests.length === 1) {
+                                            fetchRequests();
+                                        }
+                                    }}
                                     className="self-start flex items-center gap-3 px-5 py-3 bg-white border-2 border-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-[#10b981] hover:bg-gray-50 hover:border-[#10b981]/30 transition-all shadow-sm group"
                                 >
                                     <MdArrowForward className="text-xl rotate-180 group-hover:-translate-x-1 transition-transform" /> Back to Records
@@ -520,17 +555,26 @@ const MyRequestsList = () => {
                                             </button>
                                             <button
                                                 onClick={() => setShowFeedbackForm(true)}
-                                                className="flex-1 py-5 bg-blue-600 text-white rounded-[24px] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/10 active:scale-95"
+                                                disabled={hasFeedback === true}
+                                                className={`flex-1 py-5 rounded-[24px] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 ${
+                                                    hasFeedback === true
+                                                        ? 'bg-gray-100 text-gray-400 shadow-none cursor-not-allowed border-2 border-gray-200'
+                                                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-900/10'
+                                                }`}
                                             >
-                                                <MdRateReview className="text-xl" />
-                                                Share Feedback
+                                                {hasFeedback === true ? (
+                                                    <><MdCheckCircle className="text-xl text-emerald-500" /> Feedback Shared</>
+                                                ) : (
+                                                    <><MdRateReview className="text-xl" /> Share Feedback</>
+                                                )}
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-8">
+                            <div className="flex flex-col gap-8 mb-12">
+                                {/* Tracking & History */}
                                 <CollapsibleCard
                                     title="Tracking & History"
                                     icon={MdHistory}
@@ -539,128 +583,77 @@ const MyRequestsList = () => {
                                     colorClass="emerald"
                                 >
                                     <div className="space-y-10 py-4">
-                                        {!statusHistory.length ? (
+                                        {historyLoading ? (
+                                            <div className="text-center py-12 bg-white/40 rounded-[32px] border-2 border-dashed border-emerald-100/50 flex flex-col items-center justify-center">
+                                                <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
+                                                <p className="text-emerald-500 font-black text-xs uppercase tracking-widest animate-pulse">Syncing Logs...</p>
+                                            </div>
+                                        ) : !statusHistory.length ? (
                                             <div className="text-center py-12 bg-white/40 rounded-[32px] border-2 border-dashed border-emerald-100">
                                                 <MdHistory className="text-5xl text-emerald-100 mx-auto mb-4" />
                                                 <p className="text-gray-400 font-black text-sm uppercase tracking-widest">No Log Data Found</p>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 items-start">
-                                                {statusHistory.some(h => h.statusType === 'RECYCLE_STATUS') && (
-                                                    <div className="space-y-6">
-                                                        <div
-                                                            className="flex items-center justify-between cursor-pointer group/header bg-emerald-50/30 p-4 rounded-3xl border border-emerald-100/50 hover:bg-emerald-50 transition-colors"
-                                                            onClick={() => toggleSubTimeline('recycle')}
-                                                        >
-                                                            <div className="flex items-center gap-5">
-                                                                <div className="w-14 h-14 bg-emerald-500 text-white rounded-[20px] flex items-center justify-center shadow-lg shadow-emerald-100 transition-transform group-hover/header:rotate-3">
-                                                                    <MdCheckCircle className="text-3xl" />
-                                                                </div>
-                                                                <div>
-                                                                    <h5 className="text-lg font-black text-gray-800 uppercase tracking-widest leading-none mb-1.5">Request Journey</h5>
-                                                                    <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-[0.2em]">Lifecycle Tracking Logs</p>
-                                                                </div>
+                                            <div className="relative pl-8 border-l-2 border-dashed border-emerald-100 ml-8 md:ml-12 space-y-12 pb-6 mt-4 md:mt-8">
+                                                {statusHistory.map((h, i) => {
+                                                    const isFulfillment = h.statusType === 'FULFILLMENT_STATUS' || h.statusType === 'FULFILLMENT';
+                                                    return (
+                                                        <div key={i} className="relative group/log">
+                                                            {/* Dynamic Icon */}
+                                                            <div className={`absolute -left-[54px] top-0 w-11 h-11 bg-white border-2 rounded-full flex items-center justify-center transition-all duration-500 z-10 shadow-sm ${i === 0 ? "scale-110" : "scale-100"} ${isFulfillment ? "border-indigo-400 text-indigo-500" : "border-emerald-400 text-emerald-500"}`}>
+                                                                {isFulfillment ? <MdLocalShipping className="text-xl" /> : <MdCheckCircle className="text-xl" />}
                                                             </div>
-                                                            <div className={`w-10 h-10 rounded-2xl border border-emerald-200 flex items-center justify-center transition-all ${expandedSubTimelines.includes('recycle') ? 'rotate-180 bg-emerald-600 text-white' : 'bg-white text-emerald-400'}`}>
-                                                                <MdExpandMore className="text-2xl" />
+                                                            
+                                                            <div className="flex flex-col gap-3">
+                                                                <div className="flex flex-wrap items-center gap-3">
+                                                                    <span className={`px-4 py-1.5 rounded-[12px] text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                                                        isFulfillment 
+                                                                            ? (i === 0 ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200" : "bg-indigo-50 text-indigo-700 border-indigo-100") 
+                                                                            : (h.newStatus === 'RECYCLED' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-200' : ['VERIFIED', 'APPROVED'].includes(h.newStatus) ? 'bg-emerald-100 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200')
+                                                                    }`}>
+                                                                        {h.newStatus}
+                                                                    </span>
+                                                                    <span className={`text-[9px] font-black tracking-widest px-2 py-1 rounded bg-gray-50 ${isFulfillment ? 'text-indigo-400' : 'text-emerald-400'}`}>
+                                                                        {isFulfillment ? 'LOGISTICS' : 'PROCESSING'}
+                                                                    </span>
+                                                                    <span className="text-[11px] font-bold text-gray-400">
+                                                                        {new Date(h.changedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
+                                                                </div>
+                                                                {h.comments && (
+                                                                    <div className="bg-white p-5 rounded-[20px] border border-gray-100/80 shadow-sm w-full md:w-3/4 lg:w-2/3">
+                                                                        <p className="text-[13px] font-bold text-gray-500 leading-relaxed italic">"{h.comments}"</p>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
-                                                        <AnimatePresence>
-                                                            {expandedSubTimelines.includes('recycle') && (
-                                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                                                    <div className="relative pl-14 border-l-2 border-dashed border-emerald-100/50 ml-11 space-y-12 pb-10 mt-6">
-                                                                        {statusHistory.filter(h => h.statusType === 'RECYCLE_STATUS').map((h, i) => (
-                                                                            <div key={i} className="relative group/log">
-                                                                                <div className={`absolute -left-[63px] top-0 w-11 h-11 bg-white border-2 rounded-full flex items-center justify-center transition-all duration-500 ${i === 0 ? "border-emerald-500 text-emerald-500 shadow-md z-10 scale-105" : "border-gray-100 text-gray-300"}`}>
-                                                                                    <MdHistory className="text-xl" />
-                                                                                </div>
-                                                                                <div className="flex flex-col gap-4">
-                                                                                    <div className="flex items-center gap-4">
-                                                                                        <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${h.newStatus === 'RECYCLED' ? 'bg-emerald-600 text-white border-emerald-600' : ['VERIFIED', 'APPROVED'].includes(h.newStatus) ? 'bg-emerald-100 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                                                                                            {h.newStatus}
-                                                                                        </span>
-                                                                                        <span className="text-[11px] font-bold text-gray-400">{new Date(h.changedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                                                    </div>
-                                                                                    {h.comments && <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm w-full"><p className="text-sm font-bold text-gray-500 italic">"{h.comments}"</p></div>}
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
-                                                    </div>
-                                                )}
-                                                {statusHistory.some(h => h.statusType === 'FULFILLMENT_STATUS') && (
-                                                    <div className="space-y-6">
-                                                        <div
-                                                            className="flex items-center justify-between cursor-pointer group/header bg-indigo-50/30 p-4 rounded-3xl border border-indigo-100/50 hover:bg-indigo-50 transition-colors"
-                                                            onClick={() => toggleSubTimeline('fulfillment')}
-                                                        >
-                                                            <div className="flex items-center gap-5">
-                                                                <div className="w-14 h-14 bg-indigo-500 text-white rounded-[20px] flex items-center justify-center shadow-lg shadow-indigo-100 transition-transform group-hover/header:rotate-3">
-                                                                    <MdLocalShipping className="text-3xl" />
-                                                                </div>
-                                                                <div>
-                                                                    <h5 className="text-lg font-black text-gray-800 uppercase tracking-widest leading-none mb-1.5">Logistics Operations</h5>
-                                                                    <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-[0.2em]">Asset Movement Logs</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className={`w-10 h-10 rounded-2xl border border-indigo-200 flex items-center justify-center transition-all ${expandedSubTimelines.includes('fulfillment') ? 'rotate-180 bg-indigo-600 text-white' : 'bg-white text-indigo-400'}`}>
-                                                                <MdExpandMore className="text-2xl" />
-                                                            </div>
-                                                        </div>
-                                                        <AnimatePresence>
-                                                            {expandedSubTimelines.includes('fulfillment') && (
-                                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                                                    <div className="relative pl-14 border-l-2 border-dashed border-indigo-100/50 ml-11 space-y-12 pb-10 mt-6">
-                                                                        {statusHistory.filter(h => h.statusType === 'FULFILLMENT_STATUS').map((h, i) => (
-                                                                            <div key={i} className="relative group/log-ops">
-                                                                                <div className={`absolute -left-[63px] top-0 w-11 h-11 bg-white border-2 rounded-full flex items-center justify-center transition-all duration-500 ${i === 0 ? "border-indigo-500 text-indigo-500 shadow-md z-10 scale-105" : "border-gray-100 text-gray-300"}`}>
-                                                                                    <MdLayers className="text-xl" />
-                                                                                </div>
-                                                                                <div className="flex flex-col gap-4">
-                                                                                    <div className="flex items-center gap-4">
-                                                                                        <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${i === 0 ? "bg-indigo-600 text-white border-indigo-600 shadow-md" : "bg-indigo-50 text-indigo-700 border-indigo-100"}`}>
-                                                                                            {h.newStatus}
-                                                                                        </span>
-                                                                                        <span className="text-[11px] font-bold text-gray-400">{new Date(h.changedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                                                    </div>
-                                                                                    {h.comments && <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm w-full"><p className="text-sm font-bold text-gray-500 italic">"{h.comments}"</p></div>}
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
-                                                    </div>
-                                                )}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
                                 </CollapsibleCard>
 
-                                {/* --- ROW 3: Communications & Feedback --- */}
-                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start mb-12">
-                                    <CollapsibleCard
-                                        title="Communications"
-                                        icon={MdNotifications}
-                                        isOpen={expandedSection === 'reminders'}
-                                        onToggle={() => toggleSection('reminders')}
+                                {/* Communications */}
+                                <CollapsibleCard
+                                    title="Communications"
+                                    icon={MdNotifications}
+                                    isOpen={expandedSection === 'reminders'}
+                                    onToggle={() => toggleSection('reminders')}
                                     colorClass="orange"
                                 >
-                                    <div className="flex flex-col md:flex-row items-center gap-8">
+                                    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 py-4">
                                         <div className="flex-1">
-                                            <h5 className="text-lg font-black text-gray-900 tracking-tight mb-2">Internal Reminder</h5>
-                                            <p className="text-sm text-gray-500 font-bold leading-relaxed">Is your request delayed? Send a high-priority push notification to the assigned recycler or logistics agent.</p>
+                                            <h5 className="text-[15px] font-black text-gray-900 tracking-tight mb-2">Internal Reminder</h5>
+                                            <p className="text-[13px] text-gray-500 font-bold leading-relaxed max-w-2xl">Is your request delayed? Send a high-priority push notification to the assigned recycler or logistics agent directly through the platform dashboard.</p>
                                         </div>
-                                        <button onClick={handleSendReminder} disabled={sendingReminder} className="w-full md:w-auto px-10 py-5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-[24px] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-2xl shadow-orange-900/20 disabled:opacity-50 transition-all">
-                                            {sendingReminder ? 'Transmitting...' : <><MdNotifications className="text-xl" />Notify Agent</>}
+                                        <button onClick={handleSendReminder} disabled={sendingReminder} className="w-full lg:w-auto px-10 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-[20px] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 shadow-xl shadow-orange-900/10 disabled:opacity-50 transition-all active:scale-95 shrink-0">
+                                            {sendingReminder ? 'Transmitting...' : <><MdNotifications className="text-lg" />Notify Agent</>}
                                         </button>
                                     </div>
                                 </CollapsibleCard>
 
+                                {/* Feedback */}
                                 {selectedRequest.status === "completed" && (
                                     <CollapsibleCard
                                         title="Your Feedback"
@@ -668,12 +661,16 @@ const MyRequestsList = () => {
                                         isOpen={expandedSection === 'feedback'}
                                         onToggle={() => toggleSection('feedback')}
                                         colorClass="rose"
-                                        badge={<span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Help Us Improve</span>}
+                                        badge={<span className="text-[9px] font-bold text-rose-500 uppercase tracking-widest">Help Us Improve</span>}
                                     >
-                                        <FeedbackView key={feedbackRefreshKey} recycleRequestId={selectedRequest.id} onAddFeedback={() => setShowFeedbackForm(true)} />
+                                        <FeedbackView 
+                                            key={feedbackRefreshKey} 
+                                            recycleRequestId={selectedRequest.id} 
+                                            onAddFeedback={() => setShowFeedbackForm(true)} 
+                                            onFeedbackStatus={setHasFeedback}
+                                        />
                                     </CollapsibleCard>
                                 )}
-                                </div>
                             </div>
                         </motion.div>
                     ) : (
@@ -785,7 +782,7 @@ const MyRequestsList = () => {
                                                 <div className="flex justify-between items-center z-10">
                                                     <p className="text-xs font-bold text-gray-400">Click to view operations trail</p>
                                                     <button
-                                                        onClick={() => setSelectedRequestId(req.id)}
+                                                        onClick={() => router.push(`?id=${req.id}`)}
                                                         className="flex items-center gap-2 px-6 py-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-[20px] font-black text-xs uppercase tracking-widest transition-all shadow-sm group/btn active:scale-95"
                                                     >
                                                         <MdVisibility className="text-lg" />
