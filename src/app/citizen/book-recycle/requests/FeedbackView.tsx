@@ -16,9 +16,10 @@ interface Feedback {
 
 interface FeedbackViewProps {
     recycleRequestId: string;
+    onAddFeedback?: () => void;
 }
 
-export const FeedbackView: React.FC<FeedbackViewProps> = ({ recycleRequestId }) => {
+export const FeedbackView: React.FC<FeedbackViewProps> = ({ recycleRequestId, onAddFeedback }) => {
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -36,7 +37,9 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ recycleRequestId }) 
                 }
 
                 if (!response.ok) {
-                    throw new Error("Failed to fetch feedback");
+                    const errData = await response.json().catch(() => ({}));
+                    console.error("Feedback fetch error:", response.status, errData);
+                    throw new Error(errData?.error || errData?.message || "Failed to fetch feedback");
                 }
 
                 const data = await response.json();
@@ -64,7 +67,22 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ recycleRequestId }) 
     }
 
     if (!feedback) {
-        return null;
+        return (
+            <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-rose-100 rounded-[32px] bg-white">
+                <div className="w-16 h-16 bg-rose-50 text-rose-300 rounded-full flex items-center justify-center mb-4">
+                    <MdStar className="text-3xl" />
+                </div>
+                <p className="text-sm font-bold text-gray-500 mb-6 leading-relaxed px-4">You haven't shared your experience for this request yet. Help us serve you better!</p>
+                {onAddFeedback && (
+                    <button
+                        onClick={onAddFeedback}
+                        className="px-8 py-4 bg-rose-600 text-white rounded-[20px] font-black uppercase tracking-widest text-[11px] hover:bg-rose-700 transition-colors shadow-xl shadow-rose-900/10 active:scale-95"
+                    >
+                        Share Feedback
+                    </button>
+                )}
+            </div>
+        );
     }
 
     const categoryLabel = feedback.category.replace(/_/g, " ");

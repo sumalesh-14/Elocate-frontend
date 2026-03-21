@@ -58,6 +58,7 @@ export interface Request {
     estimatedAmount?: number | null;
     finalAmount?: number | null;
     certificateUrl?: string | null;
+    facilityName?: string | null;
 }
 
 /**
@@ -89,6 +90,7 @@ export function mapApiResponseToRequest(r: RecycleRequestApiResponse): Request {
         estimatedAmount: r.estimatedAmount,
         finalAmount: r.finalAmount,
         certificateUrl: r.certificateUrl,
+        facilityName: r.facilityName || "Facility Verification Pending",
     };
 }
 
