@@ -15,18 +15,17 @@ function SignInPageInner() {
   const initialView = viewParam === 'role-selection' ? 'role-selection' : 'login';
 
   const handleSignIn = () => {
-    setIsSignInOpen(false);
-
-    setTimeout(() => {
-      const role = getRole();
-      if (role === 'ADMIN') {
-        window.location.href = '/admin';
-      } else if (role === 'INTERMEDIARY' || role === 'PARTNER') {
-        window.location.href = '/intermediary/dashboard';
-      } else {
-        window.location.href = '/citizen';
-      }
-    }, 100);
+    // We intentionally keep the SignIn component mounted here. 
+    // This allows its built-in loading spinner to keep spinning seamlessly 
+    // while the browser handles the heavy lifting of fetching the next page.
+    const role = getRole();
+    if (role === 'ADMIN') {
+      window.location.href = '/admin';
+    } else if (role === 'INTERMEDIARY' || role === 'PARTNER') {
+      window.location.href = '/intermediary/dashboard';
+    } else {
+      window.location.href = '/citizen';
+    }
   };
 
   const handleClose = () => {

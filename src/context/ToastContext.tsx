@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { Check, AlertCircle, X, Info } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info';
@@ -41,8 +41,19 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, 3000);
   }, []);
+
+  useEffect(() => {
+    const pendingToast = sessionStorage.getItem('pendingToast');
+    if (pendingToast) {
+      try {
+        const { message, type } = JSON.parse(pendingToast);
+        showToast(message, type);
+      } catch (e) {}
+      sessionStorage.removeItem('pendingToast');
+    }
+  }, [showToast]);
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));

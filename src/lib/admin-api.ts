@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { toast } from "react-toastify";
+import { getToken, getRefreshToken, setToken } from "@/lib/sign-in-auth";
 
 /**
  * adminApiClient
@@ -32,31 +33,20 @@ const processQueue = (error: any, token: string | null = null) => {
 
 // Helper to get auth token
 const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = getToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 // Helper to check if token is expired or about to expire
+// Disabling manual manual timestamp checks so we rely cleanly on backend 401 signals
 const isTokenExpired = (): boolean => {
-    if (typeof window === 'undefined') return false;
-
-    const token = localStorage.getItem('token');
-    const tokenTimestamp = localStorage.getItem('tokenTimestamp');
-
-    if (!token || !tokenTimestamp) return true;
-
-    const expirationTime = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    const currentTime = Date.now();
-    const tokenAge = currentTime - parseInt(tokenTimestamp);
-
-    // Refresh if token is older than 23 hours (1 hour before expiry)
-    return tokenAge > (expirationTime - 60 * 60 * 1000);
+    return false;
 };
 
 // Function to refresh token
 const refreshToken = async (): Promise<string | null> => {
     try {
-        const currentRefreshToken = localStorage.getItem('refreshToken');
+        const currentRefreshToken = getRefreshToken();
         if (!currentRefreshToken) {
             console.error('❌ [TOKEN REFRESH] No refresh token found');
             return null;
@@ -72,9 +62,7 @@ const refreshToken = async (): Promise<string | null> => {
             const newAccessToken = response.data.tokens.accessToken;
             const newRefreshToken = response.data.tokens.refreshToken;
 
-            localStorage.setItem('token', newAccessToken);
-            localStorage.setItem('refreshToken', newRefreshToken);
-            localStorage.setItem('tokenTimestamp', Date.now().toString());
+            setToken(newAccessToken, newRefreshToken, true);
 
             console.log('✅ [TOKEN REFRESH] Token refreshed successfully');
             return newAccessToken;
@@ -99,7 +87,7 @@ adminApiClient.interceptors.request.use(
             }
         } else {
             // Add current token to request
-            const token = localStorage.getItem('token');
+            const token = getToken();
             if (token && config.headers) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
@@ -116,12 +104,13 @@ adminApiClient.interceptors.response.use(
     (response) => {
         const resData = response.data as any;
         if (resData?.message === 'SESSION_EXPIRED' || resData?.error === 'SESSION_EXPIRED') {
-            toast.error("Session expired. Re-routing to login page...", {
+            toast.error("admin-api: Session expired on response intercept. Re-routing...", {
                 autoClose: 5000,
                 position: "top-right",
             });
             if (typeof window !== "undefined") {
                 localStorage.clear();
+                sessionStorage.setItem('pendingToast', JSON.stringify({ message: "DEBUG: admin-api response intercept triggered redirect", type: "error" }));
                 window.location.replace("/sign-in");
             }
         }
@@ -140,7 +129,7 @@ adminApiClient.interceptors.response.use(
                     if (originalRequest.headers) {
                         originalRequest.headers.Authorization = `Bearer ${token}`;
                     }
-                    return adminApiClient(originalRequest);
+                    return adminApiClient(originalRequest as any);
                 }).catch(err => {
                     return Promise.reject(err);
                 });
@@ -157,28 +146,30 @@ adminApiClient.interceptors.response.use(
                     if (originalRequest.headers) {
                         originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     }
-                    return adminApiClient(originalRequest);
+                    return adminApiClient(originalRequest as any);
                 } else {
                     // Refresh failed, logout user
                     processQueue(new Error('Token refresh failed'), null);
-                    toast.error("Session expired. Please login again.", {
+                    toast.error("admin-api: Token refresh forcibly failed (401). Please login again.", {
                         autoClose: 5000,
                         position: "top-right",
                     });
                     if (typeof window !== "undefined") {
                         localStorage.clear();
+                        sessionStorage.setItem('pendingToast', JSON.stringify({ message: "DEBUG: admin-api 401 refresh empty triggered redirect", type: "error" }));
                         window.location.replace("/sign-in");
                     }
                     return Promise.reject(error);
                 }
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                toast.error("Session expired. Please login again.", {
+                toast.error("admin-api: Token refresh manually caught exception. Please login again.", {
                     autoClose: 5000,
                     position: "top-right",
                 });
                 if (typeof window !== "undefined") {
                     localStorage.clear();
+                    sessionStorage.setItem('pendingToast', JSON.stringify({ message: "DEBUG: admin-api 401 catch block triggered redirect", type: "error" }));
                     window.location.replace("/sign-in");
                 }
                 return Promise.reject(refreshError);
@@ -194,12 +185,13 @@ adminApiClient.interceptors.response.use(
             errorData?.error === 'SESSION_EXPIRED' ||
             error.message === 'SESSION_EXPIRED'
         ) {
-            toast.error("Session expired. Re-routing to login page...", {
+            toast.error("admin-api: Server replied manually with SESSION_EXPIRED error flag.", {
                 autoClose: 5000,
                 position: "top-right",
             });
             if (typeof window !== "undefined") {
                 localStorage.clear();
+                sessionStorage.setItem('pendingToast', JSON.stringify({ message: "DEBUG: admin-api final catch triggered redirect", type: "error" }));
                 window.location.replace("/sign-in");
             }
         }

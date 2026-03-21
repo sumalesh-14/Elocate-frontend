@@ -15,18 +15,15 @@ export const ROLE_ROUTES = {
 
 export type UserRole = keyof typeof ROLE_ROUTES;
 
-/**
- * handleSessionExpired
- * Logic to clear session and redirect on session expiry
- */
 export const handleSessionExpired = () => {
-    toast.error("Session expired. Re-routing to login page...", {
+    toast.error("Global auth.ts: Session expired. Re-routing to login...", {
         autoClose: 5000,
         position: "top-right",
     });
 
     if (typeof window !== "undefined") {
         localStorage.clear();
+        sessionStorage.setItem('pendingToast', JSON.stringify({ message: "DEBUG: global auth.ts handleSessionExpired triggered redirect", type: "error" }));
         // Redirect to the common sign-in page
         window.location.replace("/sign-in");
     }

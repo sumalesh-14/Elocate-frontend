@@ -12,6 +12,7 @@ const Page = () => {
 
   useEffect(() => {
     if (!isAuthenticated()) {
+      sessionStorage.setItem('pendingToast', JSON.stringify({ message: "DEBUG: isAuthenticated() returned false! Cookies missing?", type: "error" }));
       router.push("/sign-in");
     }
   }, [router]);
