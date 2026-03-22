@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { intermediaryApi, Driver } from "@/lib/intermediary-api";
+import { intermediaryApi, Driver, resolveFacilityId } from "@/lib/intermediary-api";
 import "./styles.css";
 
 // ScheduledCollection interface remains for internal UI state until backend integration
@@ -172,7 +172,8 @@ const AssignDriversPage = () => {
 
         const fetchDrivers = async () => {
             try {
-                const data = await intermediaryApi.drivers.getAll(driverSearch, driverAvailabilityFilter);
+                const facilityId = await resolveFacilityId() || undefined;
+                const data = await intermediaryApi.drivers.getAll(driverSearch, driverAvailabilityFilter, 0, 100, facilityId);
                 setDrivers(data.content || []);
             } catch (error) {
                 console.error("Error fetching drivers:", error);

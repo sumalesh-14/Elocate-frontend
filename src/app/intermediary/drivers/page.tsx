@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, X, AlertTriangle, Truck, Bike, Ship, Container, Search, ChevronLeft, ChevronRight, ShieldCheck, Navigation, Clock } from "lucide-react";
-import { intermediaryApi, Driver, DriverRequest } from "@/lib/intermediary-api";
+import { intermediaryApi, Driver, DriverRequest, resolveFacilityId } from "@/lib/intermediary-api";
 
 const DriversPage = () => {
     const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -21,7 +21,9 @@ const DriversPage = () => {
     // Fetch Drivers
     const fetchDrivers = async (page: number = currentPage) => {
         try {
-            const data = await intermediaryApi.drivers.getAll(searchTerm, filterAvailability, page, pageSize);
+            const facilityId = await resolveFacilityId() || undefined;
+            console.log("[DriversPage] facilityId resolved:", facilityId);
+            const data = await intermediaryApi.drivers.getAll(searchTerm, filterAvailability, page, pageSize, facilityId);
             if (data && data.content) {
                 setDrivers(data.content);
                 setTotalPages(data.totalPages);
@@ -84,6 +86,7 @@ const DriversPage = () => {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const facilityId = await resolveFacilityId() || undefined;
             const driverToSave = {
                 name: currentDriver.name!,
                 email: currentDriver.email!,
@@ -91,6 +94,7 @@ const DriversPage = () => {
                 vehicleNumber: currentDriver.vehicleNumber!,
                 availability: currentDriver.availability,
                 vehicleType: currentDriver.vehicleType || "VAN",
+                facilityId: facilityId,
             } as DriverRequest;
 
             if (modalMode === "add") {

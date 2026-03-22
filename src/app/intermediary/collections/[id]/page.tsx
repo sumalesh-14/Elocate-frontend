@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { intermediaryApi } from "@/lib/intermediary-api";
+import { intermediaryApi, resolveFacilityId } from "@/lib/intermediary-api";
 import { analyzeDeviceMaterials, getErrorMessage } from "@/lib/image-analyzer-api";
 import { useToast } from "@/context/ToastContext";
 
@@ -96,8 +96,9 @@ export default function CollectionDetailsPage() {
                 setAnalysisCondition(data.conditionCode || "GOOD");
                 setAnalysisNotes(data.conditionNotes || "");
 
-                // Fetch drivers right away so we have them if needed
-                const driversData = await intermediaryApi.drivers.getAll();
+                // Fetch only drivers belonging to this request's facility
+                const facilityId = data.facilityId || await resolveFacilityId() || undefined;
+                const driversData = await intermediaryApi.drivers.getAll(undefined, undefined, 0, 100, facilityId);
                 setDrivers(driversData?.content || []);
             } catch (error) {
                 console.error("Failed to fetch request:", error);

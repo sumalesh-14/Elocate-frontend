@@ -40,39 +40,38 @@ const Signin: React.FC = () => {
     const loadingToast = toast.loading("Verifying credentials...");
 
     try {
-      // --- DUMMY AUTHENTICATION START ---
-      const user = {
-        id: "dummy-citizen-id-789",
-        email: formData.email || "citizen@elocate.com",
-        token: "dummy-citizen-token",
-        phoneNumber: "7777777777",
-        fullname: "Citizen User",
-        username: "citizenuser",
-      };
+      const response = await axios.post(`/api/v1/auth/sign-in`, formData);
+      console.log("Raw login response:", JSON.stringify(response.data));
 
-      /* ORIGINAL API CALL - Uncomment for production
-      const response = await axios.post(
-        "http://localhost:8080/elocate/api/v1/auth/login",
-        formData
-      );
-      const user = response.data;
-      */
-      // --- DUMMY AUTHENTICATION END ---
+      const userData = response.data.user;
+      const tokens = response.data.tokens;
 
-      console.log(user);
-      localStorage.setItem("user", JSON.stringify(user));
+      console.log("userData:", userData);
+      console.log("tokens:", tokens);
 
-      if (user) {
-        setUser(user);
-        setEmail(user.email);
-        setToken(user.token);
-        setPhoneNumber(user.phoneNumber);
-        setfullname(user.fullname);
-        setUserID(user.id);
-        if (user.username) {
-          setUserName(user.username);
-        }
+      if (userData?.role !== "PARTNER" && userData?.role !== "INTERMEDIARY") {
+        throw new Error("Access denied. This portal is for partners only.");
       }
+
+      // Store directly in localStorage
+      localStorage.setItem("token", tokens.accessToken);
+      localStorage.setItem("user", JSON.stringify(response.data)); // full nested response
+      localStorage.setItem("id", userData.id);
+      localStorage.setItem("email", userData.email);
+      localStorage.setItem("fullName", userData.fullName);
+      localStorage.setItem("mobileNumber", userData.mobileNumber);
+      localStorage.setItem("role", userData.role);
+      // Always store facilityId for INTERMEDIARY/PARTNER
+      if (userData.facilityId) {
+        localStorage.setItem("facilityId", userData.facilityId);
+      }
+
+      setUser(response.data);
+      setEmail(userData.email);
+      setToken(tokens.accessToken);
+      setPhoneNumber(userData.mobileNumber);
+      setfullname(userData.fullName);
+      setUserID(userData.id);
 
       toast.update(loadingToast, {
         render: "Login Successful! Welcome back.",
@@ -82,13 +81,14 @@ const Signin: React.FC = () => {
       });
 
       setTimeout(() => {
-        window.location.href = "/citizen";
+        window.location.href = "/intermediary/dashboard";
       }, 1000);
 
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (error: any) {
+      console.error("Login failed:", error?.response?.data || error?.message || error);
+      alert("Login error: " + (error?.response?.data?.message || error?.message || "Unknown error"));
       toast.update(loadingToast, {
-        render: "Login Failed. Please check your credentials.",
+        render: error?.message || "Login Failed. Please check your credentials.",
         type: "error",
         isLoading: false,
         autoClose: 3000

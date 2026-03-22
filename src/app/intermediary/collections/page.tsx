@@ -1,26 +1,40 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getUser, getUserID } from "../../intermediary/sign-in/auth";
 import { intermediaryApi } from "@/lib/intermediary-api";
 
 const CollectionsPage = () => {
-    const user = getUser();
-    const facilityOwnerId = getUserID(); // In a real app this might be different if facility is a separate ID, assuming user ID = facility owner
+    const [facilityOwnerId, setFacilityOwnerId] = useState<string | null>(null);
     const [filterStatus, setFilterStatus] = useState<string>("All");
     const [searchTerm, setSearchTerm] = useState<string>("");
     const [collections, setCollections] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
+    // Read from localStorage inside useEffect to avoid SSR issues
+    useEffect(() => {
+        const id = localStorage.getItem("id");
+        console.log('[CollectionsPage] localStorage keys:', Object.keys(localStorage));
+        console.log('[CollectionsPage] id from localStorage:', id);
+        console.log('[CollectionsPage] token from localStorage:', localStorage.getItem('token'));
+        console.log('[CollectionsPage] accessToken cookie:', document.cookie);
+        setFacilityOwnerId(id);
+    }, []);
+
     useEffect(() => {
         const fetchRequests = async () => {
-            if (!facilityOwnerId) return;
+            console.log('[CollectionsPage] fetchRequests called, facilityOwnerId:', facilityOwnerId);
+            if (!facilityOwnerId) {
+                console.warn('[CollectionsPage] ⚠️ facilityOwnerId is null/empty — skipping fetch');
+                return;
+            }
             try {
                 setLoading(true);
-                const data = await intermediaryApi.requests.getAll(facilityOwnerId as string, filterStatus, searchTerm);
+                console.log('[CollectionsPage] Calling intermediaryApi.requests.getAll...');
+                const data = await intermediaryApi.requests.getAll(facilityOwnerId, filterStatus, searchTerm);
+                console.log('[CollectionsPage] ✅ Response:', data);
                 setCollections(data);
             } catch (error) {
-                console.error("Failed to load collections:", error);
+                console.error('[CollectionsPage] ❌ Failed to load collections:', error);
             } finally {
                 setLoading(false);
             }

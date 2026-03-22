@@ -6,14 +6,23 @@ export const setToken = (token: string): void => {
   if (isLocalStorageAvailable) {
     localStorage.setItem('token', token);
     localStorage.setItem('tokenTimestamp', Date.now().toString());
-    console.log('Token set:', token);
+    // Also store in cookie as fallback
+    document.cookie = `accessToken=${encodeURIComponent(token)}; path=/; max-age=86400`;
+    console.log('Token set in localStorage and cookie');
   }
 };
 
 export const getToken = () => {
   if (isLocalStorageAvailable) {
     const token = localStorage.getItem('token');
-    return token;
+    if (token) return token;
+
+    // Fallback: read from cookies (accessToken)
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [key, value] = cookie.trim().split('=');
+      if (key === 'accessToken') return decodeURIComponent(value);
+    }
   }
   return null;
 };

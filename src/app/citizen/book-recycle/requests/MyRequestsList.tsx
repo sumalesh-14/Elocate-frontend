@@ -243,16 +243,21 @@ const MyRequestsList = () => {
             });
             loadRequestDetails(selectedRequestId);
         } catch (err: any) {
+            const msg = err?.response?.data?.message || err?.message || "";
+            const isQuotaError = msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("try again tomorrow");
             toast.update(reminderToast, {
-                render: "Failed to send reminder.",
+                render: isQuotaError
+                    ? "Today's reminder quota reached. Please try again tomorrow — the intermediary will respond to you."
+                    : "Failed to send reminder. Please try again.",
                 type: "error",
                 isLoading: false,
-                autoClose: 3000
+                autoClose: 5000
             });
         } finally {
             setSendingReminder(false);
         }
     };
+
 
     const getDeviceIcon = (deviceType: string, className = "text-2xl") => {
         const icons: { [key: string]: React.ReactNode } = {
@@ -597,32 +602,35 @@ const MyRequestsList = () => {
                                             <div className="relative pl-8 border-l-2 border-dashed border-emerald-100 ml-8 md:ml-12 space-y-12 pb-6 mt-4 md:mt-8">
                                                 {statusHistory.map((h, i) => {
                                                     const isFulfillment = h.statusType === 'FULFILLMENT_STATUS' || h.statusType === 'FULFILLMENT';
+                                                    const isReminder = h.newStatus === 'REMINDER_SENT';
                                                     return (
                                                         <div key={i} className="relative group/log">
                                                             {/* Dynamic Icon */}
-                                                            <div className={`absolute -left-[54px] top-0 w-11 h-11 bg-white border-2 rounded-full flex items-center justify-center transition-all duration-500 z-10 shadow-sm ${i === 0 ? "scale-110" : "scale-100"} ${isFulfillment ? "border-indigo-400 text-indigo-500" : "border-emerald-400 text-emerald-500"}`}>
-                                                                {isFulfillment ? <MdLocalShipping className="text-xl" /> : <MdCheckCircle className="text-xl" />}
+                                                            <div className={`absolute -left-[54px] top-0 w-11 h-11 bg-white border-2 rounded-full flex items-center justify-center transition-all duration-500 z-10 shadow-sm ${i === 0 ? "scale-110" : "scale-100"} ${isReminder ? "border-orange-400 text-orange-500" : isFulfillment ? "border-indigo-400 text-indigo-500" : "border-emerald-400 text-emerald-500"}`}>
+                                                                {isReminder ? <MdNotifications className="text-xl" /> : isFulfillment ? <MdLocalShipping className="text-xl" /> : <MdCheckCircle className="text-xl" />}
                                                             </div>
                                                             
                                                             <div className="flex flex-col gap-3">
                                                                 <div className="flex flex-wrap items-center gap-3">
                                                                     <span className={`px-4 py-1.5 rounded-[12px] text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                                                        isFulfillment 
+                                                                        isReminder
+                                                                            ? (i === 0 ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-200" : "bg-orange-50 text-orange-700 border-orange-100")
+                                                                            : isFulfillment 
                                                                             ? (i === 0 ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200" : "bg-indigo-50 text-indigo-700 border-indigo-100") 
                                                                             : (h.newStatus === 'RECYCLED' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-200' : ['VERIFIED', 'APPROVED'].includes(h.newStatus) ? 'bg-emerald-100 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200')
                                                                     }`}>
-                                                                        {h.newStatus}
+                                                                        {isReminder ? '🔔 Reminder Sent' : h.newStatus}
                                                                     </span>
-                                                                    <span className={`text-[9px] font-black tracking-widest px-2 py-1 rounded bg-gray-50 ${isFulfillment ? 'text-indigo-400' : 'text-emerald-400'}`}>
-                                                                        {isFulfillment ? 'LOGISTICS' : 'PROCESSING'}
+                                                                    <span className={`text-[9px] font-black tracking-widest px-2 py-1 rounded bg-gray-50 ${isReminder ? 'text-orange-400' : isFulfillment ? 'text-indigo-400' : 'text-emerald-400'}`}>
+                                                                        {isReminder ? 'NOTIFICATION' : isFulfillment ? 'LOGISTICS' : 'PROCESSING'}
                                                                     </span>
                                                                     <span className="text-[11px] font-bold text-gray-400">
                                                                         {new Date(h.changedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                                     </span>
                                                                 </div>
                                                                 {h.comments && (
-                                                                    <div className="bg-white p-5 rounded-[20px] border border-gray-100/80 shadow-sm w-full md:w-3/4 lg:w-2/3">
-                                                                        <p className="text-[13px] font-bold text-gray-500 leading-relaxed italic">"{h.comments}"</p>
+                                                                    <div className={`p-5 rounded-[20px] border shadow-sm w-full md:w-3/4 lg:w-2/3 ${isReminder ? 'bg-orange-50 border-orange-100' : 'bg-white border-gray-100/80'}`}>
+                                                                        <p className={`text-[13px] font-bold leading-relaxed italic ${isReminder ? 'text-orange-700' : 'text-gray-500'}`}>"{h.comments}"</p>
                                                                     </div>
                                                                 )}
                                                             </div>
