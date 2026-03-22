@@ -1,0 +1,1 @@
+src/app/intermediary/collections/[id]/page.tsx(97,68): error TS2339: Property 'getHistory' does not exist on type '{ getAll: (userId: string, status?: string | undefined, search?: string | undefined) => Promise<any>; getById: (id: string) => Promise<any>; approve: (id: string, payload: { ...; }) => Promise<...>; ... 7 more ...; getStatusHistory: (id: string) => Promise<...>; }'.

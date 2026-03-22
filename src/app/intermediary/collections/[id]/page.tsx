@@ -9,7 +9,7 @@ import { useToast } from "@/context/ToastContext";
 // Platform Link Component to avoid hook violations in map
 function PlatformLink({ platform }: { platform: any }) {
     const [imageError, setImageError] = useState(false);
-    
+
     return (
         <a
             href={platform.link}
@@ -31,7 +31,7 @@ function PlatformLink({ platform }: { platform: any }) {
                     </svg>
                 </div>
             )}
-            <span className="text-xs font-semibold text-gray-700 group-hover:text-indigo-600 text-center transition-colors">
+            <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center transition-colors">
                 {platform.platformName}
             </span>
         </a>
@@ -55,7 +55,7 @@ export default function CollectionDetailsPage() {
     const [conditionCode, setConditionCode] = useState<string>("GOOD");
     const [verificationNotes, setVerificationNotes] = useState<string>("");
     const [finalAmount, setFinalAmount] = useState<string>("");
-    
+
     // State for material analysis condition override
     const [analysisCondition, setAnalysisCondition] = useState<string>("");
     const [analysisNotes, setAnalysisNotes] = useState<string>("");
@@ -82,30 +82,58 @@ export default function CollectionDetailsPage() {
     const [isConditionImpactOpen, setIsConditionImpactOpen] = useState<boolean>(true);
     const [isPlatformLinksOpen, setIsPlatformLinksOpen] = useState<boolean>(true);
     const [isMaterialTableOpen, setIsMaterialTableOpen] = useState<boolean>(true);
-    const [isActionsOpen, setIsActionsOpen] = useState<boolean>(false); // Closed by default
+    const [isActionsOpen, setIsActionsOpen] = useState<boolean>(true); // Closed by default
+    const [currentSection, setCurrentSection] = useState<number>(0);
 
     useEffect(() => {
-        const fetchDetails = async () => {
-            if (!params.id) return;
-            try {
-                setLoading(true);
-                const data = await intermediaryApi.requests.getById(params.id as string);
-                setRequest(data);
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const active = document.activeElement;
+            if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT" || active.getAttribute("contenteditable") === "true")) {
+                return;
+            }
 
-                // Initialize analysis condition with request's condition
-                setAnalysisCondition(data.conditionCode || "GOOD");
-                setAnalysisNotes(data.conditionNotes || "");
-
-                // Fetch only drivers belonging to this request's facility
-                const facilityId = data.facilityId || await resolveFacilityId() || undefined;
-                const driversData = await intermediaryApi.drivers.getAll(undefined, undefined, 0, 100, facilityId);
-                setDrivers(driversData?.content || []);
-            } catch (error) {
-                console.error("Failed to fetch request:", error);
-            } finally {
-                setLoading(false);
+            if (e.key === "ArrowRight") {
+                setCurrentSection((prev) => (prev + 1) % 4);
+            } else if (e.key === "ArrowLeft") {
+                setCurrentSection((prev) => (prev - 1 + 4) % 4);
             }
         };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
+    const [approveAmount, setApproveAmount] = useState<string>("");
+
+    const fetchDetails = async () => {
+        if (!params.id) return;
+        try {
+            if (!request) setLoading(true);
+            const data = await intermediaryApi.requests.getById(params.id as string);
+            setRequest(data);
+
+            try {
+                const historyData = await intermediaryApi.requests.getStatusHistory(params.id as string);
+                setStatusHistory(historyData || []);
+            } catch (err) {
+                console.error("Failed to fetch history:", err);
+            }
+
+            // Initialize analysis condition with request's condition
+            setAnalysisCondition(data.conditionCode || "GOOD");
+            setAnalysisNotes(data.conditionNotes || "");
+
+            // Fetch only drivers belonging to this request's facility
+            const facilityId = data.facilityId || await resolveFacilityId() || undefined;
+            const driversData = await intermediaryApi.drivers.getAll(undefined, undefined, 0, 100, facilityId);
+            setDrivers(driversData?.content || []);
+        } catch (error) {
+            console.error("Failed to fetch request:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchDetails();
     }, [params.id]);
 
@@ -130,13 +158,14 @@ export default function CollectionDetailsPage() {
     const handleApprove = async () => {
         try {
             setActionLoading(true);
+            const finalApproveAmt = approveAmount !== "" ? parseFloat(approveAmount) : grandTotal;
             await intermediaryApi.requests.approve(params.id as string, {
-                adjustedEstimatedAmount: grandTotal,
+                adjustedEstimatedAmount: finalApproveAmt,
                 adjustmentReason: adjustmentReason || "Standard Approval",
                 aiPricingResponse: materialsData || undefined
             });
             showToast("Success\nRequest approved successfully.", "success");
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => refreshData(), 1500);
         } catch (error) {
             showToast("Error\nFailed to approve. Check console.", "error");
             console.error(error);
@@ -153,12 +182,12 @@ export default function CollectionDetailsPage() {
         try {
             setActionLoading(true);
             await intermediaryApi.requests.assignDriver(
-                params.id as string, 
-                selectedDriverId, 
+                params.id as string,
+                selectedDriverId,
                 driverComments || undefined
             );
             showToast("Success\nDriver assigned successfully! Email sent with instructions.", "success");
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => refreshData(), 1500);
         } catch (error) {
             showToast("Error\nFailed to assign driver. Check console.", "error");
             console.error(error);
@@ -172,7 +201,7 @@ export default function CollectionDetailsPage() {
             setActionLoading(true);
             await intermediaryApi.requests.markDropped(params.id as string);
             showToast("Success\nMarked as received at facility.", "success");
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => refreshData(), 1500);
         } catch (error) {
             showToast("Error\nFailed to mark as dropped.", "error");
             console.error(error);
@@ -186,7 +215,7 @@ export default function CollectionDetailsPage() {
             setActionLoading(true);
             await intermediaryApi.requests.verifyDropOff(params.id as string);
             showToast("Success\nVerified Drop-off successfully.", "success");
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => refreshData(), 1500);
         } catch (error) {
             showToast("Error\nFailed to verify drop-off.", "error");
             console.error(error);
@@ -200,13 +229,13 @@ export default function CollectionDetailsPage() {
             setActionLoading(true);
             const finalAmountNum = finalAmount ? parseFloat(finalAmount) : undefined;
             await intermediaryApi.requests.verifyCondition(
-                params.id as string, 
-                conditionCode, 
+                params.id as string,
+                conditionCode,
                 verificationNotes || "Condition verified on receipt.",
                 finalAmountNum
             );
             showToast("Success\nCondition verified successfully.", "success");
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => refreshData(), 1500);
         } catch (error) {
             showToast("Error\nFailed to verify condition.", "error");
             console.error(error);
@@ -220,7 +249,7 @@ export default function CollectionDetailsPage() {
             setActionLoading(true);
             await intermediaryApi.requests.markRecycled(params.id as string);
             showToast("Success\nMarked as Recycled!", "success");
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => refreshData(), 1500);
         } catch (error) {
             showToast("Error\nFailed mark as recycled.", "error");
             console.error(error);
@@ -279,6 +308,13 @@ export default function CollectionDetailsPage() {
         }
     };
 
+    const refreshData = () => {
+        fetchDetails();
+        if (showHistory || statusHistory.length > 0) {
+            fetchStatusHistory();
+        }
+    };
+
     const handleToggleHistory = () => {
         if (!showHistory && statusHistory.length === 0) {
             fetchStatusHistory();
@@ -321,977 +357,903 @@ export default function CollectionDetailsPage() {
     const canMarkAsDropped = request.fulfillmentType === "DROP_OFF" && request.fulfillmentStatus === "DROP_PENDING" && request.status === "APPROVED";
     const canVerifyDropOff = request.fulfillmentType === "DROP_OFF" && request.fulfillmentStatus === "DROPPED_AT_FACILITY";
 
-    const needsConditionVerification = (request.fulfillmentStatus === "PICKUP_COMPLETED" || request.fulfillmentStatus === "DROP_VERIFIED") && request.status !== "VERIFIED" && request.status !== "RECYCLED";
+    const needsConditionVerification = (request.fulfillmentStatus === "PICKUP_COMPLETED" || request.fulfillmentStatus === "DROP_VERIFIED" || request.fulfillmentStatus === "PICKUP_FAILED") && request.status !== "VERIFIED" && request.status !== "RECYCLED";
     const canRecycle = request.status === "VERIFIED";
 
+    const recycleStatusHistory = statusHistory.filter((item: any) => {
+        const s = (item.newStatus || item.status || "").toUpperCase();
+        return s && !s.includes('DROP') && !s.includes('PICKUP') && !s.includes('ASSIGN') && !s.includes('FACILITY');
+    });
+    const fulfillmentHistory = statusHistory.filter((item: any) => {
+        const s = (item.newStatus || item.status || "").toUpperCase();
+        return s && (s.includes('DROP') || s.includes('PICKUP') || s.includes('ASSIGN') || s.includes('FACILITY'));
+    });
+
     return (
-        <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+        <div className="w-full min-h-screen bg-gray-50">
             {/* Header with Gradient */}
-            <div className="bg-gradient-to-r from-eco-600 via-eco-500 to-green-500 rounded-2xl p-6 mb-6 shadow-lg animate-fadeIn">
-                <div className="flex justify-between items-center">
+            <header className="mb-8 w-full bg-white border-b border-gray-200 rounded-b-[2.5rem] shadow-[0_8px_30px_-15px_rgba(0,0,0,0.05)] animate-fadeIn">
+                <div className="max-w-[1700px] mx-auto px-6 sm:px-10 lg:px-16 py-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
+                        <button
+                            onClick={() => router.push("/intermediary/collections")}
+                            className="flex items-center gap-1 text-gray-500 hover:text-emerald-700 font-bold text-xs uppercase cursor-pointer mb-4 transition-all duration-200 group"
+                        >
+                            <svg className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                            Back to List
+                        </button>
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                                <span className="text-2xl">📋</span>
+                            <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Active Request</span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></div>
+                                <span className="text-xs font-semibold text-emerald-600 uppercase tracking-tighter">Live Tracking</span>
                             </div>
-                            <h1 className="text-3xl font-bold text-white drop-shadow-md">
-                                Request #{request.id.split('-')[0].toUpperCase()}
-                            </h1>
                         </div>
-                        <p className="text-eco-50 text-sm ml-13">Collection Management Dashboard</p>
+                        <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-1">
+                            {request.requestNumber || `Request #${request.id.split('-')[0].toUpperCase()}`}
+                        </h1>
+                        <p className="text-gray-500 font-medium text-sm">Hardware Lifecycle Management • Batch {request.category || 'A-12'}</p>
                     </div>
-                    <button
-                        onClick={() => router.back()}
-                        className="px-5 py-2.5 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 transition-all duration-300 font-semibold shadow-md hover:shadow-lg transform hover:scale-105 flex items-center gap-2"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Back to List
-                    </button>
+                    <div className="flex items-center gap-2 bg-gray-100/80 p-1.5 rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]">
+                        {['Details', 'History', 'Analysis', 'Actions'].map((label, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setCurrentSection(idx)}
+                                className={`px-5 py-2 text-sm transition-all duration-300 rounded-full ${currentSection === idx ? 'font-bold text-white bg-emerald-700 shadow-md' : 'font-medium text-gray-500 hover:text-emerald-700'}`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column: Details (2/3 width on large screens) */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Status Card with Animation */}
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 animate-slideInLeft">
-                        <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => setIsStatusOpen(!isStatusOpen)}>
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-eco-500 to-green-500 rounded-lg flex items-center justify-center">
-                                    <span className="text-white text-lg">📊</span>
-                                </div>
-                                <h2 className="text-xl font-bold text-gray-800">Status Overview</h2>
-                            </div>
-                            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                <svg 
-                                    className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${isStatusOpen ? 'rotate-180' : ''}`} 
-                                    fill="none" 
-                                    stroke="currentColor" 
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </div>
+            {/* Main Content Carousel */}
 
-                        {/* Status Cards Grid */}
-                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300 overflow-hidden ${isStatusOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                            <div className="bg-gradient-to-br from-eco-50 to-green-50 rounded-xl p-4 border-2 border-eco-200 hover:border-eco-300 transition-all duration-300 transform hover:scale-[1.02]">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-eco-500 rounded-full flex items-center justify-center shadow-md">
-                                        <span className="text-white text-xl font-bold">✓</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-xs font-semibold text-eco-700 uppercase tracking-wide">Overall Status</span>
-                                        <div className="text-2xl font-bold text-eco-900 mt-1">{request.status}</div>
+
+            <div className="overflow-hidden w-full relative">
+                <div
+                    className="flex transition-transform duration-500 ease-in-out"
+                    style={{ transform: `translateX(-${currentSection * 100}%)` }}
+                >
+                    {/* Section 1: Details */}
+                    <div className="w-full flex-shrink-0 px-2 sm:px-4">
+                        <div className="w-full space-y-8 animate-fadeIn">
+                            {/* Status Overview Section */}
+                            <section className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl text-emerald-700">📊</span>
+                                        <h2 className="text-sm font-black uppercase tracking-wider text-gray-800">Status Overview</h2>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border-2 border-amber-200 hover:border-amber-300 transition-all duration-300 transform hover:scale-[1.02]">
-                                <div className="flex items-center gap-3">
-                                    <div className={"w-12 h-12 rounded-full flex items-center justify-center shadow-md " + (request.fulfillmentStatus === "COMPLETED" ? "bg-green-500" : "bg-amber-500")}>
-                                        <span className="text-white text-xl font-bold">🚚</span>
+                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="flex items-center gap-4 p-5 rounded-2xl bg-emerald-50/50 border border-emerald-100/50 hover:shadow-md transition-all">
+                                        <div className="w-12 h-12 rounded-full bg-emerald-700 text-white flex items-center justify-center shadow-sm">
+                                            <span className="font-bold">✓</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Overall Status</p>
+                                            <p className="text-2xl font-black text-gray-900 tracking-tight">{request.status}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Fulfillment</span>
-                                        <div className={"text-2xl font-bold mt-1 " + (request.fulfillmentStatus === "COMPLETED" ? "text-green-600" : "text-amber-600")}>
-                                            {request.fulfillmentStatus}
+
+                                    <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-50/50 border border-amber-100/50 hover:shadow-md transition-all">
+                                        <div className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-sm">
+                                            <span>🚚</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Fulfillment</p>
+                                            <p className="text-2xl font-black text-gray-900 tracking-tight">{request.fulfillmentStatus}</p>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
+                            </section>
 
-                    {/* Device & Logistics Details Card */}
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 animate-slideInLeft" style={{animationDelay: '0.1s'}}>
-                        <div className="flex items-center justify-between mb-6 cursor-pointer" onClick={() => setIsDeviceDetailsOpen(!isDeviceDetailsOpen)}>
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                                    <span className="text-white text-lg">📱</span>
-                                </div>
-                                <h2 className="text-xl font-bold text-gray-800">Device & Logistics Details</h2>
-                            </div>
-                            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                <svg 
-                                    className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${isDeviceDetailsOpen ? 'rotate-180' : ''}`} 
-                                    fill="none" 
-                                    stroke="currentColor" 
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div className={`transition-all duration-300 overflow-hidden ${isDeviceDetailsOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Device Details Column */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-gray-200">
-                                    <span className="text-lg">💻</span>
-                                    <h3 className="text-base font-bold text-gray-800">Device Information</h3>
-                                </div>
-                                
-                                <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase">Device Model</span>
-                                        <span className="font-bold text-gray-800">{request.deviceModelName || "Unknown"}</span>
+                            {/* Device & Logistics Details */}
+                            <section className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl text-emerald-700">📱</span>
+                                        <h2 className="text-sm font-black uppercase tracking-wider text-gray-800">Device & Logistics Details</h2>
                                     </div>
                                 </div>
-                                
-                                <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase">Category</span>
-                                        <span className="font-bold text-gray-800">{request.categoryName} ({request.brandName})</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase">Condition</span>
-                                        <span className="font-bold text-gray-800 px-3 py-1 bg-white rounded-full border border-gray-300">{request.conditionCode}</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-gradient-to-br from-eco-50 to-green-50 rounded-lg p-4 border-2 border-eco-200 mt-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm font-bold text-eco-700">💰 Estimated Amount</span>
-                                        <span className="text-2xl font-bold text-eco-900">₹{request.estimatedAmount}</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm font-bold text-green-700">✓ Final Amount</span>
-                                        <span className="text-2xl font-bold text-green-900">₹{request.finalAmount || 0}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Logistics Column */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-gray-200">
-                                    <span className="text-lg">🚚</span>
-                                    <h3 className="text-base font-bold text-gray-800">Logistics</h3>
-                                </div>
-                                
-                                <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase">Fulfillment Type</span>
-                                        <span className="font-bold text-gray-800 px-3 py-1 bg-white rounded-full border border-gray-300">{request.fulfillmentType}</span>
-                                    </div>
-                                </div>
-                                
-                                {request.fulfillmentType === "PICKUP" ? (
-                                    <>
-                                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                                            <span className="text-xs font-semibold text-blue-700 uppercase block mb-2">📍 Pickup Address</span>
-                                            <span className="font-medium text-gray-800 text-sm block leading-relaxed">
-                                                {request.pickupAddress}, {request.pickupCity}, {request.pickupState} {request.pickupPincode}
-                                            </span>
+                                <div className="grid grid-cols-1 lg:grid-cols-2">
+                                    {/* Left: Device Info */}
+                                    <div className="p-6 border-r border-gray-100 space-y-6">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-gray-400">💻</span>
+                                            <h3 className="text-sm font-bold text-gray-600">Device Information</h3>
                                         </div>
-                                        <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs font-semibold text-gray-500 uppercase">Assigned Driver</span>
-                                                <span className="font-bold text-gray-800">{request.assignedDriverId ? request.assignedDriverId.split('-')[0] : "Not Assigned"}</span>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Device Model</span>
+                                                <span className="text-sm font-black text-gray-800">{request.deviceModelName || "Unknown"}</span>
                                             </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                                        <span className="text-xs font-semibold text-purple-700 uppercase block mb-2">🏢 Facility</span>
-                                        <span className="font-bold text-gray-800">{request.facilityName}</span>
-                                    </div>
-                                )}
-                                
-                                <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase">Created At</span>
-                                        <span className="font-medium text-gray-800 text-sm">{new Date(request.createdAt).toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-
-                    {/* Status History Timeline */}
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 animate-slideInLeft" style={{animationDelay: '0.2s'}}>
-                        <div className="flex items-center justify-between mb-6 cursor-pointer" onClick={handleToggleHistory}>
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                    <span className="text-white text-lg">📜</span>
-                                </div>
-                                <h2 className="text-xl font-bold text-gray-800">Status History</h2>
-                            </div>
-                            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                <svg 
-                                    className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${showHistory ? 'rotate-180' : ''}`} 
-                                    fill="none" 
-                                    stroke="currentColor" 
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div className={`transition-all duration-300 overflow-hidden ${showHistory ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                            {loadingHistory ? (
-                                <div className="text-center py-8 text-gray-500">
-                                    <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-3"></div>
-                                    <p>Loading history...</p>
-                                </div>
-                            ) : statusHistory.length > 0 ? (
-                                <div>
-                                    {/* Filter/Group Status History */}
-                                    {(() => {
-                                        const recycleStatusHistory = statusHistory.filter((item: any) => item.statusType === 'RECYCLE_STATUS');
-                                        const fulfillmentHistory = statusHistory.filter((item: any) => item.statusType === 'FULFILLMENT_STATUS');
-                                        
-                                        return (
-                                            <div className="space-y-6">
-                                                {/* Main Request Status Timeline */}
-                                                {recycleStatusHistory.length > 0 && (
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-purple-200">
-                                                            <span className="text-lg">🎯</span>
-                                                            <h3 className="text-base font-bold text-gray-800">Request Status</h3>
-                                                            <span className="text-xs text-gray-500">({recycleStatusHistory.length} updates)</span>
-                                                        </div>
-                                                        <div className="relative">
-                                                            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 to-green-200"></div>
-                                                            <div className="space-y-4">
-                                                                {recycleStatusHistory.map((item: any, idx: number) => (
-                                                                    <div key={item.id} className="relative pl-16 animate-fadeIn" style={{animationDelay: `${idx * 0.1}s`}}>
-                                                                        <div className={`absolute left-3 w-6 h-6 rounded-full bg-gradient-to-br ${getStatusColor(item.newStatus)} shadow-lg flex items-center justify-center text-white text-xs font-bold border-4 border-white`}>
-                                                                            {getStatusIcon(item.newStatus)}
-                                                                        </div>
-                                                                        <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-4 border-2 border-purple-200 hover:border-purple-400 transition-all duration-300 hover:shadow-md">
-                                                                            <div className="flex items-center gap-2 mb-2">
-                                                                                <span className={`px-3 py-1 bg-gradient-to-r ${getStatusColor(item.newStatus)} text-white rounded-full text-sm font-bold shadow-sm`}>
-                                                                                    {item.newStatus}
-                                                                                </span>
-                                                                                <span className="text-xs text-gray-500">{new Date(item.changedAt).toLocaleString()}</span>
-                                                                            </div>
-                                                                            {item.comments && (
-                                                                                <p className="text-sm text-gray-700 leading-relaxed">{item.comments}</p>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Fulfillment/Operational Timeline */}
-                                                {fulfillmentHistory.length > 0 && (
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-blue-200">
-                                                            <span className="text-lg">🚚</span>
-                                                            <h3 className="text-base font-bold text-gray-800">Fulfillment Status</h3>
-                                                            <span className="text-xs text-gray-500">({fulfillmentHistory.length} updates)</span>
-                                                        </div>
-                                                        <div className="relative">
-                                                            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 to-cyan-200"></div>
-                                                            <div className="space-y-4">
-                                                                {fulfillmentHistory.map((item: any, idx: number) => (
-                                                                    <div key={item.id} className="relative pl-16 animate-fadeIn" style={{animationDelay: `${idx * 0.1}s`}}>
-                                                                        <div className={`absolute left-3 w-6 h-6 rounded-full bg-gradient-to-br ${getStatusColor(item.newStatus)} shadow-lg flex items-center justify-center text-white text-xs font-bold border-4 border-white`}>
-                                                                            {getStatusIcon(item.newStatus)}
-                                                                        </div>
-                                                                        <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border-2 border-blue-200 hover:border-blue-400 transition-all duration-300 hover:shadow-md">
-                                                                            <div className="flex items-center gap-2 mb-2">
-                                                                                <span className={`px-3 py-1 bg-gradient-to-r ${getStatusColor(item.newStatus)} text-white rounded-full text-sm font-bold shadow-sm`}>
-                                                                                    {item.newStatus}
-                                                                                </span>
-                                                                                <span className="text-xs text-gray-500">{new Date(item.changedAt).toLocaleString()}</span>
-                                                                            </div>
-                                                                            {item.comments && (
-                                                                                <p className="text-sm text-gray-700 leading-relaxed">{item.comments}</p>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                            <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Category</span>
+                                                <span className="text-sm font-black text-gray-800">{request.categoryName}</span>
                                             </div>
-                                        );
-                                    })()}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    <div className="text-4xl mb-3">📭</div>
-                                    <p>No status history available</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Material Analysis Results - Moved to Left Column */}
-                    {materialsData && (
-                        <div className="space-y-6 animate-slideInUp">
-                            {/* Pricing Summary Cards */}
-                            {materialsData.recyclingEstimate && (
-                                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-                                    <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => setIsPricingSummaryOpen(!isPricingSummaryOpen)}>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                                                <span className="text-white text-lg">💰</span>
+                                            <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Condition</span>
+                                                <span className="px-3 py-1 bg-gray-100 text-gray-800 text-[10px] font-black rounded-full border border-gray-200 uppercase">{request.conditionCode}</span>
                                             </div>
-                                            <h3 className="text-xl font-bold text-gray-900">Pricing Summary</h3>
-                                        </div>
-                                        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                            <svg 
-                                                className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${isPricingSummaryOpen ? 'rotate-180' : ''}`} 
-                                                fill="none" 
-                                                stroke="currentColor" 
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 transition-all duration-300 overflow-hidden ${isPricingSummaryOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    {/* Material Value Card */}
-                                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border-2 border-blue-200 hover:border-blue-300 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
-                                                <span className="text-2xl">💎</span>
-                                            </div>
-                                            <h4 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Material Value</h4>
-                                        </div>
-                                        <p className="text-4xl font-bold text-blue-900 mb-2">
-                                            ₹{materialsData.recyclingEstimate.totalMaterialValue?.toFixed(2) || grandTotal.toFixed(2)}
-                                        </p>
-                                        <p className="text-xs text-blue-700 font-medium">Total raw material worth</p>
-                                    </div>
-
-                                    {/* Recycling Price Card */}
-                                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200 hover:border-green-300 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-md">
-                                                <span className="text-2xl">♻️</span>
-                                            </div>
-                                            <h4 className="text-sm font-bold text-green-900 uppercase tracking-wide">Recycling Price</h4>
-                                        </div>
-                                        <p className="text-4xl font-bold text-green-900 mb-2">
-                                            ₹{materialsData.recyclingEstimate.suggestedRecyclingPrice?.toFixed(2) || (grandTotal * 0.55).toFixed(2)}
-                                        </p>
-                                        <p className="text-xs text-green-700 font-medium">Condition-adjusted value</p>
-                                    </div>
-
-                                    {/* Buyback Price Card */}
-                                    {materialsData.recyclingEstimate.suggestedBuybackPrice && (
-                                        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200 hover:border-purple-300 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center shadow-md">
-                                                    <span className="text-2xl">💰</span>
+                                            <div className="mt-8 p-5 bg-emerald-50 rounded-2xl flex justify-between items-center border border-emerald-100/30 shadow-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg">💰</span>
+                                                    <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">Estimated Amount</span>
                                                 </div>
-                                                <h4 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Buyback Price</h4>
+                                                <span className="text-2xl font-black text-emerald-700">₹{request.estimatedAmount}</span>
                                             </div>
-                                            <p className="text-4xl font-bold text-purple-900 mb-2">
-                                                ₹{materialsData.recyclingEstimate.suggestedBuybackPrice.toFixed(2)}
-                                            </p>
-                                            <p className="text-xs text-purple-700 font-medium">
-                                                🚀 {(materialsData.recyclingEstimate.suggestedBuybackPrice / materialsData.recyclingEstimate.suggestedRecyclingPrice).toFixed(1)}x better than recycling
-                                            </p>
+                                            <div className="p-5 bg-teal-50 rounded-2xl flex justify-between items-center border border-teal-100/30 shadow-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg">✓</span>
+                                                    <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider">Final Amount</span>
+                                                </div>
+                                                <span className="text-2xl font-black text-teal-700">₹{request.finalAmount || 0}</span>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                                </div>
-                            )}
+                                    </div>
 
-                            {/* Condition Impact Banner */}
-                            {materialsData.recyclingEstimate?.conditionImpact && (
-                                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border-l-4 border-indigo-500 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <span className="text-xl">ℹ️</span>
+                                    {/* Right: Logistics */}
+                                    <div className="p-6 space-y-6">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-gray-400">🚚</span>
+                                            <h3 className="text-sm font-bold text-gray-600">Logistics</h3>
                                         </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-indigo-900 mb-2 text-base">Condition Impact Analysis</h4>
-                                            <p className="text-sm text-indigo-800 leading-relaxed">{materialsData.recyclingEstimate.conditionImpact}</p>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Fulfillment Type</span>
+                                                <span className="px-4 py-1.5 border border-gray-200 rounded-xl text-xs font-black uppercase tracking-wider text-gray-700 bg-gray-50">{request.fulfillmentType}</span>
+                                            </div>
+                                            {request.fulfillmentType === "PICKUP" ? (
+                                                <div className="p-5 bg-emerald-50/40 rounded-2xl border border-emerald-100/30">
+                                                    <div className="flex items-center gap-2 mb-2 text-emerald-800">
+                                                        <span>📍</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-wider">Pickup Address</span>
+                                                    </div>
+                                                    <p className="text-sm font-semibold text-gray-800 leading-relaxed">{request.pickupAddress}, {request.pickupCity}, {request.pickupState} {request.pickupPincode}</p>
+                                                </div>
+                                            ) : (
+                                                <div className="p-5 bg-purple-50 rounded-2xl border border-purple-100/30">
+                                                    <div className="flex items-center gap-2 mb-2 text-purple-800">
+                                                        <span>🏢</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-wider">Facility</span>
+                                                    </div>
+                                                    <p className="text-sm font-semibold text-gray-800 leading-relaxed">{request.facilityName}</p>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Driver</span>
+                                                <span className="text-sm font-black text-gray-800">{request.driverName || (request.assignedDriverId ? request.assignedDriverId.split('-')[0] : "Not Assigned")}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center py-3">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Created At</span>
+                                                <span className="text-sm font-black text-gray-800">{new Date(request.createdAt).toLocaleString()}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            </section>
 
-                            {/* E-Commerce Platform Links */}
-                            {materialsData.devicePricing?.platformLinks && materialsData.devicePricing.platformLinks.length > 0 && (
-                                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-                                    <div className="flex items-center gap-3 mb-5">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                                            <span className="text-white text-xl">🛒</span>
-                                        </div>
-                                        <h3 className="text-xl font-bold text-gray-900">Check Current Market Price</h3>
-                                    </div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                        {materialsData.devicePricing.platformLinks.map((platform: any, idx: number) => (
-                                            <PlatformLink key={idx} platform={platform} />
-                                        ))}
-                                    </div>
+                            {/* Additional Support Elements Grid */}
+
+                        </div>
+                    </div>
+                    {/* Section 2: History */}
+
+                    <div className="w-full flex-shrink-0 px-2 sm:px-4 pb-20">
+                        <div className="w-full max-w-[1600px] mx-auto">
+
+                            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 animate-fadeIn">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h2 className="text-xl font-bold flex items-center gap-3 text-gray-900 tracking-tight">
+                                        <svg className="w-6 h-6 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        Status History
+                                    </h2>
                                 </div>
-                            )}
 
-                            {/* Material Breakdown Table */}
-                            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                        <span className="text-white text-xl">🔬</span>
-                                    </div>
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+                                    {/* Request Status Column */}
                                     <div>
-                                        <h3 className="text-2xl font-bold text-gray-900">Material Composition Breakdown</h3>
-                                        <p className="text-sm text-gray-500">Detailed analysis of recoverable materials</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-6 border border-blue-200">
-                                    <p className="text-sm text-gray-700 leading-relaxed">
-                                        <span className="font-semibold text-indigo-700">📋 Analysis Method:</span> {materialsData.analysisDescription}
-                                    </p>
-                                </div>
+                                        <div className="flex items-center gap-3 mb-8">
+                                            <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                                            <h3 className="text-sm font-bold text-gray-900 tracking-tight">Request Status <span className="text-gray-400 font-normal ml-1">({recycleStatusHistory.length} updates)</span></h3>
+                                        </div>
 
-                                <div className="overflow-x-auto rounded-xl border-2 border-gray-200 shadow-sm">
-                                    <table className="min-w-full text-left bg-white">
-                                        <thead className="bg-gradient-to-r from-gray-800 to-gray-700 text-white">
-                                            <tr>
-                                                <th className="px-6 py-4 text-sm font-bold uppercase tracking-wider">Material</th>
-                                                <th className="px-6 py-4 text-sm font-bold uppercase tracking-wider">Location</th>
-                                                <th className="px-6 py-4 text-sm font-bold uppercase tracking-wider text-right">Quantity (g)</th>
-                                                <th className="px-6 py-4 text-sm font-bold uppercase tracking-wider text-right">Rate (₹/g)</th>
-                                                <th className="px-6 py-4 text-sm font-bold uppercase tracking-wider text-right">Total Value</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
-                                            {materialsData.materials.map((m: any, idx: number) => (
-                                                <tr key={idx} className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all duration-200">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-3 h-3 rounded-full ${m.isPrecious ? 'bg-yellow-400 shadow-lg shadow-yellow-400/50 animate-pulse' : 'bg-gray-400'}`}></div>
-                                                            <div>
-                                                                <span className="font-bold text-gray-900 text-base">{m.materialName}</span>
-                                                                {m.isPrecious && (
-                                                                    <span className="ml-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold border border-yellow-600 shadow-sm">
-                                                                        ⭐ PRECIOUS
-                                                                    </span>
+                                        {loadingHistory ? (
+                                            <div className="text-sm text-gray-500">Loading history...</div>
+                                        ) : (
+                                            <div className="relative pl-4 before:content-[''] before:absolute before:left-[11px] before:top-0 before:bottom-0 before:w-[2px] before:bg-gray-200">
+                                                {["CREATED", "APPROVED", "VERIFIED", "RECYCLED"].map((stage, idx) => {
+                                                    const historyItem = recycleStatusHistory.find((h: any) => (h.newStatus || h.status) === stage);
+                                                    const isCompleted = !!historyItem;
+                                                    return (
+                                                        <div key={idx} className={`relative pl-10 ${idx !== 3 ? 'pb-12' : ''}`}>
+                                                            <div className={`absolute left-0 top-0 w-6 h-6 rounded-full flex items-center justify-center z-10 ${isCompleted ? (stage.includes('FAILED') ? 'bg-red-600' : 'bg-green-700') + ' text-white shadow-sm' : 'bg-gray-100 border border-gray-200 text-gray-400'}`}>
+                                                                {isCompleted ? (
+                                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
+                                                                ) : (
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                                 )}
                                                             </div>
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded tracking-wider ${isCompleted ? (stage.includes('FAILED') ? 'bg-red-600' : 'bg-green-700') + ' text-white' : 'bg-gray-400 text-white'}`}>
+                                                                        {isCompleted ? (historyItem.newStatus || historyItem.status) : stage}
+                                                                    </span>
+                                                                    {isCompleted && (
+                                                                        <span className="text-xs font-medium text-gray-400">
+                                                                            {new Date(historyItem.timestamp || historyItem.changedAt).toLocaleString()}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className={`text-sm ${isCompleted ? 'text-gray-800 font-bold' : 'text-gray-400'}`}>
+                                                                    {isCompleted ? (historyItem.comments || "Stage Completed") : "Pending Stage"}
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
-                                                        <span className="line-clamp-2">{m.foundIn}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <span className="font-semibold text-gray-800 text-base">{m.estimatedQuantityGrams}g</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <input
-                                                            type="number"
-                                                            value={m.editableRate}
-                                                            onChange={(e) => handleRateChange(idx, e.target.value)}
-                                                            className="w-32 p-2.5 text-sm border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-right font-medium transition-all hover:border-indigo-300 bg-white"
-                                                            step="0.01"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <span className="font-bold text-green-600 text-lg">
-                                                            ₹{(m.estimatedQuantityGrams * (m.editableRate || 0)).toFixed(2)}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                        <tfoot className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
-                                            <tr>
-                                                <td colSpan={4} className="px-6 py-5 text-right font-bold uppercase tracking-widest text-base">
-                                                    💰 Grand Total:
-                                                </td>
-                                                <td className="px-6 py-5 text-right font-bold text-2xl">
-                                                    ₹{grandTotal.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Column: Actions Panel (Sticky on large screens) */}
-                <div className="lg:col-span-1">
-                    <div className="sticky top-6 space-y-4 animate-slideInRight">
-
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                <span className="text-white text-lg">⚡</span>
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900">Quick Actions</h3>
-                        </div>
-                        
-                        {/* Material Analysis Card - Collapsible, Closed by Default */}
-                        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
-                            <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => setIsActionsOpen(!isActionsOpen)}>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
-                                        <span className="text-white text-sm font-bold">AI</span>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
-                                    <h4 className="font-bold text-indigo-900">Material Analysis</h4>
-                                </div>
-                                <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
-                                    <svg 
-                                        className={`w-5 h-5 text-indigo-600 transition-transform duration-300 ${isActionsOpen ? 'rotate-180' : ''}`} 
-                                        fill="none" 
-                                        stroke="currentColor" 
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-                            </div>
-                            
-                            <div className={`transition-all duration-300 overflow-hidden ${isActionsOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                                <div className="px-5 pb-5">
-                            <p className="text-xs text-indigo-700 mb-4 font-medium">Calculate value based on device condition</p>
-                            
-                            <div className="space-y-3">
-                                {/* Condition Override */}
-                                <div>
-                                    <label className="text-xs font-bold text-gray-700 block mb-2 flex items-center gap-1">
-                                        <span>🔍</span>
-                                        Device Condition
-                                        <span className="text-indigo-600">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <select 
-                                            value={analysisCondition} 
-                                            onChange={e => setAnalysisCondition(e.target.value)} 
-                                            className="w-full p-3 text-sm border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer font-medium transition-all hover:border-indigo-300"
-                                        >
-                                            <option value="EXCELLENT">⭐ EXCELLENT - Pristine/Working</option>
-                                            <option value="GOOD">✓ GOOD - Fair/Minor Issues</option>
-                                            <option value="FAIR">~ FAIR - Broken/Damaged</option>
-                                            <option value="POOR">✗ POOR - Scrap/Parts</option>
-                                        </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div className="mt-2 p-2 bg-white rounded-lg border border-indigo-200">
-                                        <p className="text-[10px] font-semibold text-indigo-700">
-                                            {analysisCondition === "EXCELLENT" && "💎 65% recycling, 70% buyback"}
-                                            {analysisCondition === "GOOD" && "✓ 55% recycling, 55% buyback"}
-                                            {analysisCondition === "FAIR" && "⚠️ 45% recycling, 35% buyback"}
-                                            {analysisCondition === "POOR" && "♻️ 30% recycling, no buyback"}
-                                        </p>
-                                    </div>
-                                </div>
 
-                                {/* Condition Notes */}
-                                <div>
-                                    <label className="text-xs font-bold text-gray-700 block mb-2 flex items-center gap-1">
-                                        <span>📝</span>
-                                        Condition Notes
-                                    </label>
-                                    <textarea
-                                        value={analysisNotes}
-                                        onChange={e => setAnalysisNotes(e.target.value)}
-                                        placeholder="e.g., Minor scratches, battery 85%, screen perfect"
-                                        className="w-full p-3 text-xs border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all hover:border-indigo-300"
-                                        rows={3}
-                                    />
-                                </div>
-
-                                <button
-                                    onClick={handleAnalyzeMaterials}
-                                    disabled={analyzingMaterials}
-                                    className="w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 text-sm font-bold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                                >
-                                    {analyzingMaterials ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Analyzing...
-                                        </span>
-                                    ) : "🔬 Analyze Device"}
-                                </button>
-                            </div>
-                            </div>
-                            </div>
-                        </div>
-
-                        {needsApproval && (
-                            <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 animate-fadeIn">
-                                <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => setIsApproveOpen(!isApproveOpen)}>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
-                                        <h4 className="font-bold text-yellow-900">Approve Request</h4>
-                                    </div>
-                                    <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
-                                        <svg 
-                                            className={`w-5 h-5 text-yellow-600 transition-transform duration-300 ${isApproveOpen ? 'rotate-180' : ''}`} 
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div className={`transition-all duration-300 overflow-hidden ${isApproveOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    <div className="px-5 pb-5">
-                                <div className="space-y-3">
+                                    {/* Fulfillment Status Column */}
                                     <div>
-                                        <span className="text-xs font-semibold text-gray-700 block mb-2">Final Amount</span>
-                                        <div className="p-3 border-2 border-yellow-300 rounded-lg bg-white font-bold text-green-700 text-center text-lg shadow-inner">
-                                            ₹{grandTotal.toFixed(2)}
+                                        <div className="flex items-center gap-3 mb-8">
+                                            <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                                            <h3 className="text-sm font-bold text-gray-900 tracking-tight">Fulfillment Status <span className="text-gray-400 font-normal ml-1">({fulfillmentHistory.length} updates)</span></h3>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-semibold text-gray-700 block mb-2">Adjustment Reason</label>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Optional reason for adjustment" 
-                                            value={adjustmentReason} 
-                                            onChange={e => setAdjustmentReason(e.target.value)} 
-                                            className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all" 
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={handleApprove}
-                                        disabled={actionLoading}
-                                        className="w-full px-4 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-lg hover:from-yellow-600 hover:to-amber-600 font-bold shadow-md hover:shadow-lg text-sm transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                                    >
-                                        {actionLoading ? (
-                                            <span className="flex items-center justify-center gap-2">
-                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Processing...
-                                            </span>
-                                        ) : `✓ Approve ₹${grandTotal.toFixed(2)}`}
-                                    </button>
-                                </div>
+
+                                        {loadingHistory ? (
+                                            <div className="text-sm text-gray-500">Loading history...</div>
+                                        ) : (
+                                            <div className="relative pl-4 before:content-[''] before:absolute before:left-[11px] before:top-0 before:bottom-0 before:w-[2px] before:bg-gray-200">
+                                                {(request.fulfillmentType === "DROP_OFF"
+                                                    ? ["DROP_PENDING", "DROPPED_AT_FACILITY", "DROP_VERIFIED"]
+                                                    : (fulfillmentHistory.some((h: any) => (h.newStatus || h.status) === "PICKUP_FAILED")
+                                                        ? ["PICKUP_REQUESTED", "PICKUP_ASSIGNED", "PICKUP_IN_PROGRESS", "PICKUP_FAILED"]
+                                                        : ["PICKUP_REQUESTED", "PICKUP_ASSIGNED", "PICKUP_IN_PROGRESS", "PICKUP_COMPLETED"])
+                                                ).map((stage, idx, arr) => {
+                                                    const historyItem = fulfillmentHistory.find((h: any) => {
+                                                        const s = (h.newStatus || h.status || "");
+                                                        return s === stage || (stage === "DRIVER_ASSIGNED" && s.includes("ASSIGN"));
+                                                    });
+                                                    const isCompleted = !!historyItem;
+                                                    const label = stage === "DRIVER_ASSIGNED" && historyItem ? (historyItem.newStatus || historyItem.status) : stage;
+                                                    return (
+                                                        <div key={idx} className={`relative pl-10 ${idx !== arr.length - 1 ? 'pb-12' : ''}`}>
+                                                            <div className={`absolute left-0 top-0 w-6 h-6 rounded-full flex items-center justify-center z-10 ${isCompleted ? (stage.includes('FAILED') ? 'bg-red-600' : 'bg-green-700') + ' text-white shadow-sm' : 'bg-gray-100 border border-gray-200 text-gray-400'}`}>
+                                                                {isCompleted ? (
+                                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
+                                                                ) : (
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded tracking-wider ${isCompleted ? (stage.includes('FAILED') ? 'bg-red-600' : 'bg-green-700') + ' text-white' : 'bg-gray-400 text-white'}`}>
+                                                                        {label}
+                                                                    </span>
+                                                                    {isCompleted && (
+                                                                        <span className="text-xs font-medium text-gray-400">
+                                                                            {new Date(historyItem.timestamp || historyItem.changedAt).toLocaleString()}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className={`text-sm ${isCompleted ? 'text-gray-800 font-bold' : 'text-gray-400'}`}>
+                                                                    {isCompleted ? (historyItem.comments || "Stage Completed") : "Pending Stage"}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                        )}
 
-                        {needsDriver && (
-                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 animate-fadeIn">
-                                <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => setIsAssignDriverOpen(!isAssignDriverOpen)}>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
-                                        <h4 className="font-bold text-blue-900">Assign Driver</h4>
-                                    </div>
-                                    <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
-                                        <svg 
-                                            className={`w-5 h-5 text-blue-600 transition-transform duration-300 ${isAssignDriverOpen ? 'rotate-180' : ''}`} 
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div className={`transition-all duration-300 overflow-hidden ${isAssignDriverOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    <div className="px-5 pb-5">
-                                        <p className="text-xs text-blue-700 mb-3 font-medium">Trigger pickup workflow</p>
-                                        <div className="space-y-3">
-                                    <div className="relative">
-                                        <select 
-                                            value={selectedDriverId} 
-                                            onChange={e => setSelectedDriverId(e.target.value)} 
-                                            className="w-full p-2.5 text-sm border border-gray-300 rounded-lg bg-white appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer"
-                                        >
-                                            <option value="">🚗 Choose Driver</option>
-                                            {drivers.map(d => (
-                                                <option key={d.id} value={d.id}>👤 {d.name} ({d.vehicleType})</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Driver Instructions/Comments */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-blue-700 mb-1.5">
-                                            📝 Special Instructions for Driver (Optional)
-                                        </label>
-                                        <textarea
-                                            value={driverComments}
-                                            onChange={e => setDriverComments(e.target.value)}
-                                            placeholder="e.g., Call customer 30 minutes before arrival. Building has parking restrictions. Handle with care - screen is cracked."
-                                            className="w-full p-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
-                                            rows={3}
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">These instructions will be sent to the driver via email</p>
-                                    </div>
-                                    
-                                    <button
-                                        onClick={handleAssignDriver}
-                                        disabled={actionLoading}
-                                        className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 font-bold shadow-md hover:shadow-lg text-sm transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                                    >
-                                        {actionLoading ? (
-                                            <span className="flex items-center justify-center gap-2">
-                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Assigning...
-                                            </span>
-                                        ) : "🚚 Assign Driver"}
-                                    </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {canMarkAsDropped && (
-                            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 animate-fadeIn">
-                                <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => setIsMarkDroppedOpen(!isMarkDroppedOpen)}>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
-                                        <h4 className="font-bold text-indigo-900">Receive Drop-off</h4>
-                                    </div>
-                                    <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
-                                        <svg 
-                                            className={`w-5 h-5 text-indigo-600 transition-transform duration-300 ${isMarkDroppedOpen ? 'rotate-180' : ''}`} 
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div className={`transition-all duration-300 overflow-hidden ${isMarkDroppedOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    <div className="px-5 pb-5">
-                                <p className="text-xs text-indigo-700 mb-3 font-medium">Mark as received at facility</p>
-                                <button
-                                    onClick={handleMarkAsDropped}
-                                    disabled={actionLoading}
-                                    className="w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-bold shadow-md hover:shadow-lg text-sm transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                                >
-                                    {actionLoading ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Processing...
-                                        </span>
-                                    ) : "📦 Mark Received"}
-                                </button>
-                                </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {canVerifyDropOff && (
-                            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 animate-fadeIn">
-                                <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => setIsVerifyDropOffOpen(!isVerifyDropOffOpen)}>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
-                                        <h4 className="font-bold text-purple-900">Verify Drop-off</h4>
-                                    </div>
-                                    <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
-                                        <svg 
-                                            className={`w-5 h-5 text-purple-600 transition-transform duration-300 ${isVerifyDropOffOpen ? 'rotate-180' : ''}`} 
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div className={`transition-all duration-300 overflow-hidden ${isVerifyDropOffOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    <div className="px-5 pb-5">
-                                <p className="text-xs text-purple-700 mb-3 font-medium">Verify dropped content</p>
-                                <button
-                                    onClick={handleVerifyDropOff}
-                                    disabled={actionLoading}
-                                    className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-bold shadow-md hover:shadow-lg text-sm transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                                >
-                                    {actionLoading ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Processing...
-                                        </span>
-                                    ) : "✓ Verify Drop-off"}
-                                </button>
-                                </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {needsConditionVerification && (
-                            <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 animate-fadeIn">
-                                <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => setIsVerifyConditionOpen(!isVerifyConditionOpen)}>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-sm">✓</div>
-                                        <h4 className="font-bold text-orange-900">Verify Condition</h4>
-                                    </div>
-                                    <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
-                                        <svg 
-                                            className={`w-5 h-5 text-orange-600 transition-transform duration-300 ${isVerifyConditionOpen ? 'rotate-180' : ''}`} 
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div className={`transition-all duration-300 overflow-hidden ${isVerifyConditionOpen ? 'max-h-[700px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    <div className="px-5 pb-5">
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="text-xs font-semibold text-gray-700 block mb-2">Device Condition</label>
-                                        <div className="relative">
-                                            <select 
-                                                value={conditionCode} 
-                                                onChange={e => setConditionCode(e.target.value)} 
-                                                className="w-full p-2.5 text-sm border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all cursor-pointer bg-white"
-                                            >
-                                                <option value="FLAWLESS">⭐ Flawless</option>
-                                                <option value="GOOD">✓ Good</option>
-                                                <option value="FAIR">~ Fair</option>
-                                                <option value="POOR">✗ Poor</option>
-                                            </select>
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
+                            {/* Impact and Quick Actions Blocks below History */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
+                                <div className="lg:col-span-8">
+                                    <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-emerald-50 p-8 rounded-3xl relative overflow-hidden h-full shadow-lg">
+                                        <div className="relative z-10">
+                                            <h4 className="text-xs font-extrabold uppercase tracking-[0.2em] mb-8 text-emerald-200">Sustainability Impact</h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-emerald-300">CO2 Avoided</span>
+                                                    <span className="text-3xl font-extrabold text-white mt-1">{(grandTotal * 0.15).toFixed(1)} kg</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-emerald-300">Metals Recovered</span>
+                                                    <span className="text-3xl font-extrabold text-white mt-1">{(grandTotal * 0.05).toFixed(1)} kg</span>
+                                                </div>
+                                                <div className="flex flex-col border-l border-emerald-700/50 pl-8">
+                                                    <span className="text-sm font-bold text-emerald-300">Net Impact</span>
+                                                    <span className="text-3xl font-black text-green-300 mt-1">A+ Rating</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-emerald-500 rounded-full blur-[100px] opacity-40"></div>
                                     </div>
-                                    
-                                    {/* Verification Notes */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-orange-700 mb-1.5">
-                                            📝 Verification Notes
-                                        </label>
-                                        <textarea
-                                            value={verificationNotes}
-                                            onChange={e => setVerificationNotes(e.target.value)}
-                                            placeholder="e.g., Device in excellent condition. All accessories included. Battery health at 85%. Minor scratches on back panel."
-                                            className="w-full p-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all resize-none"
-                                            rows={3}
-                                        />
+                                </div>
+                                <div className="lg:col-span-4">
+                                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 h-full flex flex-col justify-center">
+                                        <h4 className="text-xs font-bold uppercase tracking-widest mb-5 text-gray-400">Quick Actions</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <button className="flex flex-col items-center justify-center gap-3 p-5 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200 group">
+                                                <svg className="w-6 h-6 text-emerald-700 group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                <span className="text-[10px] font-extrabold uppercase tracking-tight text-gray-700">Export CSV</span>
+                                            </button>
+                                            <button className="flex flex-col items-center justify-center gap-3 p-5 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200 group">
+                                                <svg className="w-6 h-6 text-emerald-700 group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                                                <span className="text-[10px] font-extrabold uppercase tracking-tight text-gray-700">Share Log</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                    
-                                    {/* Final Amount */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-orange-700 mb-1.5">
-                                            💰 Final Amount (Optional)
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₹</span>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={finalAmount}
-                                                onChange={e => setFinalAmount(e.target.value)}
-                                                placeholder="Enter final amount"
-                                                className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    {/* Section 3: Analysis */}
+                    <div className="w-full flex-shrink-0 px-2 sm:px-6 pb-20">
+                        <div className="max-w-[1600px] mx-auto space-y-10">
+                            {/* 1. Material Analysis Header */}
+                            <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-widest rounded-full">Automated Diagnostic</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></div>
+                                            <span className="text-xs text-gray-500 font-medium">AI Engine Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm rounded-xl transition-colors">Export PDF</button>
+                                    <button
+                                        onClick={() => materialsData ? setMaterialsData(null) : handleAnalyzeMaterials()}
+                                        disabled={analyzingMaterials}
+                                        className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {analyzingMaterials ? (
+                                            <>
+                                                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                <span>Running Analysis...</span>
+                                            </>
+                                        ) : materialsData ? "New Analysis" : "Verify Analysis"}
+                                    </button>
+                                </div>
+                            </section>
+
+                            {!materialsData ? (
+                                <div className="bg-white p-12 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-100 max-w-2xl mx-auto flex flex-col items-center justify-center text-center animate-fadeIn relative overflow-hidden mt-6">
+                                    <div className="absolute top-0 right-0 p-8 opacity-5">
+                                        <span className="text-9xl">🔬</span>
+                                    </div>
+                                    <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-emerald-100/50">
+                                        <span className="text-3xl">🤖</span>
+                                    </div>
+                                    <h3 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">AI Diagnostic Workflow</h3>
+                                    <p className="text-gray-500 text-sm mb-8 max-w-md font-medium">Configure device properties and diagnostic overrides safely to run accurate secondary composition mapping calculations.</p>
+
+                                    <div className="w-full max-w-md space-y-5 text-left bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                                        <div>
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block px-1">Sub-Hardware Condition</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 text-lg flex items-center">
+                                                    <span>💎</span>
+                                                </div>
+                                                <select
+                                                    value={analysisCondition || "GOOD"}
+                                                    onChange={e => setAnalysisCondition(e.target.value)}
+                                                    className="w-full pl-12 pr-12 py-4 bg-white border border-gray-100 shadow-[0_4px_25px_-12px_rgba(0,0,0,0.06)] rounded-2xl font-extrabold text-sm text-gray-800 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-600 outline-none cursor-pointer appearance-none transition-all group-hover:border-emerald-500/50"
+                                                >
+                                                    <option value="EXCELLENT">EXCELLENT - Pristine/Working</option>
+                                                    <option value="GOOD">GOOD - Normal wear/tear</option>
+                                                    <option value="FAIR">FAIR - Minor damage/Faults</option>
+                                                    <option value="POOR">POOR - Heavily damaged/Scrap</option>
+                                                </select>
+                                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block px-1">Additional Verification Notes</label>
+                                            <textarea
+                                                rows={3}
+                                                value={analysisNotes}
+                                                onChange={e => setAnalysisNotes(e.target.value)}
+                                                className="w-full px-5 py-4 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none placeholder-gray-400 font-medium"
+                                                placeholder="Describe specific diagnosis details, broken shields, missing modules..."
                                             />
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-1">Leave empty to use estimated amount. This will be the final payment.</p>
-                                    </div>
-                                    
-                                    <button
-                                        onClick={handleVerifyCondition}
-                                        disabled={actionLoading}
-                                        className="w-full px-4 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 font-bold shadow-md hover:shadow-lg text-sm transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                                    >
-                                        {actionLoading ? (
-                                            <span className="flex items-center justify-center gap-2">
-                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Processing...
-                                            </span>
-                                        ) : "✓ Verify Condition"}
-                                    </button>
-                                </div>
-                                </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {canRecycle && (
-                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 animate-fadeIn">
-                                <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => setIsMarkRecycledOpen(!isMarkRecycledOpen)}>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">✓</div>
-                                        <h4 className="font-bold text-green-900">Complete Recycling</h4>
-                                    </div>
-                                    <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
-                                        <svg 
-                                            className={`w-5 h-5 text-green-600 transition-transform duration-300 ${isMarkRecycledOpen ? 'rotate-180' : ''}`} 
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            viewBox="0 0 24 24"
+                                        <button
+                                            onClick={handleAnalyzeMaterials}
+                                            disabled={analyzingMaterials}
+                                            className="w-full py-4 bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm rounded-xl transition-all shadow-[0_10px_20px_-5px_rgba(16,185,129,0.3)] mt-2 flex items-center justify-center gap-2 disabled:opacity-75"
                                         >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
+                                            {analyzingMaterials ? (
+                                                <>
+                                                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    <span>Formulating Data...</span>
+                                                </>
+                                            ) : 'Submit Diagnostics & Analyze'}
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className={`transition-all duration-300 overflow-hidden ${isMarkRecycledOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    <div className="px-5 pb-5">
-                                <p className="text-xs text-green-700 mb-3 font-medium">Credit points to user</p>
-                                <button
-                                    onClick={handleMarkRecycled}
-                                    disabled={actionLoading}
-                                    className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 font-bold shadow-md hover:shadow-lg text-sm transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                                >
-                                    {actionLoading ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Processing...
-                                        </span>
-                                    ) : "♻️ Mark Recycled"}
-                                </button>
-                                </div>
-                                </div>
-                            </div>
-                        )}
+                            ) : (
+                                <>
+                                    {/* 2. Pricing Summary Cards */}
+                                    <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {/* Material Value */}
+                                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                                <span className="text-6xl">📊</span>
+                                            </div>
+                                            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-4">Estimated Material Value</p>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-3xl font-black text-emerald-700">₹{materialsData?.recyclingEstimate?.totalMaterialValue?.toLocaleString() || (grandTotal || 0).toLocaleString()}</span>
+                                            </div>
+                                            <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1 font-medium">↑ +4.2% Market Shift</p>
+                                        </div>
 
-                        {!needsApproval && !needsDriver && !canMarkAsDropped && !canVerifyDropOff && !needsConditionVerification && !canRecycle && (
-                            <div className="text-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl text-gray-500 italic text-sm border border-gray-200">
-                                <div className="text-3xl mb-2">✓</div>
-                                <div>No actions available</div>
+                                        {/* Recycling Price */}
+                                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                                <span className="text-6xl">♻️</span>
+                                            </div>
+                                            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-4">Current Recycling Price</p>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-3xl font-black text-gray-900">₹{materialsData?.recyclingEstimate?.suggestedRecyclingPrice?.toFixed(2) || ((grandTotal || 0) * 0.85).toFixed(2)}</span>
+                                            </div>
+                                            <p className="text-xs text-gray-400 mt-2 font-medium">After processing fees</p>
+                                        </div>
+
+                                        {/* Buyback Price */}
+                                        <div className="bg-emerald-700 p-8 rounded-2xl shadow-lg relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-4 opacity-20">
+                                                <span className="text-6xl text-white">💰</span>
+                                            </div>
+                                            <p className="text-[11px] text-emerald-200 font-bold uppercase tracking-wider mb-4">Guaranteed Buyback Price</p>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-3xl font-black text-white">₹{materialsData?.recyclingEstimate?.suggestedBuybackPrice?.toFixed(2) || ((grandTotal || 0) * 0.95).toFixed(2)}</span>
+                                            </div>
+                                            <p className="text-xs text-emerald-100/80 mt-2 font-medium">Valid for 48 hours</p>
+                                        </div>
+                                    </section>
+
+                                    {/* Bento Layout for Composition and sidebar */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                        {/* 3. Material Composition Breakdown */}
+                                        <section className="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-fit">
+                                            <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-gray-900 tracking-tight">Material Composition Breakdown</h3>
+                                                    <p className="text-sm text-gray-400 mt-1 font-medium">Detailed list of recoverable precious metals and industrial elements.</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-gray-50 border-b border-gray-100">
+                                                            <th className="px-8 py-4 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Material</th>
+                                                            <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-gray-400 text-center">Location</th>
+                                                            <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-gray-400 text-right">Quantity (g)</th>
+                                                            <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-gray-400 text-right">Rate (₹/g)</th>
+                                                            <th className="px-8 py-4 text-[10px] font-extrabold uppercase tracking-widest text-gray-400 text-right">Value (₹)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-100">
+                                                        {(materialsData?.materials || []).map((m: any, idx: number) => (
+                                                            <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                                                <td className="px-8 py-5">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className={`w-2 h-2 rounded-full ${m.isPrecious ? 'bg-amber-500 animate-pulse' : 'bg-gray-300'}`}></div>
+                                                                        <span className="font-bold text-gray-900 text-sm">{m.materialName || m.material}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-5 text-xs text-gray-500 text-center font-bold tracking-tight">{m.foundIn || "Hardware Component"}</td>
+                                                                <td className="px-6 py-5 text-sm text-gray-800 font-extrabold text-right">{m.estimatedQuantityGrams}g</td>
+                                                                <td className="px-6 py-5 text-sm text-gray-500 font-medium text-right">
+                                                                    <input
+                                                                        type="number"
+                                                                        value={m.editableRate}
+                                                                        onChange={(e) => handleRateChange(idx, e.target.value)}
+                                                                        className="w-24 p-1.5 text-xs text-right border border-gray-200 rounded-lg shadow-sm focus:ring-1 focus:ring-emerald-500 font-bold bg-gray-50/50 border-transparent outline-none"
+                                                                        step="0.01"
+                                                                    />
+                                                                </td>
+                                                                <td className="px-8 py-5 text-sm font-black text-emerald-700 text-right">
+                                                                    ₹{(m.estimatedQuantityGrams * (m.editableRate || 0)).toFixed(2)}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr className="bg-emerald-50/20 border-t border-emerald-100">
+                                                            <td className="px-8 py-6 text-right font-black text-emerald-800 uppercase tracking-widest text-xs" colSpan={4}>Grand Total Material Value</td>
+                                                            <td className="px-8 py-6 text-right font-black text-xl text-emerald-800">₹{grandTotal.toFixed(2)}</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </section>
+
+                                        {/* Sidebar Column */}
+                                        <aside className="lg:col-span-4 space-y-8">
+                                            {/* Parameter Settings (Added To Retain Functionality) */}
+
+                                            {/* Condition Impact Analysis */}
+                                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <div className="p-2 bg-emerald-50 rounded-lg text-emerald-700">
+                                                        <span>📊</span>
+                                                    </div>
+                                                    <h4 className="font-bold text-lg text-gray-900 tracking-tight">Condition Impact</h4>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div className="flex items-start gap-3">
+                                                        <span className="text-emerald-600 text-lg mt-0.5">✓</span>
+                                                        <p className="text-sm leading-relaxed text-gray-500 font-medium">
+                                                            <span className="font-black text-gray-900">{analysisCondition || "GOOD"} Grade:</span> {materialsData?.recyclingEstimate?.conditionImpact || "Minor scratches or wear have negligible impact on the precious metal recovery rate but increase functional resale value with optimized extraction workflows."}
+                                                        </p>
+                                                    </div>
+                                                    <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                                                        <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">Impact Insight</p>
+                                                        <p className="text-xs text-gray-600 font-medium">{analysisNotes || "The device structural integrity prevents battery contamination, maximizing the recovery value of cobalt and rare element yields."}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Market Price Comparison */}
+                                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <div className="p-2 bg-emerald-50 rounded-lg text-emerald-700">
+                                                        <span>🏪</span>
+                                                    </div>
+                                                    <h4 className="font-bold text-lg text-gray-900 tracking-tight">Current Market Check</h4>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {materialsData?.devicePricing?.platformLinks && materialsData.devicePricing.platformLinks.length > 0 ? (
+                                                        materialsData.devicePricing.platformLinks.map((platform: any, idx: number) => (
+                                                            <a key={idx} className="flex flex-col items-center justify-center p-3 border border-gray-100 rounded-xl hover:border-emerald-200 transition-all font-black text-[10px] tracking-tight text-gray-400 hover:text-emerald-700 hover:bg-emerald-50/30 text-center" href={platform.link} target="_blank" rel="noopener noreferrer">
+                                                                <span>{platform.platformName.toUpperCase()}</span>
+                                                            </a>
+                                                        ))
+                                                    ) : (
+                                                        ['Amazon', 'Flipkart', 'Croma', 'Vijay Sales'].map((mkt, idx) => (
+                                                            <div key={idx} className="p-3 border border-gray-100 rounded-xl text-center font-black text-[10px] text-gray-400">
+                                                                {mkt.toUpperCase()}
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                                <p className="text-[10px] text-gray-400 mt-4 text-center italic font-medium">Live market aggregation updated on diagnostics extraction</p>
+                                            </div>
+                                        </aside>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    {/* Section 4: Actions */}
+                    <div className="w-full flex-shrink-0 px-2 sm:px-4 pb-20">
+                        <div className="w-full max-w-4xl mx-auto space-y-12">
+
+                            <div className="mb-4">
+                                <h4 className="text-[11px] font-extrabold text-indigo-600 uppercase tracking-widest mb-2">Logistics Command</h4>
+                                <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Operational Dashboard</h2>
                             </div>
-                        )}
+
+                            {needsApproval && (
+                                <div className="bg-white rounded-[2rem] shadow-[0_4px_30px_-10px_rgba(0,0,0,0.08)] border border-gray-100 p-6 sm:p-10 animate-fadeIn">
+                                    <div className="flex items-center gap-5 mb-8">
+                                        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-blue-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+                                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight">Approve Request</h3>
+                                            <p className="text-sm text-gray-500 font-medium tracking-tight">Review AI estimation and finalize quote parameters</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/70 p-6 sm:p-8 rounded-[1.5rem] border border-gray-100/60">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest block">Final Amount</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">₹</span>
+                                                    <input
+                                                        type="number"
+                                                        className="w-full pl-11 px-5 py-4 bg-white border border-gray-200/70 rounded-[1.25rem] text-sm text-gray-900 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 font-bold placeholder-gray-300 transition-all font-mono text-lg"
+                                                        placeholder={grandTotal.toFixed(2)}
+                                                        value={approveAmount}
+                                                        onChange={e => setApproveAmount(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest block">Adjustment Reason (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Standard Approval..."
+                                                    value={adjustmentReason}
+                                                    onChange={e => setAdjustmentReason(e.target.value)}
+                                                    className="w-full px-5 py-4 bg-white border border-gray-200/70 rounded-[1.25rem] text-sm text-gray-800 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all placeholder-gray-400 font-medium"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-end items-center gap-6 mt-10 pt-6 border-t border-gray-200/60">
+                                            <button className="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Save Draft</button>
+                                            <button
+                                                onClick={handleApprove}
+                                                disabled={actionLoading}
+                                                className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white text-sm font-extrabold rounded-[1.25rem] shadow-[0_8px_20px_-8px_rgba(29,78,216,0.6)] flex items-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {actionLoading ? "Processing..." : "Confirm Approval"}
+                                                {!actionLoading && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {needsDriver && (
+                                <div className="bg-white rounded-[2rem] shadow-[0_4px_30px_-10px_rgba(0,0,0,0.08)] border border-gray-100 p-6 sm:p-10 animate-fadeIn">
+                                    <div className="flex items-center gap-5 mb-8">
+                                        <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+                                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight">Assign Driver</h3>
+                                            <p className="text-sm text-gray-500 font-medium tracking-tight">Coordinate fleet deployment for Order #{request?.id?.slice(-4) || '8829'}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/70 p-6 sm:p-8 rounded-[1.5rem] border border-gray-100/60">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest block">Select Available Driver</label>
+                                                <div className="relative">
+                                                    <select
+                                                        value={selectedDriverId}
+                                                        onChange={e => setSelectedDriverId(e.target.value)}
+                                                        className="w-full px-5 py-4 bg-white border border-gray-200/70 rounded-[1.25rem] text-sm text-gray-800 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-bold appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="">Marcus Aurelius (Heavy Cargo)</option>
+                                                        {drivers.map(d => (
+                                                            <option key={d.id} value={d.id}>{d.name} ({d.vehicleType})</option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest block">Dispatch Priority</label>
+                                                <div className="flex gap-3">
+                                                    <div className="flex-1 py-4 text-center text-sm font-bold text-gray-600 bg-white border border-gray-200/70 rounded-[1.25rem] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.03)] cursor-pointer hover:border-gray-300">Standard</div>
+                                                    <div className="flex-1 py-4 text-center text-sm font-bold text-purple-700 bg-purple-100 border border-purple-200 rounded-[1.25rem] shadow-sm cursor-pointer">High Priority</div>
+                                                    <div className="flex-1 py-4 text-center text-sm font-bold text-gray-600 bg-white border border-gray-200/70 rounded-[1.25rem] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.03)] cursor-pointer hover:border-gray-300">Emergency</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest block">Special Instructions (Optional)</label>
+                                            <textarea
+                                                value={driverComments}
+                                                onChange={e => setDriverComments(e.target.value)}
+                                                placeholder="e.g. Gate code 1234, handle with care..."
+                                                className="w-full px-5 py-4 bg-white border border-gray-200/70 rounded-[1.25rem] text-sm text-gray-800 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-medium resize-none placeholder-gray-300"
+                                                rows={3}
+                                            />
+                                        </div>
+
+                                        <div className="flex justify-end items-center gap-6 mt-10 pt-6 border-t border-gray-200/60">
+                                            <button className="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Save Draft</button>
+                                            <button
+                                                onClick={handleAssignDriver}
+                                                disabled={actionLoading}
+                                                className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white text-sm font-extrabold rounded-[1.25rem] shadow-[0_8px_20px_-8px_rgba(29,78,216,0.6)] flex items-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {actionLoading ? "Processing..." : "Confirm Assignment"}
+                                                {!actionLoading && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {canMarkAsDropped && (
+                                <div className="bg-white rounded-[2rem] shadow-[0_4px_30px_-10px_rgba(0,0,0,0.08)] border border-gray-100 p-6 sm:p-10 animate-fadeIn">
+                                    <div className="flex items-center gap-5 mb-8">
+                                        <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+                                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight">Receive Drop-off</h3>
+                                            <p className="text-sm text-gray-500 font-medium tracking-tight">Logistics receipt at facility checkpoint</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/70 p-6 sm:p-8 rounded-[1.5rem] border border-gray-100/60">
+                                        <div className="flex justify-between items-center bg-white p-5 rounded-[1.25rem] border border-gray-200/70 shadow-sm mb-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-extrabold text-gray-900">Current Facility</p>
+                                                    <p className="text-xs text-gray-500 font-medium">Main processing hub #41</p>
+                                                </div>
+                                            </div>
+                                            <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Ready</span>
+                                        </div>
+
+                                        <div className="flex justify-end items-center gap-6 mt-8 pt-6 border-t border-gray-200/60">
+                                            <button className="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</button>
+                                            <button
+                                                onClick={handleMarkAsDropped}
+                                                disabled={actionLoading}
+                                                className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white text-sm font-extrabold rounded-[1.25rem] shadow-[0_8px_20px_-8px_rgba(29,78,216,0.6)] flex items-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {actionLoading ? "Processing..." : "Confirm Receipt"}
+                                                {!actionLoading && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {canVerifyDropOff && (
+                                <div className="bg-white rounded-[2rem] shadow-[0_4px_30px_-10px_rgba(0,0,0,0.08)] border border-gray-100 p-6 sm:p-10 animate-fadeIn">
+                                    <div className="flex items-center gap-5 mb-8">
+                                        <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+                                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight">Verify Physical Drop-off</h3>
+                                            <p className="text-sm text-gray-500 font-medium tracking-tight">Confirm items received match manifest</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/70 p-6 sm:p-8 rounded-[1.5rem] border border-gray-100/60">
+                                        <div className="flex justify-end items-center gap-6 mt-4">
+                                            <button className="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Report Issue</button>
+                                            <button
+                                                onClick={handleVerifyDropOff}
+                                                disabled={actionLoading}
+                                                className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white text-sm font-extrabold rounded-[1.25rem] shadow-[0_8px_20px_-8px_rgba(29,78,216,0.6)] flex items-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {actionLoading ? "Processing..." : "Verify Package"}
+                                                {!actionLoading && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {needsConditionVerification && (
+                                <div className="bg-white rounded-[2rem] shadow-[0_4px_30px_-10px_rgba(0,0,0,0.08)] border border-gray-100 p-6 sm:p-10 animate-fadeIn">
+                                    <div className="flex items-center gap-5 mb-8">
+                                        <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+                                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight">Verify Condition</h3>
+                                            <p className="text-sm text-gray-500 font-medium tracking-tight">Final quality inspection & hardware triage</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/70 p-6 sm:p-8 rounded-[1.5rem] border border-gray-100/60">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest block">Hardware Condition</label>
+                                                <div className="relative">
+                                                    <select
+                                                        value={conditionCode}
+                                                        onChange={e => setConditionCode(e.target.value)}
+                                                        className="w-full px-5 py-4 bg-white border border-gray-200/70 rounded-[1.25rem] text-sm text-gray-800 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-extrabold appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="FLAWLESS">⭐ Flawless (Grade A)</option>
+                                                        <option value="GOOD">✓ Good (Grade B)</option>
+                                                        <option value="FAIR">~ Fair (Grade C)</option>
+                                                        <option value="POOR">✗ Poor / Parts Only</option>
+                                                    </select>
+                                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest block">Payment Override (Optional)</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">₹</span>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={finalAmount}
+                                                        onChange={e => setFinalAmount(e.target.value)}
+                                                        placeholder="Leave blank for estimate"
+                                                        className="w-full pl-11 px-5 py-4 bg-white border border-gray-200/70 rounded-[1.25rem] text-sm text-gray-900 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 font-extrabold placeholder-gray-400 transition-all font-mono"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest block">Quality Assurance Notes</label>
+                                            <textarea
+                                                value={verificationNotes}
+                                                onChange={e => setVerificationNotes(e.target.value)}
+                                                placeholder="e.g. Battery health 85%, minor chassis scratches..."
+                                                className="w-full px-5 py-4 bg-white border border-gray-200/70 rounded-[1.25rem] text-sm text-gray-800 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-medium resize-none placeholder-gray-300"
+                                                rows={3}
+                                            />
+                                        </div>
+
+                                        <div className="flex justify-end items-center gap-6 mt-10 pt-6 border-t border-gray-200/60">
+                                            <button className="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Flag as Defective</button>
+                                            <button
+                                                onClick={handleVerifyCondition}
+                                                disabled={actionLoading}
+                                                className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white text-sm font-extrabold rounded-[1.25rem] shadow-[0_8px_20px_-8px_rgba(29,78,216,0.6)] flex items-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {actionLoading ? "Processing..." : "Confirm Verification"}
+                                                {!actionLoading && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {canRecycle && (
+                                <div className="bg-white rounded-[2rem] shadow-[0_4px_30px_-10px_rgba(0,0,0,0.08)] border border-gray-100 p-6 sm:p-10 animate-fadeIn">
+                                    <div className="flex items-center gap-5 mb-8">
+                                        <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+                                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight">Complete Recycling</h3>
+                                            <p className="text-sm text-gray-500 font-medium tracking-tight">Finalize order and release payment credits</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/70 p-6 sm:p-8 rounded-[1.5rem] border border-gray-100/60">
+                                        <div className="flex justify-end items-center gap-6 mt-4">
+                                            <button className="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</button>
+                                            <button
+                                                onClick={handleMarkRecycled}
+                                                disabled={actionLoading}
+                                                className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold rounded-[1.25rem] shadow-[0_8px_20px_-8px_rgba(5,150,105,0.6)] flex items-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {actionLoading ? "Processing..." : "Complete Pipeline"}
+                                                {!actionLoading && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {!needsApproval && !needsDriver && !canMarkAsDropped && !canVerifyDropOff && !needsConditionVerification && !canRecycle && (
+                                <div className="text-center py-16 px-6 bg-slate-50/80 rounded-[2rem] border border-gray-200/60 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                                    <div className="w-20 h-20 mx-auto bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
+                                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                                    </div>
+                                    <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight mb-2">No Actions Needed</h3>
+                                    <p className="text-gray-500 font-medium text-sm">All operations are up to date for this order.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

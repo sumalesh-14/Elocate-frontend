@@ -1,0 +1,8 @@
+src/app/intermediary/collections/[id]/page.tsx(564,174): error TS2552: Cannot find name 'recycleStatusHistory'. Did you mean 'setStatusHistory'?
+src/app/intermediary/collections/[id]/page.tsx(571,50): error TS2552: Cannot find name 'recycleStatusHistory'. Did you mean 'setStatusHistory'?
+src/app/intermediary/collections/[id]/page.tsx(571,84): error TS2552: Cannot find name 'recycleStatusHistory'. Did you mean 'setStatusHistory'?
+src/app/intermediary/collections/[id]/page.tsx(575,105): error TS2552: Cannot find name 'recycleStatusHistory'. Did you mean 'setStatusHistory'?
+src/app/intermediary/collections/[id]/page.tsx(606,178): error TS2304: Cannot find name 'fulfillmentHistory'.
+src/app/intermediary/collections/[id]/page.tsx(613,50): error TS2304: Cannot find name 'fulfillmentHistory'.
+src/app/intermediary/collections/[id]/page.tsx(613,82): error TS2304: Cannot find name 'fulfillmentHistory'.
+src/app/intermediary/collections/[id]/page.tsx(618,105): error TS2304: Cannot find name 'fulfillmentHistory'.
