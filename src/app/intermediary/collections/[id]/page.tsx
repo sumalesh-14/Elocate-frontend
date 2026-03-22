@@ -887,8 +887,6 @@ export default function CollectionDetailsPage() {
 
                                         {/* Sidebar Column */}
                                         <aside className="lg:col-span-4 space-y-8">
-                                            {/* Parameter Settings (Added To Retain Functionality) */}
-
                                             {/* Condition Impact Analysis */}
                                             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                                                 <div className="flex items-center gap-3 mb-6">
