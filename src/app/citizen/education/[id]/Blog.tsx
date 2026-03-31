@@ -6,15 +6,13 @@ import Link from "next/link";
 import { randomBlogs } from "@/app/citizen/data/blogs";
 
 interface BlogPageProps {
-  params: {
-    id: string;
-  };
+  id: string;
 }
 
-const Blog: React.FC<BlogPageProps> = ({ params }) => {
+const Blog: React.FC<BlogPageProps> = ({ id }) => {
   const [relatedBlogs, setRelatedBlogs] = useState(() => {
     const randomBlogsResult = randomBlogs(3);
-    return randomBlogsResult.filter(blog => blog.id !== Number(params.id)).slice(0, 3);
+    return randomBlogsResult.filter(blog => blog.id !== Number(id)).slice(0, 3);
   });
   const [readingProgress, setReadingProgress] = useState(0);
 
@@ -28,10 +26,9 @@ const Blog: React.FC<BlogPageProps> = ({ params }) => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  if (!params?.id) return <div>Invalid Blog ID</div>;
-  const id = Number(params.id);
-  const blog = blogs.find((blog) => blog.id === id);
+  if (!id) return <div>Invalid Blog ID</div>;
+  const blogId = Number(id);
+  const blog = blogs.find((blog) => blog.id === blogId);
 
   if (!blog) {
     return (
@@ -46,7 +43,7 @@ const Blog: React.FC<BlogPageProps> = ({ params }) => {
   }
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen pt-[80px]">
       {/* Reading progress bar */}
       <div className="fixed top-[80px] left-0 w-full h-1 bg-gray-200 z-50">
         <div

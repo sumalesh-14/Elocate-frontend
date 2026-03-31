@@ -4,30 +4,108 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { blogs, getBlogsByCategory } from "../data/blogs";
+import { resourcePdfs } from "../data/resourcePdfs";
 import Head from "next/head";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiBookOpen, FiClock, FiTag, FiDownload, FiPlayCircle, FiGlobe, FiTarget, FiBarChart, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { MdEco } from "react-icons/md";
 
+const generatePDF = async (title: string) => {
+  const { jsPDF } = await import("jspdf");
+  const data = resourcePdfs[title];
+  if (!data) return;
+
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  const contentW = pageW - margin * 2;
+  let y = margin;
+
+  // Header background
+  doc.setFillColor(4, 120, 87); // emerald-700
+  doc.rect(0, 0, pageW, 45, "F");
+
+  // Logo / brand
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("E-LOCATE  |  Education Hub", margin, 12);
+
+  // Title
+  doc.setFontSize(20);
+  doc.text(data.title, margin, 26);
+
+  // Subtitle
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  const subtitleLines = doc.splitTextToSize(data.subtitle, contentW);
+  doc.text(subtitleLines, margin, 36);
+
+  y = 58;
+
+  // Sections
+  data.sections.forEach((section) => {
+    // Check page break before heading
+    if (y + 20 > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+
+    // Section heading
+    doc.setFillColor(236, 253, 245); // emerald-50
+    doc.roundedRect(margin, y - 5, contentW, 10, 2, 2, "F");
+    doc.setTextColor(4, 120, 87);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(section.heading, margin + 3, y + 2);
+    y += 12;
+
+    // Section body
+    doc.setTextColor(55, 65, 81); // gray-700
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const bodyLines = doc.splitTextToSize(section.body, contentW);
+    bodyLines.forEach((line: string) => {
+      if (y + 6 > pageH - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.text(line, margin, y);
+      y += 6;
+    });
+    y += 6;
+  });
+
+  // Footer
+  const totalPages: number = (doc.internal as unknown as { getNumberOfPages: () => number }).getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(209, 250, 229);
+    doc.line(margin, pageH - 14, pageW - margin, pageH - 14);
+    doc.setTextColor(156, 163, 175);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text("© ELocate Education Hub  |  elocate.in", margin, pageH - 8);
+    doc.text(`Page ${i} of ${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
+  }
+
+  doc.save(`${title.replace(/ /g, "_")}_ELocate.pdf`);
+};
+
 const Education: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [filteredBlogs, setFilteredBlogs] = useState(blogs);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Extract unique categories from blogs
   const categories = ["all", ...Array.from(new Set(blogs.map(blog => blog.category)))];
 
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      if (selectedCategory === "all") {
-        setFilteredBlogs(blogs);
-      } else {
-        setFilteredBlogs(getBlogsByCategory(selectedCategory));
-      }
-      setIsLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
+    if (selectedCategory === "all") {
+      setFilteredBlogs(blogs);
+    } else {
+      setFilteredBlogs(getBlogsByCategory(selectedCategory));
+    }
   }, [selectedCategory]);
 
   // Scroll logic for categories
@@ -62,10 +140,11 @@ const Education: React.FC = () => {
             playsInline
             className="w-full h-full object-cover"
           >
-            <source src="https://cdn.pixabay.com/video/2021/04/12/70860-538805601_large.mp4" type="video/mp4" />
+            <source src="https://youtu.be/_Y2ePj3wr8M?si=XDW25ZHz3UiIRlYd" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/40 to-white" />
         </div>
+
 
         {/* Emerald Scanning Grid */}
         <div className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none"
@@ -285,7 +364,7 @@ const Education: React.FC = () => {
             <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
               {[
                 { icon: <FiGlobe />, label: "Global E-Waste", val: "57.4M", sub: "Annual Tons Generated" },
-                { icon: <FiBarChart />, label: "Material Value", val: "$62.5B", sub: "Untapped Resources" },
+                { icon: <FiBarChart />, label: "Material Value", val: "₹5,188B", sub: "Untapped Resources" },
                 { icon: <FiTarget />, label: "Recycling Gap", val: "17.4%", sub: "Current Global Rate" },
                 { icon: <MdEco />, label: "CO2 Reduction", val: "80kg", sub: "Per Recycled Smartphone" }
               ].map((stat, i) => (
@@ -350,7 +429,7 @@ const Education: React.FC = () => {
                   <Image src={res.img} alt={res.title} layout="fill" objectFit="cover" className="transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/90 via-emerald-900/40 to-transparent p-6 flex flex-col justify-end">
                     <h4 className="text-white font-bold font-cuprum mb-4">{res.title}</h4>
-                    <button className="flex items-center gap-2 text-emerald-300 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
+                    <button onClick={() => generatePDF(res.title)} className="flex items-center gap-2 text-emerald-300 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
                       <FiDownload />
                       Download PDF
                     </button>

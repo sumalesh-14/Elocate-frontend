@@ -1,27 +1,19 @@
-"use client";
 import React from "react";
-import { motion } from "framer-motion";
 import Blog from "./Blog";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-const Page = ({ params }: PageProps) => {
+const Page = async ({ params }: PageProps) => {
+  const resolvedParams = await params;
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="">
-          <Blog params={params} />
-        </div>
-      </motion.div>
+      <div>
+        <Blog id={resolvedParams.id} />
+      </div>
     </>
   );
 };
