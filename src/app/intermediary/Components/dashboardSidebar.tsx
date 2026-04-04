@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
     Package,
-    Users,
     Settings,
     Truck,
     Calendar,
@@ -38,7 +37,6 @@ const navGroups = [
     {
         title: "Management",
         items: [
-            { name: "Clients", path: "/intermediary/clients", icon: Users },
             { name: "Drivers", path: "/intermediary/drivers", icon: Contact },
             { name: "Withdrawals", path: "/intermediary/withdrawals", icon: Banknote },
             { name: "Transactions", path: "/intermediary/transactions", icon: Receipt },

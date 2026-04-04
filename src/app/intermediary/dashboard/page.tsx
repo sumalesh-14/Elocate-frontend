@@ -1,240 +1,343 @@
 "use client";
-
-import { getUser } from "../../intermediary/sign-in/auth";
+import { useState, useEffect } from "react";
+import { getToken, getUserID, getFullName } from "../sign-in/auth";
 import {
-    Package,
-    Clock,
-    CheckCircle2,
-    Recycle,
-    ArrowUp,
-    CalendarClock,
-    Truck,
-    Users,
+  Package, Clock, CheckCircle2, Banknote, ArrowUp, ArrowDown,
+  CalendarClock, Truck, Settings, Trophy, TrendingUp,
+  Star, ChevronRight, Activity, Loader2, XCircle,
 } from "lucide-react";
 
-const IntermediaryDashboard = () => {
-    const user = getUser();
+const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const authHeaders = () => ({ Authorization: `Bearer ${getToken()}` });
 
-    const stats = [
-        {
-            label: "Total Collections",
-            value: "1,204",
-            unit: "items",
-            change: "+8.2%",
-            isPositive: true,
-            icon: Package,
-            color: "bg-emerald-50 text-emerald-600",
-        },
-        {
-            label: "Pending Items",
-            value: "42",
-            unit: "pending",
-            change: "-5",
-            isPositive: true,
-            icon: Clock,
-            color: "bg-amber-50 text-amber-600",
-        },
-        {
-            label: "Completion Rate",
-            value: "94.2%",
-            unit: "this month",
-            change: "+2.1%",
-            isPositive: true,
-            icon: CheckCircle2,
-            color: "bg-blue-50 text-blue-600",
-        },
-        {
-            label: "Recycled Items",
-            value: "2.8K",
-            unit: "units",
-            change: "+12.5%",
-            isPositive: true,
-            icon: Recycle,
-            color: "bg-tech-lime/20 text-eco-700",
-        },
-    ];
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface DashboardData {
+  totalRequests: number;
+  pendingRequests: number;
+  completedRequests: number;
+  rejectedRequests: number;
+  totalCredited: number;
+  facilityId: string;
+  facilityName: string;
+  isVerified: boolean;
+}
 
-    const recentActivity = [
-        { id: "#COL-1042", client: "Grand Hotel & Spa", date: "Today, 10:30 AM", status: "Completed", weight: "450 kg" },
-        { id: "#COL-1041", client: "City High School", date: "Today, 09:00 AM", status: "In Transit", weight: "210 kg" },
-        { id: "#COL-1040", client: "Tech Solutions Inc", date: "Yesterday", status: "Pending", weight: "830 kg" },
-        { id: "#COL-1039", client: "Community Center", date: "Mar 1, 2026", status: "Completed", weight: "320 kg" },
-    ];
+interface Request {
+  id: string;
+  requestNumber: string;
+  citizenName?: string;
+  deviceName?: string;
+  status: string;
+  estimatedAmount?: number;
+  finalAmount?: number;
+  createdAt: string;
+}
 
-    const statusColors: Record<string, string> = {
-        Completed: "bg-green-100 text-green-700",
-        "In Transit": "bg-blue-100 text-blue-700",
-        Pending: "bg-yellow-100 text-yellow-700",
-        Cancelled: "bg-red-100 text-red-700",
-    };
+interface WalletTx {
+  id: string;
+  transactionType: string;
+  amount: number;
+  description: string;
+  citizenName?: string;
+  createdAt: string;
+}
 
-    return (
-        <div className="space-y-8">
-
-            {/* Welcome */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-3xl font-bold text-eco-950">Dashboard Overview</h2>
-                    <p className="text-eco-600 mt-1">
-                        Welcome back, {user?.fullname || "Intermediary"}! Here's your collection summary.
-                    </p>
-                </div>
-                <div className="flex gap-3">
-                    <a
-                        href="/intermediary/schedule"
-                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-eco-700 hover:bg-eco-50 shadow-sm transition-colors"
-                    >
-                        View Schedule
-                    </a>
-                    <a
-                        href="/intermediary/collections"
-                        className="px-4 py-2 bg-eco-900 text-white rounded-lg text-sm font-medium shadow-lg shadow-eco-900/20 hover:bg-eco-800 transition-colors"
-                    >
-                        All Collections
-                    </a>
-                </div>
-            </div>
-
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, i) => (
-                    <div
-                        key={i}
-                        className="bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className={`p-3 rounded-xl ${stat.color}`}>
-                                <stat.icon size={22} />
-                            </div>
-                            <div
-                                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.isPositive ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
-                                    }`}
-                            >
-                                <ArrowUp size={12} className={stat.isPositive ? "" : "rotate-180"} />
-                                {stat.change}
-                            </div>
-                        </div>
-                        <div className="text-3xl font-bold text-eco-900">{stat.value}</div>
-                        <div className="text-sm text-gray-500 font-medium uppercase tracking-wide mt-1">
-                            {stat.unit}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">{stat.label}</div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Quick Actions + Live Status */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* Quick Actions */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
-                    <h3 className="font-bold text-xl text-eco-900 mb-6">Quick Actions</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {[
-                            { label: "Schedule Pickup", href: "/intermediary/schedule", icon: CalendarClock, color: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" },
-                            { label: "Assign Driver", href: "/intermediary/assign-drivers", icon: Truck, color: "bg-blue-50 text-blue-700 hover:bg-blue-100" },
-                            { label: "View Clients", href: "/intermediary/clients", icon: Users, color: "bg-amber-50 text-amber-700 hover:bg-amber-100" },
-                        ].map((action, i) => (
-                            <a
-                                key={i}
-                                href={action.href}
-                                className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all ${action.color} group`}
-                            >
-                                <action.icon size={28} className="transition-transform group-hover:scale-110" />
-                                <span className="text-sm font-semibold text-center">{action.label}</span>
-                            </a>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Live Status Panel */}
-                <div className="bg-eco-950 text-white p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-tech-lime rounded-full blur-[80px] opacity-20 -translate-y-1/2 translate-x-1/3" />
-                    <div className="relative z-10 h-full flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-bold text-xl">Live Status</h3>
-                            <div className="flex items-center gap-2 px-2 py-1 bg-white/10 rounded-full text-xs font-medium text-tech-lime animate-pulse">
-                                <span className="w-1.5 h-1.5 rounded-full bg-tech-lime" />
-                                LIVE
-                            </div>
-                        </div>
-                        <div className="space-y-5 flex-1">
-                            {[
-                                { text: "Driver Ravi assigned to COL-1041", time: "5m ago" },
-                                { text: "COL-1042 marked as Completed", time: "30m ago" },
-                                { text: "New pickup request from City High School", time: "2h ago" },
-                                { text: "COL-1039 completed successfully", time: "Yesterday" },
-                            ].map((item, i) => (
-                                <div key={i} className="flex gap-3 items-start group">
-                                    <div className="mt-1.5 w-2 h-2 rounded-full bg-tech-lime/50 group-hover:bg-tech-lime transition-colors shrink-0" />
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-200 leading-snug group-hover:text-white transition-colors">
-                                            {item.text}
-                                        </p>
-                                        <span className="text-xs text-eco-400/70">{item.time}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="mt-6 pt-6 border-t border-white/10">
-                            <div className="flex items-center justify-between">
-                                <div className="text-xs text-eco-400">Operations</div>
-                                <div className="text-sm font-bold text-tech-lime">Active</div>
-                            </div>
-                            <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                                <div className="h-full bg-tech-lime w-[88%]" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Recent Activity Table */}
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-                    <h3 className="font-bold text-xl text-eco-900">Recent Collections</h3>
-                    <a href="/intermediary/collections" className="text-sm font-medium text-eco-600 hover:text-eco-800">
-                        View All
-                    </a>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50/50">
-                            <tr>
-                                {["Collection ID", "Client", "Date", "Status", "Weight"].map((h) => (
-                                    <th
-                                        key={h}
-                                        className="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                                    >
-                                        {h}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {recentActivity.map((row, i) => (
-                                <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-8 py-4 text-sm font-medium text-eco-900">{row.id}</td>
-                                    <td className="px-8 py-4 text-sm text-gray-600">{row.client}</td>
-                                    <td className="px-8 py-4 text-sm text-gray-500">{row.date}</td>
-                                    <td className="px-8 py-4">
-                                        <span
-                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[row.status] || "bg-gray-100 text-gray-600"
-                                                }`}
-                                        >
-                                            {row.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-8 py-4 text-sm font-bold text-gray-700">{row.weight}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    );
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const STATUS_STYLE: Record<string, string> = {
+  CREATED:  "bg-amber-100 text-amber-700",
+  APPROVED: "bg-blue-100 text-blue-700",
+  VERIFIED: "bg-indigo-100 text-indigo-700",
+  RECYCLED: "bg-emerald-100 text-emerald-700",
+  REJECTED: "bg-red-100 text-red-600",
+  CANCELLED:"bg-gray-100 text-gray-500",
 };
 
-export default IntermediaryDashboard;
+function getTier(rate: number) {
+  if (rate >= 95) return { label: "Platinum", color: "text-cyan-600",   bg: "bg-cyan-50",   border: "border-cyan-200",   stars: 4 };
+  if (rate >= 80) return { label: "Gold",     color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200", stars: 3 };
+  if (rate >= 60) return { label: "Silver",   color: "text-slate-500",  bg: "bg-slate-50",  border: "border-slate-200",  stars: 2 };
+  return               { label: "Bronze",   color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200", stars: 1 };
+}
+
+function RadialProgress({ pct, size = 96 }: { pct: number; size?: number }) {
+  const r = (size - 12) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return (
+    <svg width={size} height={size} className="-rotate-90">
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={8} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#16a34a" strokeWidth={8}
+        strokeDasharray={`${circ} ${circ}`} strokeDashoffset={circ - dash}
+        strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+    </svg>
+  );
+}
+
+function fmt(n: number) {
+  if (n >= 100000) return `₹${(n/100000).toFixed(1)}L`;
+  if (n >= 1000)   return `₹${(n/1000).toFixed(1)}K`;
+  return `₹${n.toFixed(0)}`;
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+export default function IntermediaryDashboard() {
+  const name = getFullName() || "Partner";
+  const userId = getUserID();
+
+  const [dash, setDash]       = useState<DashboardData | null>(null);
+  const [requests, setReqs]   = useState<Request[]>([]);
+  const [feed, setFeed]       = useState<WalletTx[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) { setError("Not authenticated"); setLoading(false); return; }
+    let cancelled = false;
+
+    Promise.all([
+      fetch(`${BASE}/api/v1/partner-auth/dashboard`, { headers: authHeaders() }),
+      fetch(`${BASE}/api/v1/intermediary/recycle-requests?userId=${userId}`, { headers: authHeaders() }),
+    ]).then(async ([dRes, rRes]) => {
+      if (cancelled) return;
+      if (!dRes.ok) throw new Error("Failed to load dashboard");
+      const d: DashboardData = await dRes.json();
+      setDash(d);
+
+      if (rRes.ok) {
+        const all: Request[] = await rRes.json();
+        setReqs(all.slice(0, 5));
+      }
+
+      // Fetch wallet feed using facilityId from dashboard
+      if (d.facilityId) {
+        const txRes = await fetch(`${BASE}/api/v1/wallet/transactions/facility?facilityId=${d.facilityId}`, { headers: authHeaders() });
+        if (!cancelled && txRes.ok) {
+          const txs: WalletTx[] = await txRes.json();
+          setFeed(txs.slice(0, 5));
+        }
+      }
+    }).catch(e => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="animate-spin text-emerald-500" size={36} />
+    </div>
+  );
+  if (error) return (
+    <div className="flex items-center gap-3 p-5 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
+      <XCircle size={18} /> {error}
+    </div>
+  );
+  if (!dash) return null;
+
+  const completionRate = dash.totalRequests > 0
+    ? Math.round((dash.completedRequests / dash.totalRequests) * 100)
+    : 0;
+  const tier = getTier(completionRate);
+  const nextTierAt = tier.label === "Bronze" ? 60 : tier.label === "Silver" ? 80 : tier.label === "Gold" ? 95 : 100;
+  const progressToNext = tier.label === "Platinum" ? 100
+    : Math.max(0, Math.round(((completionRate - (nextTierAt - 20)) / 20) * 100));
+
+  const STATS = [
+    { label: "Total Requests",   value: dash.totalRequests,    unit: "all time",    icon: Package,      cardBg: "bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/60", color: "bg-emerald-100 text-emerald-700" },
+    { label: "Pending Approval", value: dash.pendingRequests,  unit: "need action", icon: Clock,        cardBg: "bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200/60",     color: "bg-amber-100 text-amber-700" },
+    { label: "Completed",        value: dash.completedRequests,unit: "recycled",    icon: CheckCircle2, cardBg: "bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200/60",         color: "bg-blue-100 text-blue-700" },
+    { label: "Total Credited",   value: fmt(dash.totalCredited || 0), unit: "to citizens", icon: Banknote, cardBg: "bg-gradient-to-br from-violet-50 to-violet-100/50 border-violet-200/60", color: "bg-violet-100 text-violet-700" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-8 pb-8 w-full">
+
+      {/* Welcome */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p className="text-gray-500 text-sm font-medium whitespace-nowrap">
+            Welcome back, <strong className="text-gray-900">{name}</strong> — here's your facility overview.
+          </p>
+          {dash.isVerified && (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full mt-1">
+              ✓ Verified Facility
+            </span>
+          )}
+        </div>
+        <div className="flex gap-3">
+          <a href="/intermediary/schedule" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm transition">View Schedule</a>
+          <a href="/intermediary/collections" className="px-4 py-2 bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md hover:bg-emerald-800 transition">All Collections</a>
+        </div>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {STATS.map((s, i) => (
+          <div key={i} className={`${s.cardBg} border rounded-2xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}>
+            <div className="flex items-start justify-between mb-4">
+              <div className={`p-2.5 rounded-xl ${s.color}`}><s.icon size={20} /></div>
+            </div>
+            <p className="text-2xl font-extrabold text-gray-900">{s.value}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-widest font-bold">{s.unit}</p>
+            <p className="text-sm font-bold text-gray-700 mt-1">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Gamification + Quick Actions + Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Facility Score */}
+        <div className={`${tier.bg} border ${tier.border} rounded-2xl p-6 flex flex-col gap-4`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy size={16} className={tier.color} />
+              <span className={`text-sm font-bold ${tier.color}`}>Facility Score</span>
+            </div>
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${tier.bg} ${tier.border} ${tier.color}`}>{tier.label}</span>
+          </div>
+          <div className="flex items-center gap-5">
+            <div className="relative">
+              <RadialProgress pct={completionRate} size={88} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-lg font-extrabold text-gray-900">{completionRate}%</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1.5">Completion Rate</p>
+              <div className="flex gap-0.5 mb-2">
+                {Array.from({length:4}).map((_,i) => (
+                  <Star key={i} size={14} className={i < tier.stars ? "text-yellow-400 fill-yellow-400" : "text-gray-200 fill-gray-200"} />
+                ))}
+              </div>
+              <p className="text-xs text-gray-400">
+                {tier.label === "Platinum" ? "Max tier reached!" : `${nextTierAt - completionRate}% to ${tier.label === "Bronze" ? "Silver" : tier.label === "Silver" ? "Gold" : "Platinum"}`}
+              </p>
+            </div>
+          </div>
+          {tier.label !== "Platinum" && (
+            <div>
+              <div className="flex justify-between text-xs text-gray-400 mb-1">
+                <span>Progress to next tier</span><span className="text-emerald-600 font-semibold">{progressToNext}%</span>
+              </div>
+              <div className="h-2 bg-white/60 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{width:`${progressToNext}%`}} />
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white/70 rounded-xl p-3 text-center">
+              <p className="text-lg font-extrabold text-gray-900">{dash.completedRequests}</p>
+              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Completed</p>
+            </div>
+            <div className="bg-white/70 rounded-xl p-3 text-center">
+              <p className="text-lg font-extrabold text-gray-900">{dash.pendingRequests}</p>
+              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Pending</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex flex-col gap-3">
+          <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Quick Actions</p>
+          <div className="grid grid-cols-2 gap-3 flex-1">
+            {[
+              { label: "Schedule Pickup",  href: "/intermediary/schedule",       icon: CalendarClock },
+              { label: "Assign Driver",    href: "/intermediary/assign-drivers", icon: Truck },
+              { label: "Withdrawals",      href: "/intermediary/withdrawals",    icon: Banknote },
+              { label: "Transactions",     href: "/intermediary/transactions",   icon: TrendingUp },
+              { label: "Collections",      href: "/intermediary/collections",    icon: Package },
+              { label: "Settings",         href: "/intermediary/settings",       icon: Settings },
+            ].map((a, i) => (
+              <a key={i} href={a.href}
+                className="bg-white hover:bg-emerald-50 border border-gray-100 hover:border-emerald-200 rounded-2xl flex flex-col items-center justify-center p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                  <a.icon size={18} />
+                </div>
+                <span className="text-xs font-bold text-gray-700 text-center leading-tight">{a.label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Activity Feed */}
+        <div className="flex flex-col gap-3">
+          <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Activity Feed</p>
+          <div className="space-y-2.5">
+            {feed.length === 0 ? (
+              <div className="text-sm text-gray-400 text-center py-8">No recent activity</div>
+            ) : feed.map((tx, i) => (
+              <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-3.5 hover:bg-emerald-50/50 hover:border-emerald-100 transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                  <Activity size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-800 truncate">
+                    {tx.citizenName ? <><strong>{tx.citizenName}</strong> — </> : ""}{tx.description}
+                  </p>
+                  <p className="text-[10px] font-bold text-gray-400 tracking-wide mt-0.5">{timeAgo(tx.createdAt)}</p>
+                </div>
+                <span className="text-sm font-extrabold text-emerald-600 flex-shrink-0">+₹{(+tx.amount).toFixed(0)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Requests Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <h3 className="text-base font-bold text-gray-900">Recent Requests</h3>
+          <a href="/intermediary/collections" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+            View All <ChevronRight size={14} />
+          </a>
+        </div>
+        {requests.length === 0 ? (
+          <div className="text-sm text-gray-400 text-center py-12">No requests yet</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50/60">
+                <tr>
+                  {["Request #", "Device", "Status", "Amount", "Date"].map(h => (
+                    <th key={h} className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {requests.map((r, i) => (
+                  <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 text-xs font-mono font-bold text-emerald-700">{r.requestNumber}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{r.deviceName || "—"}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${STATUS_STYLE[r.status] ?? "bg-gray-100 text-gray-600"}`}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-gray-800">
+                      {r.finalAmount ? `₹${r.finalAmount}` : r.estimatedAmount ? `₹${r.estimatedAmount}` : "—"}
+                    </td>
+                    <td className="px-6 py-4 text-xs text-gray-400">
+                      {new Date(r.createdAt).toLocaleDateString("en-IN", {day:"numeric", month:"short", year:"numeric"})}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+    </div>
+  );
+}
