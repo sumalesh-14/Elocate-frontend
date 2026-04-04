@@ -152,6 +152,22 @@ export default function IntermediaryDashboard() {
   const progressToNext = tier.label === "Platinum" ? 100
     : Math.max(0, Math.round(((completionRate - (nextTierAt - 20)) / 20) * 100));
 
+  const QUOTES = [
+    "“Sustainability is no longer about doing less harm. It's about doing more good.”",
+    "“Your facility has diverted over 2.4 tonnes of e-waste from landfills this month alone.”",
+    "“Great work! You're in the top 15% of fastest collectors in your region.”",
+    "“Recycling one million laptops saves energy equivalent to the electricity used by 3,657 US homes in a year.”",
+    "“Small steps make a huge impact. Every device recycled is a win for the planet.”"
+  ];
+  const [quoteIdx, setQuoteIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setQuoteIdx(prev => (prev + 1) % QUOTES.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   const STATS = [
     { label: "Total Requests",   value: dash.totalRequests,    unit: "all time",    icon: Package,      cardBg: "bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/60", color: "bg-emerald-100 text-emerald-700" },
     { label: "Pending Approval", value: dash.pendingRequests,  unit: "need action", icon: Clock,        cardBg: "bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200/60",     color: "bg-amber-100 text-amber-700" },
@@ -160,7 +176,10 @@ export default function IntermediaryDashboard() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 pb-8 w-full">
+    <div className="flex flex-col gap-8 pb-8 relative w-full">
+      {/* ── Background ambient glow ── */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-300/20 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse" />
+      <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-blue-300/20 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse delay-1000" />
 
       {/* Welcome */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -181,24 +200,28 @@ export default function IntermediaryDashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 relative z-10">
         {STATS.map((s, i) => (
-          <div key={i} className={`${s.cardBg} border rounded-2xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}>
-            <div className="flex items-start justify-between mb-4">
-              <div className={`p-2.5 rounded-xl ${s.color}`}><s.icon size={20} /></div>
+          <div key={i} className={`group relative ${s.cardBg} backdrop-blur-xl border rounded-3xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden`}>
+            <div className="absolute -inset-1 bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            
+            <div className="flex items-start justify-between mb-4 relative z-10">
+              <div className={`p-3 rounded-2xl ${s.color} shadow-sm group-hover:scale-110 transition-transform duration-500`}><s.icon size={22} /></div>
             </div>
-            <p className="text-2xl font-extrabold text-gray-900">{s.value}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-widest font-bold">{s.unit}</p>
-            <p className="text-sm font-bold text-gray-700 mt-1">{s.label}</p>
+            <div className="relative z-10">
+              <p className="text-3xl font-black text-gray-900 drop-shadow-sm">{s.value}</p>
+              <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-bold">{s.unit}</p>
+              <p className="text-sm font-bold text-gray-800 mt-1.5">{s.label}</p>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Gamification + Quick Actions + Feed */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
 
         {/* Facility Score */}
-        <div className={`${tier.bg} border ${tier.border} rounded-2xl p-6 flex flex-col gap-4`}>
+        <div className={`bg-gradient-to-br from-emerald-100/90 via-emerald-50/80 to-white backdrop-blur-xl border border-emerald-200/50 rounded-3xl p-6 flex flex-col gap-4 shadow-xl shadow-emerald-100/50 hover:shadow-2xl transition-all duration-500 group`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy size={16} className={tier.color} />
@@ -235,15 +258,24 @@ export default function IntermediaryDashboard() {
               </div>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white/70 rounded-xl p-3 text-center">
-              <p className="text-lg font-extrabold text-gray-900">{dash.completedRequests}</p>
-              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Completed</p>
+          <div className="grid grid-cols-2 gap-3 pt-3">
+            <div className="bg-white/80 backdrop-blur-sm border border-white rounded-2xl p-3.5 text-center shadow-sm group-hover:-translate-y-1 transition-transform duration-500">
+              <p className="text-xl font-black text-gray-900 drop-shadow-sm">{dash.completedRequests}</p>
+              <p className="text-[11px] font-bold tracking-wider text-gray-500 uppercase mt-0.5">Completed</p>
             </div>
-            <div className="bg-white/70 rounded-xl p-3 text-center">
-              <p className="text-lg font-extrabold text-gray-900">{dash.pendingRequests}</p>
-              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Pending</p>
+            <div className="bg-white/80 backdrop-blur-sm border border-white rounded-2xl p-3.5 text-center shadow-sm group-hover:-translate-y-1 transition-transform duration-500 delay-75">
+              <p className="text-xl font-black text-gray-900 drop-shadow-sm">{dash.pendingRequests}</p>
+              <p className="text-[11px] font-bold tracking-wider text-gray-500 uppercase mt-0.5">Pending</p>
             </div>
+          </div>
+
+          {/* Animated Quote Carousel */}
+          <div className="flex-1 mt-5 min-h-[6rem] relative w-full flex items-center justify-center bg-white/40 rounded-[20px] p-5 overflow-hidden shadow-inner border border-white/50">
+            {QUOTES.map((q, i) => (
+              <p key={i} className={`absolute w-full px-6 text-[13px] leading-relaxed font-bold text-emerald-900 text-center transition-all duration-700 ease-in-out ${i === quoteIdx ? "opacity-100 translate-y-0" : i < quoteIdx ? "opacity-0 -translate-y-6" : "opacity-0 translate-y-6"}`}>
+                {q}
+              </p>
+            ))}
           </div>
         </div>
 
@@ -260,11 +292,11 @@ export default function IntermediaryDashboard() {
               { label: "Settings",         href: "/intermediary/settings",       icon: Settings },
             ].map((a, i) => (
               <a key={i} href={a.href}
-                className="bg-white hover:bg-emerald-50 border border-gray-100 hover:border-emerald-200 rounded-2xl flex flex-col items-center justify-center p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
-                  <a.icon size={18} />
+                className="bg-gradient-to-br from-emerald-50/50 to-white hover:from-emerald-100/50 rounded-[20px] flex flex-col items-center justify-center p-6 shadow-sm border border-emerald-100/50 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <a.icon size={20} />
                 </div>
-                <span className="text-xs font-bold text-gray-700 text-center leading-tight">{a.label}</span>
+                <span className="text-[13px] font-extrabold text-gray-800 text-center leading-tight">{a.label}</span>
               </a>
             ))}
           </div>
@@ -277,17 +309,21 @@ export default function IntermediaryDashboard() {
             {feed.length === 0 ? (
               <div className="text-sm text-gray-400 text-center py-8">No recent activity</div>
             ) : feed.map((tx, i) => (
-              <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-3.5 hover:bg-emerald-50/50 hover:border-emerald-100 transition-all group">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
-                  <Activity size={16} />
+              <div key={i} className="flex items-center gap-4 bg-gradient-to-r from-slate-50 to-white hover:from-emerald-50/50 rounded-[20px] p-4 shadow-sm border border-slate-100 hover:shadow-emerald-50/50 transition-all duration-300 group cursor-default">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                  <Activity size={18} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-800 truncate">
+                  <p className="text-[13px] text-gray-800 truncate">
                     {tx.citizenName ? <><strong>{tx.citizenName}</strong> — </> : ""}{tx.description}
                   </p>
-                  <p className="text-[10px] font-bold text-gray-400 tracking-wide mt-0.5">{timeAgo(tx.createdAt)}</p>
+                  <p className="text-[10px] font-bold text-gray-400 tracking-wider mt-0.5">{timeAgo(tx.createdAt)}</p>
                 </div>
-                <span className="text-sm font-extrabold text-emerald-600 flex-shrink-0">+₹{(+tx.amount).toFixed(0)}</span>
+                {tx.amount > 0 ? (
+                  <span className="text-sm font-extrabold text-emerald-600 flex-shrink-0">+₹{(+tx.amount).toFixed(0)}</span>
+                ) : (
+                  <ChevronRight size={14} className="text-gray-300 flex-shrink-0 group-hover:text-gray-400 group-hover:translate-x-1 transition-all" />
+                )}
               </div>
             ))}
           </div>
@@ -295,9 +331,9 @@ export default function IntermediaryDashboard() {
       </div>
 
       {/* Recent Requests Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-900">Recent Requests</h3>
+      <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden relative z-10 transition-all duration-500 hover:shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 bg-slate-50/80 backdrop-blur-md">
+          <h3 className="text-lg font-bold text-gray-900">Recent Requests</h3>
           <a href="/intermediary/collections" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
             View All <ChevronRight size={14} />
           </a>
@@ -307,7 +343,7 @@ export default function IntermediaryDashboard() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50/60">
+              <thead className="bg-slate-100/50">
                 <tr>
                   {["Request #", "Device", "Status", "Amount", "Date"].map(h => (
                     <th key={h} className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">{h}</th>
