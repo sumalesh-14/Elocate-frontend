@@ -31,6 +31,8 @@ export default function DashboardLayout({ children }: LayoutProps) {
             '/intermediary/schedule': 'Schedule',
             '/intermediary/reports': 'Reports',
             '/intermediary/dashboard': 'Dashboard',
+            '/intermediary/withdrawals': 'Withdrawal Requests',
+            '/intermediary/transactions': 'Transaction History',
         };
         return titleMap[path] || 'Intermediary Portal';
     };
