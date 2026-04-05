@@ -21,6 +21,7 @@ export async function POST(request: Request) {
         console.log("[SIGN-IN PROXY] user.role:", data?.user?.role);
         console.log("[SIGN-IN PROXY] user.id:", data?.user?.id);
         console.log("[SIGN-IN PROXY] user.email:", data?.user?.email);
+        console.log("[SIGN-IN PROXY] user.facilityId:", data?.user?.facilityId);
 
         if (!response.ok) {
             return NextResponse.json(data, { status: response.status });

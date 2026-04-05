@@ -1,7 +1,10 @@
 export const sendMessageToGemini = async (
     message: string,
     history: { role: string; parts: { text: string }[] }[],
-    sessionId?: string
+    sessionId?: string,
+    role?: string,
+    facilityId?: string,
+    userId?: string,
 ): Promise<{ text: string; sessionId?: string; suggestions?: string[] }> => {
     try {
         const response = await fetch('/api/proxy/chat', {
@@ -13,6 +16,9 @@ export const sendMessageToGemini = async (
                 message,
                 history,
                 session_id: sessionId,
+                role: role,
+                facility_id: facilityId,
+                user_id: userId,
             }),
         });
 

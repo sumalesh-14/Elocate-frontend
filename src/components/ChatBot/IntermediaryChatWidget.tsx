@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Sparkles, Mic, MicOff, Maximize2, Minimize2, RefreshCw } from "lucide-react";
 import { sendMessageToGemini } from "@/services/geminiService";
-import { FormattedText, CITIZEN_PATH_LABELS } from "./chatUtils";
+import { FormattedText, INTERMEDIARY_PATH_LABELS } from "./chatUtils";
 
 export interface Message {
     role: "user" | "model";
@@ -12,12 +12,12 @@ export interface Message {
     suggestions?: string[];
 }
 
-const CITIZEN_PILL =
-    "text-eco-700 hover:text-white bg-eco-50 hover:bg-eco-600 border border-eco-300 rounded-full px-3 py-0.5 text-[1.3rem] font-medium transition-all no-underline inline-block";
+const INTERMEDIARY_PILL =
+    "text-emerald-300 hover:text-white bg-slate-700 hover:bg-emerald-600 border border-emerald-500/40 rounded-full px-3 py-0.5 text-[1.3rem] font-medium transition-all no-underline inline-block";
 
-const SESSION_KEY = "ecobot_session_id";
+const SESSION_KEY = "intermediary_chat_session_id";
 
-export const ChatWidget: React.FC = () => {
+export const IntermediaryChatWidget: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [input, setInput] = useState("");
@@ -26,7 +26,7 @@ export const ChatWidget: React.FC = () => {
         return sessionStorage.getItem(SESSION_KEY) || undefined;
     });
     const [messages, setMessages] = useState<Message[]>([
-        { role: "model", text: "Hi there! 👋 I'm EcoBot, your e-waste recycling assistant. Here are some things you can ask me:" },
+        { role: "model", text: "Welcome to the Ops Center. 👋 I'm your **Compliance & Logistics Co-Pilot**. I can help you with CPCB rules, driver management, and report analysis. How can I assist your facility today?" },
     ]);
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -34,10 +34,10 @@ export const ChatWidget: React.FC = () => {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const SAMPLE_QUESTIONS = [
-        "♻️ How do I recycle my old phone?",
-        "🔋 Where can I drop off old batteries?",
-        "💻 What happens to recycled laptops?",
-        "🌿 Why is e-waste harmful to the environment?",
+        "📋 What are the Form-2 filing requirements?",
+        "🚛 How do I optimize driver assignments?",
+        "📊 Explain the Financials report trends.",
+        "⚖️ CPCB E-Waste Rules 2022 summary.",
     ];
 
     useEffect(() => {
@@ -54,7 +54,32 @@ export const ChatWidget: React.FC = () => {
             const history = sessionId
                 ? []
                 : messages.map((m) => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: m.text }] }));
-            const result = await sendMessageToGemini(userMessage.text, history, sessionId);
+
+            // Read facility and user context from localStorage (set at login)
+            // facilityId is stored directly at login, but fall back to nested user object if missing
+            let facilityId: string | undefined = undefined;
+            let userId: string | undefined = undefined;
+            if (typeof window !== "undefined") {
+                facilityId = localStorage.getItem("facilityId") || undefined;
+                userId = localStorage.getItem("id") || undefined;
+
+                // Fallback: parse from the full user object stored at login
+                if (!facilityId) {
+                    try {
+                        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+                        // UserProfileResponse structure: { user: { facilityId: "..." } }
+                        facilityId = stored?.user?.facilityId || stored?.facilityId || undefined;
+                        if (facilityId) {
+                            // Cache it for next time
+                            localStorage.setItem("facilityId", facilityId);
+                        }
+                    } catch { /* ignore parse errors */ }
+                }
+            }
+
+            console.log("[Ops Co-Pilot] facilityId:", facilityId, "userId:", userId);
+
+            const result = await sendMessageToGemini(userMessage.text, history, sessionId, "intermediary", facilityId, userId);
             if (result.sessionId && !sessionId) {
                 setSessionId(result.sessionId);
                 sessionStorage.setItem(SESSION_KEY, result.sessionId);
@@ -90,7 +115,7 @@ export const ChatWidget: React.FC = () => {
         if (isLoading) return;
         setSessionId(undefined);
         sessionStorage.removeItem(SESSION_KEY);
-        setMessages([{ role: "model", text: "Hi there! 👋 I'm EcoBot, your e-waste recycling assistant. Here are some things you can ask me:" }]);
+        setMessages([{ role: "model", text: "Welcome to the Ops Center. 👋 I'm your **Compliance & Logistics Co-Pilot**. I can help you with CPCB rules, driver management, and report analysis. How can I assist your facility today?" }]);
         setInput("");
         if (isListening) setIsListening(false);
     };
@@ -107,53 +132,53 @@ export const ChatWidget: React.FC = () => {
             {/* Chat Window */}
             <div
                 style={{ zIndex: 9999 }}
-                className={`fixed flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] bg-white/80 backdrop-blur-xl border border-white/40 shadow-2xl origin-bottom-right
+                className={`fixed flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] bg-slate-950/95 backdrop-blur-2xl shadow-2xl origin-bottom-right border border-emerald-500/20
           ${!isOpen ? "translate-y-12 opacity-0 scale-90 pointer-events-none" : "translate-y-0 opacity-100 scale-100 pointer-events-auto"}
           ${isExpanded ? "bottom-[5vh] right-[5vw] w-[90vw] h-[90vh] max-h-[90vh] rounded-[3rem]" : "bottom-24 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[400px] h-[600px] max-h-[80vh] rounded-[2rem]"}`}
             >
                 {/* Header */}
-                <div className={`flex items-center justify-between transition-all duration-300 ${isExpanded ? "p-6 bg-eco-900/95" : "p-5 bg-eco-900/90"}`}>
+                <div className={`flex items-center justify-between transition-all duration-300 ${isExpanded ? "p-6 bg-emerald-950" : "p-5 bg-emerald-900"}`}>
                     <div className="flex items-center gap-3">
-                        <div className={`rounded-full bg-tech-lime/20 flex items-center justify-center border border-tech-lime/30 transition-all ${isExpanded ? "w-12 h-12" : "w-10 h-10"}`}>
-                            <Sparkles className={`${isExpanded ? "w-7 h-7" : "w-6 h-6"} text-tech-lime`} />
+                        <div className={`rounded-full bg-emerald-400/20 flex items-center justify-center border border-emerald-400/30 transition-all ${isExpanded ? "w-12 h-12" : "w-10 h-10"}`}>
+                            <Sparkles className={`${isExpanded ? "w-7 h-7" : "w-6 h-6"} text-emerald-400`} />
                         </div>
                         <div>
-                            <h3 className={`font-display font-bold text-white leading-tight ${isExpanded ? "text-[2.6rem]" : "text-[1.8rem]"}`}>EcoBot AI</h3>
-                            <p className="text-eco-200 text-[1.2rem] font-outfit">Powered by Gemini</p>
+                            <h3 className={`font-display font-bold text-white leading-tight ${isExpanded ? "text-[2.6rem]" : "text-[1.8rem]"}`}>Ops Co-Pilot</h3>
+                            <p className="text-emerald-200/70 text-[1.2rem] font-medium tracking-wide">Facility Operations & Compliance</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        <button suppressHydrationWarning onClick={handleRefresh} disabled={isLoading} className={`text-eco-200 hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`} title="Start new chat"><RefreshCw size={18} /></button>
-                        <button suppressHydrationWarning onClick={() => setIsExpanded(!isExpanded)} className="text-eco-200 hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors" title={isExpanded ? "Minimize" : "Expand"}>{isExpanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}</button>
-                        <button suppressHydrationWarning onClick={() => { setIsOpen(false); setTimeout(() => setIsExpanded(false), 300); }} className="text-eco-200 hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors"><X size={20} /></button>
+                        <button suppressHydrationWarning onClick={handleRefresh} disabled={isLoading} className={`text-emerald-200 hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`} title="Start new chat"><RefreshCw size={18} /></button>
+                        <button suppressHydrationWarning onClick={() => setIsExpanded(!isExpanded)} className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors" title={isExpanded ? "Minimize" : "Expand"}>{isExpanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}</button>
+                        <button suppressHydrationWarning onClick={() => { setIsOpen(false); setTimeout(() => setIsExpanded(false), 300); }} className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors"><X size={20} /></button>
                     </div>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-gradient-to-b from-eco-50/30 to-white/60">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-slate-900">
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex flex-col gap-1.5 ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                            <span className={`text-[1.1rem] font-medium px-2 ${msg.role === "user" ? "text-eco-400" : "text-eco-500"}`}>
-                                {msg.role === "user" ? "You" : "EcoBot"}
+                            <span className={`text-[1.1rem] font-medium px-2 ${msg.role === "user" ? "text-slate-400" : "text-emerald-500"}`}>
+                                {msg.role === "user" ? "You" : "Ops Co-Pilot"}
                             </span>
                             <div className={`px-4 py-3 rounded-2xl shadow-sm font-outfit w-fit
                 ${isExpanded ? "max-w-[75%]" : msg.role === "user" ? "max-w-[85%]" : "max-w-[90%]"}
-                ${msg.role === "user" ? "bg-eco-700 text-white rounded-tr-sm self-end text-right" : "bg-white text-eco-900 border border-eco-100 rounded-tl-sm"}
-                ${msg.isError ? "bg-red-50 text-red-600 border-red-200" : ""}`}>
+                ${msg.role === "user" ? "bg-emerald-600 text-white rounded-tr-sm self-end text-right" : "bg-slate-800 text-slate-100 border border-slate-700 rounded-tl-sm"}
+                ${msg.isError ? "bg-red-900/40 text-red-200 border-red-500/30" : ""}`}>
                                 <FormattedText
                                     text={msg.text}
-                                    pathLabels={CITIZEN_PATH_LABELS}
-                                    pillClassName={CITIZEN_PILL}
-                                    numberColor="text-eco-500"
-                                    bulletColor="text-eco-400"
-                                    headingColor="text-eco-800"
+                                    pathLabels={INTERMEDIARY_PATH_LABELS}
+                                    pillClassName={INTERMEDIARY_PILL}
+                                    numberColor="text-emerald-400"
+                                    bulletColor="text-emerald-500"
+                                    headingColor="text-emerald-300"
                                 />
                             </div>
                             {msg.role === "model" && msg.suggestions && msg.suggestions.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 mt-1 w-full">
                                     {msg.suggestions.map((s, si) => (
                                         <button key={si} suppressHydrationWarning onClick={() => { setInput(s); inputRef.current?.focus(); }}
-                                            className="text-[1.2rem] text-eco-700 bg-white hover:bg-eco-600 hover:text-white border border-eco-300 rounded-full px-4 py-2 transition-all font-outfit shadow-sm hover:shadow active:scale-95 text-left">
+                                            className="text-[1.2rem] text-emerald-400 bg-slate-800 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 rounded-full px-4 py-2 transition-all font-outfit shadow-sm hover:shadow active:scale-95 text-left">
                                             {s}
                                         </button>
                                     ))}
@@ -166,7 +191,7 @@ export const ChatWidget: React.FC = () => {
                         <div className="flex flex-wrap gap-2 pt-1">
                             {SAMPLE_QUESTIONS.map((q, i) => (
                                 <button key={i} suppressHydrationWarning onClick={() => { setInput(q); inputRef.current?.focus(); }}
-                                    className="text-[1.2rem] text-eco-700 bg-white hover:bg-eco-600 hover:text-white border border-eco-300 rounded-full px-4 py-2 transition-all font-outfit shadow-sm hover:shadow active:scale-95">
+                                    className="text-[1.2rem] text-emerald-400 bg-slate-800 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 rounded-full px-4 py-2 transition-all font-outfit shadow-sm hover:shadow active:scale-95">
                                     {q}
                                 </button>
                             ))}
@@ -175,8 +200,8 @@ export const ChatWidget: React.FC = () => {
 
                     {isLoading && (
                         <div className="flex items-start gap-1.5">
-                            <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm border border-eco-100 shadow-sm flex gap-1.5 items-center">
-                                {[0, 150, 300].map((d) => <div key={d} className="w-2 h-2 bg-eco-400 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />)}
+                            <div className="bg-slate-800 px-4 py-3 rounded-2xl rounded-tl-sm border border-slate-700 shadow-sm flex gap-1.5 items-center">
+                                {[0, 150, 300].map((d) => <div key={d} className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />)}
                             </div>
                         </div>
                     )}
@@ -184,23 +209,23 @@ export const ChatWidget: React.FC = () => {
                 </div>
 
                 {/* Input */}
-                <div className={`bg-white/80 border-t border-eco-100 ${isExpanded ? "p-6" : "p-4"}`}>
+                <div className={`bg-slate-900 border-t border-slate-800 ${isExpanded ? "p-6" : "p-4"}`}>
                     <div className="relative flex items-center gap-2">
                         <input suppressHydrationWarning ref={inputRef} type="text" value={input}
                             onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyPress}
-                            placeholder={isListening ? "Listening..." : "Ask about recycling..."}
-                            className={`w-full bg-eco-50 border-none rounded-full text-eco-900 placeholder-eco-400 focus:ring-2 focus:ring-eco-500/50 focus:outline-none transition-all font-outfit
+                            placeholder={isListening ? "Listening..." : "Ask about operations..."}
+                            className={`w-full bg-slate-800 border border-slate-700 rounded-full text-white placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/50 focus:outline-none transition-all font-outfit
                 ${isExpanded ? "py-5 pl-7 pr-24 text-[1.8rem]" : "py-3.5 pl-6 pr-20 text-[1.4rem] md:text-[1.5rem]"}
-                ${isListening ? "ring-2 ring-red-400/50 bg-red-50" : ""}`}
+                ${isListening ? "ring-2 ring-red-400/50 bg-red-900/20" : ""}`}
                         />
                         <div className="absolute right-2 flex items-center gap-1">
                             <button suppressHydrationWarning onClick={toggleVoiceInput}
-                                className={`rounded-full transition-all hover:bg-eco-100 ${isExpanded ? "p-3" : "p-2"} ${isListening ? "text-red-500 animate-pulse bg-red-100" : "text-eco-600"}`}
+                                className={`rounded-full transition-all hover:bg-slate-700 ${isExpanded ? "p-3" : "p-2"} ${isListening ? "text-red-500 animate-pulse bg-red-900/30" : "text-slate-400"}`}
                                 title="Voice Input">
                                 {isListening ? <MicOff size={isExpanded ? 22 : 18} /> : <Mic size={isExpanded ? 22 : 18} />}
                             </button>
                             <button suppressHydrationWarning onClick={handleSend} disabled={isLoading || !input.trim()}
-                                className={`bg-eco-600 rounded-full text-white hover:bg-eco-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:scale-105 ${isExpanded ? "p-3" : "p-2"}`}>
+                                className={`bg-emerald-600 rounded-full text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:scale-105 ${isExpanded ? "p-3" : "p-2"}`}>
                                 <Send size={isExpanded ? 22 : 18} />
                             </button>
                         </div>
@@ -211,8 +236,8 @@ export const ChatWidget: React.FC = () => {
             {/* Toggle Button */}
             <button style={{ zIndex: 10000 }} suppressHydrationWarning
                 onClick={() => { if (isExpanded && isOpen) { setIsOpen(false); setTimeout(() => setIsExpanded(false), 300); } else { setIsOpen(!isOpen); } }}
-                className={`fixed bottom-8 right-8 group flex items-center justify-center w-20 h-20 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${isOpen ? "bg-eco-800 rotate-90" : "bg-gradient-to-br from-eco-500 to-eco-700 rotate-0"}`}>
-                <span className="absolute inset-0 rounded-full bg-white/20 animate-ping opacity-75 group-hover:opacity-100 duration-1000" />
+                className={`fixed bottom-8 right-8 group flex items-center justify-center w-20 h-20 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${isOpen ? "bg-emerald-800 rotate-90" : "bg-gradient-to-br from-emerald-600 to-emerald-900 rotate-0"}`}>
+                <span className="absolute inset-0 rounded-full bg-emerald-400/20 animate-ping opacity-75 group-hover:opacity-100 duration-1000" />
                 {isOpen ? <X className="text-white w-10 h-10 transition-transform" /> : <MessageCircle className="text-white w-10 h-10 transition-transform" />}
             </button>
         </>

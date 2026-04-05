@@ -1,4 +1,4 @@
-"use client";
+import { jwtDecode } from "jwt-decode";
 
 const isLocalStorageAvailable = typeof window !== 'undefined';
 
@@ -32,8 +32,23 @@ export const getToken = () => {
 
 export const isAuthenticated = () => {
   const token = getToken();
-  const isAuth = !!token;
-  return isAuth;
+  if (!token) return false;
+
+  try {
+    const decoded: any = jwtDecode(token);
+    const currentTime = Date.now() / 1000;
+    
+    // Check if token is expired
+    if (decoded.exp && decoded.exp < currentTime) {
+      console.warn("[AUTH] Token has expired.");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("[AUTH] Error decoding token:", error);
+    return false;
+  }
 };
 
 export const setUser = (user: any): void => {

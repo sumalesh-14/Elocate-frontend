@@ -25,9 +25,22 @@ export default function ConditionalLayout({
     const isPublicRoute = pathname === '/' || pathname === '/citizen/sign-up' || pathname === '/citizen' || pathname?.startsWith('/citizen/about') || pathname?.startsWith('/citizen/contactus') || pathname?.startsWith('/citizen/analyze') || pathname?.startsWith('/citizen/recycle') || pathname?.startsWith('/citizen/education') || pathname?.startsWith('/citizen/rules') || pathname?.startsWith('/citizen/e-facilities') || pathname?.startsWith('/driver/pickup/');
 
     useEffect(() => {
-        if (mounted && !isAuthRoute && !isPublicRoute && !isAuthenticated()) {
+        if (!mounted) return;
+
+        // Immediate check on mount/route change
+        if (!isAuthRoute && !isPublicRoute && !isAuthenticated()) {
             router.replace('/sign-in');
         }
+
+        // Background monitor: Check every 60 seconds
+        const interval = setInterval(() => {
+            if (!isAuthRoute && !isPublicRoute && !isAuthenticated()) {
+                console.warn("[SESSION] Session expired in background. Redirecting...");
+                router.replace('/sign-in');
+            }
+        }, 60000);
+
+        return () => clearInterval(interval);
     }, [isAuthRoute, isPublicRoute, router, mounted]);
 
     // We unify the structure to prevent children from remounting when 'mounted' flips to true
