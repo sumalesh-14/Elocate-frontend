@@ -89,6 +89,14 @@ function timeAgo(iso: string) {
   return `${Math.floor(h/24)}d ago`;
 }
 
+const QUOTES = [
+  "“Sustainability is no longer about doing less harm. It's about doing more good.”",
+  "“Your facility has diverted over 2.4 tonnes of e-waste from landfills this month alone.”",
+  "“Great work! You're in the top 15% of fastest collectors in your region.”",
+  "“Recycling one million laptops saves energy equivalent to the electricity used by 3,657 US homes in a year.”",
+  "“Small steps make a huge impact. Every device recycled is a win for the planet.”"
+];
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function IntermediaryDashboard() {
   const name = getFullName() || "Partner";
@@ -99,6 +107,14 @@ export default function IntermediaryDashboard() {
   const [feed, setFeed]       = useState<WalletTx[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
+  const [quoteIdx, setQuoteIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setQuoteIdx(prev => (prev + 1) % QUOTES.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!userId) { setError("Not authenticated"); setLoading(false); return; }
@@ -152,21 +168,7 @@ export default function IntermediaryDashboard() {
   const progressToNext = tier.label === "Platinum" ? 100
     : Math.max(0, Math.round(((completionRate - (nextTierAt - 20)) / 20) * 100));
 
-  const QUOTES = [
-    "“Sustainability is no longer about doing less harm. It's about doing more good.”",
-    "“Your facility has diverted over 2.4 tonnes of e-waste from landfills this month alone.”",
-    "“Great work! You're in the top 15% of fastest collectors in your region.”",
-    "“Recycling one million laptops saves energy equivalent to the electricity used by 3,657 US homes in a year.”",
-    "“Small steps make a huge impact. Every device recycled is a win for the planet.”"
-  ];
-  const [quoteIdx, setQuoteIdx] = useState(0);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setQuoteIdx(prev => (prev + 1) % QUOTES.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
 
   const STATS = [
     { label: "Total Requests",   value: dash.totalRequests,    unit: "all time",    icon: Package,      cardBg: "bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/60", color: "bg-emerald-100 text-emerald-700" },

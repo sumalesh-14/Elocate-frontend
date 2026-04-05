@@ -1,173 +1,73 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
+import { BarChart2, FileText, Users, DollarSign, Calendar } from "lucide-react";
+import WasteVolumeChart from "./components/WasteVolumeChart";
+import ExportWidget from "./components/ExportWidget";
+import CpcbComplianceView from "./components/CpcbComplianceView";
+import DriverStatsView from "./components/DriverStatsView";
+import FinancialsView from "./components/FinancialsView";
 
-interface Report {
-    id: string;
-    name: string;
-    type: string;
-    dateGenerated: string;
-    status: "Ready" | "Generating" | "Failed";
-    format: "PDF" | "CSV" | "Excel";
+export default function ReportsPage() {
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const TABS = [
+    { id: "overview", label: "Overview", icon: BarChart2 },
+    { id: "compliance", label: "CPCB Compliance", icon: FileText },
+    { id: "drivers", label: "Driver Stats", icon: Users },
+    { id: "financials", label: "Financials", icon: DollarSign },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6 w-full px-2 lg:px-6 pb-10">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Analytics & Reports</h1>
+          <p className="text-gray-500 font-medium mt-1">Track facility performance, operations, and compliance logs.</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-white border border-gray-200 hover:border-gray-300 transition-colors px-4 py-2.5 rounded-xl shadow-sm focus-within:ring-2 ring-emerald-500/20">
+            <Calendar size={16} className="text-emerald-600" />
+            <select className="bg-transparent text-sm font-bold text-gray-700 outline-none cursor-pointer">
+              <option>Last 7 Days</option>
+              <option>Last 30 Days</option>
+              <option>This Year</option>
+              <option>All Time</option>
+            </select>
+          </div>
+          <ExportWidget />
+        </div>
+      </div>
+
+      {/* Tabs Layout */}
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-px">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`flex items-center gap-2 px-5 py-3 border-b-2 text-sm font-bold transition-all ${
+              activeTab === t.id 
+                ? "border-emerald-600 text-emerald-700" 
+                : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+            }`}
+          >
+            <t.icon size={16} />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="pt-2">
+        {activeTab === "overview" && <WasteVolumeChart />}
+        {activeTab === "compliance" && <CpcbComplianceView />}
+        {activeTab === "drivers" && <DriverStatsView />}
+        {activeTab === "financials" && <FinancialsView />}
+      </div>
+
+    </div>
+  );
 }
-
-const ReportsPage = () => {
-    // Generator State
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
-    const [reportType, setReportType] = useState("collection-summary");
-    const [isGenerating, setIsGenerating] = useState(false);
-
-    // Mock History Data
-    const [reports, setReports] = useState<Report[]>([
-        { id: "RPT-1024", name: "Jan 2026 Monthly Summary", type: "Collection Summary", dateGenerated: "2026-02-01", status: "Ready", format: "PDF" },
-        { id: "RPT-1023", name: "Q4 2025 Financials", type: "Financial Statement", dateGenerated: "2026-01-15", status: "Ready", format: "Excel" },
-        { id: "RPT-1022", name: "E-Waste Audit Log", type: "Environmental Impact", dateGenerated: "2026-01-10", status: "Ready", format: "CSV" },
-        { id: "RPT-1021", name: "Client Activity Report", type: "Client Activity", dateGenerated: "2026-01-05", status: "Ready", format: "PDF" },
-    ]);
-
-    const handleGenerate = (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsGenerating(true);
-
-        // Simulate generation delay
-        setTimeout(() => {
-            const newReport: Report = {
-                id: `RPT-${Math.floor(Math.random() * 1000) + 1000}`,
-                name: `${reportType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (${startDate} - ${endDate})`,
-                type: reportType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-                dateGenerated: new Date().toISOString().split('T')[0],
-                status: "Ready",
-                format: "PDF" // Defaulting to PDF for demo
-            };
-
-            setReports([newReport, ...reports]);
-            setIsGenerating(false);
-        }, 1500);
-    };
-
-    const getStatusClass = (status: string) => {
-        switch (status) {
-            case "Ready": return "status-completed";
-            case "Generating": return "status-pending";
-            case "Failed": return "status-cancelled";
-            default: return "";
-        }
-    };
-
-    return (
-        <>
-            <div className="page-header">
-                <h1>Reports & Documentation</h1>
-                <p>Generate and manage your operational and financial reports.</p>
-            </div>
-
-            {/* Report Generator */}
-            <div className="settings-section">
-                <h2 className="section-title">Generate New Report</h2>
-                <form onSubmit={handleGenerate}>
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <label className="form-label">Report Type</label>
-                            <select
-                                className="form-input"
-                                value={reportType}
-                                onChange={(e) => setReportType(e.target.value)}
-                            >
-                                <option value="collection-summary">Collection Summary</option>
-                                <option value="financial-statement">Financial Statement</option>
-                                <option value="environmental-impact">Environmental Impact</option>
-                                <option value="client-activity">Client Activity</option>
-                                <option value="driver-performance">Driver Performance</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Date Range Start</label>
-                            <input
-                                type="date"
-                                className="form-input"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Date Range End</label>
-                            <input
-                                type="date"
-                                className="form-input"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="form-group" style={{ justifyContent: "flex-end" }}>
-                            <button
-                                type="submit"
-                                className="btn btn-primary"
-                                style={{ marginTop: "auto" }}
-                                disabled={isGenerating}
-                            >
-                                {isGenerating ? "Generating..." : "Generate Report"}
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            {/* Recent Reports Table */}
-            <h2 className="section-title" style={{ marginBottom: "1rem" }}>Recent Reports</h2>
-            <div className="table-container">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Report Name</th>
-                            <th>Type</th>
-                            <th>Date Generated</th>
-                            <th>Format</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {reports.map((report) => (
-                            <tr key={report.id}>
-                                <td>
-                                    <strong>{report.name}</strong>
-                                    <br />
-                                    <span style={{ fontSize: "0.8rem", color: "#64748b" }}>ID: {report.id}</span>
-                                </td>
-                                <td>{report.type}</td>
-                                <td>{report.dateGenerated}</td>
-                                <td>
-                                    <span style={{
-                                        padding: "2px 6px",
-                                        background: "#f1f5f9",
-                                        borderRadius: "4px",
-                                        fontSize: "0.8rem",
-                                        fontWeight: "600",
-                                        color: "#475569"
-                                    }}>
-                                        {report.format}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span className={`status-badge ${getStatusClass(report.status)}`}>
-                                        {report.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="#" className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>
-                                        Download
-                                    </a>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </>
-    );
-};
-
-export default ReportsPage;

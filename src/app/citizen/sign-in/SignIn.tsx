@@ -47,9 +47,10 @@ const Signin: React.FC = () => {
       const user = data.user;
       const tokens = data.tokens;
 
-      // --- DUMMY AUTHENTICATION END ---
-
-      console.log(user);
+      console.log("[LOGIN] Raw response:", JSON.stringify(data, null, 2));
+      console.log("[LOGIN] user object:", user);
+      console.log("[LOGIN] user.role:", user?.role);
+      console.log("[LOGIN] tokens:", tokens?.accessToken?.substring(0, 30) + "...");
       localStorage.setItem("user", JSON.stringify(user));
 
       if (user && tokens) {
@@ -72,6 +73,8 @@ const Signin: React.FC = () => {
         };
         setUser(extendedUser);
         localStorage.setItem("user", JSON.stringify(extendedUser));
+        localStorage.setItem("role", user.role ?? "");
+        if (user.facilityId) localStorage.setItem("facilityId", user.facilityId);
         console.log("User profile with address/wallet loaded:", extendedUser);
 
         // Handle role specific logic if needed
@@ -85,7 +88,18 @@ const Signin: React.FC = () => {
       });
 
       setTimeout(() => {
-        window.location.href = "/citizen";
+        const role = user?.role;
+        console.log("[LOGIN] Routing based on role:", role);
+        if (role === "PARTNER" || role === "INTERMEDIARY") {
+          console.log("[LOGIN] → Redirecting to /intermediary");
+          window.location.href = "/intermediary";
+        } else if (role === "ADMIN") {
+          console.log("[LOGIN] → Redirecting to /admin");
+          window.location.href = "/admin";
+        } else {
+          console.log("[LOGIN] → Redirecting to /citizen");
+          window.location.href = "/citizen";
+        }
       }, 1000);
 
     } catch (error) {

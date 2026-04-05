@@ -70,7 +70,7 @@ const DashboardSidebar = ({ onNavigate }: DashboardSidebarProps) => {
                             const isActive =
                                 item.path === "/intermediary"
                                     ? pathname === "/intermediary" || pathname === "/intermediary/dashboard"
-                                    : pathname === item.path;
+                                    : pathname.startsWith(item.path);
 
                             return (
                                 <Link
