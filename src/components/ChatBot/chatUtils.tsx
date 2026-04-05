@@ -127,12 +127,12 @@ const PaginatedTable: React.FC<PaginatedTableProps> = ({ rows, pathLabels, pillC
 
     return (
         <div className="my-2">
-            <div className="overflow-x-auto rounded-lg border border-slate-700">
-                <table className="w-full text-[1.25rem] border-collapse">
+            <div className="overflow-x-auto rounded-lg border border-emerald-200/50">
+                <table className="w-full text-[1.25rem] border-collapse bg-white">
                     <thead>
-                        <tr className="bg-emerald-900/40 text-emerald-300">
+                        <tr className="bg-emerald-600/10 text-emerald-800">
                             {header.map((cell, ci) => (
-                                <th key={ci} className="px-3 py-2 text-left font-semibold border-b border-slate-700 whitespace-nowrap">
+                                <th key={ci} className="px-3 py-2 text-left font-semibold border-b border-emerald-200/50 whitespace-nowrap">
                                     {renderInline(cell, `${blockKey}-h${ci}`, pathLabels, pillClassName)}
                                 </th>
                             ))}
@@ -140,9 +140,9 @@ const PaginatedTable: React.FC<PaginatedTableProps> = ({ rows, pathLabels, pillC
                     </thead>
                     <tbody>
                         {pageRows.map((row, ri) => (
-                            <tr key={ri} className={ri % 2 === 0 ? "bg-slate-800/60" : "bg-slate-800/30"}>
+                            <tr key={ri} className={ri % 2 === 0 ? "bg-emerald-50/20" : "bg-white"}>
                                 {row.map((cell, ci) => (
-                                    <td key={ci} className="px-3 py-2 border-b border-slate-700/50 align-top">
+                                    <td key={ci} className="px-3 py-2 border-b border-emerald-100/60 align-top text-gray-800">
                                         {renderInline(cell, `${blockKey}-r${ri}c${ci}`, pathLabels, pillClassName)}
                                     </td>
                                 ))}
@@ -154,21 +154,21 @@ const PaginatedTable: React.FC<PaginatedTableProps> = ({ rows, pathLabels, pillC
             {/* Pagination controls — only show if more than one page */}
             {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-2 px-1">
-                    <span className="text-[1.2rem] text-slate-400">
+                    <span className="text-[1.2rem] text-emerald-600/70 font-medium font-outfit">
                         Page {page + 1} of {totalPages} &nbsp;·&nbsp; {body.length} total
                     </span>
                     <div className="flex gap-2">
                         <button
                             onClick={() => setPage(p => Math.max(0, p - 1))}
                             disabled={page === 0}
-                            className="text-[1.2rem] px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            className="text-[1.2rem] px-3 py-1 rounded-full border border-emerald-300/50 text-emerald-600 hover:bg-emerald-600 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all font-medium font-outfit"
                         >
                             ← Prev
                         </button>
                         <button
                             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                             disabled={page === totalPages - 1}
-                            className="text-[1.2rem] px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            className="text-[1.2rem] px-3 py-1 rounded-full border border-emerald-300/50 text-emerald-600 hover:bg-emerald-600 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all font-medium font-outfit"
                         >
                             Next →
                         </button>

@@ -13,7 +13,7 @@ export interface Message {
 }
 
 const INTERMEDIARY_PILL =
-    "text-emerald-300 hover:text-white bg-slate-700 hover:bg-emerald-600 border border-emerald-500/40 rounded-full px-3 py-0.5 text-[1.3rem] font-medium transition-all no-underline inline-block";
+    "text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 border border-emerald-300 rounded-full px-3 py-0.5 text-[1.3rem] font-medium transition-all no-underline inline-block";
 
 const SESSION_KEY = "intermediary_chat_session_id";
 
@@ -125,19 +125,19 @@ export const IntermediaryChatWidget: React.FC = () => {
             {/* Backdrop */}
             <div
                 style={{ zIndex: 9998 }}
-                className={`fixed inset-0 bg-eco-950/20 backdrop-blur-[2px] transition-opacity duration-500 ${isOpen && isExpanded ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+                className={`fixed inset-0 bg-emerald-950/20 backdrop-blur-[2px] transition-opacity duration-500 ${isOpen && isExpanded ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
                 onClick={() => setIsExpanded(false)}
             />
 
             {/* Chat Window */}
             <div
                 style={{ zIndex: 9999 }}
-                className={`fixed flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] bg-slate-950/95 backdrop-blur-2xl shadow-2xl origin-bottom-right border border-emerald-500/20
+                className={`fixed flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] bg-white/90 backdrop-blur-xl shadow-2xl origin-bottom-right border border-emerald-200
           ${!isOpen ? "translate-y-12 opacity-0 scale-90 pointer-events-none" : "translate-y-0 opacity-100 scale-100 pointer-events-auto"}
           ${isExpanded ? "bottom-[5vh] right-[5vw] w-[90vw] h-[90vh] max-h-[90vh] rounded-[3rem]" : "bottom-24 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[400px] h-[600px] max-h-[80vh] rounded-[2rem]"}`}
             >
                 {/* Header */}
-                <div className={`flex items-center justify-between transition-all duration-300 ${isExpanded ? "p-6 bg-emerald-950" : "p-5 bg-emerald-900"}`}>
+                <div className={`flex items-center justify-between transition-all duration-300 ${isExpanded ? "p-6 bg-emerald-700/95" : "p-5 bg-emerald-700/90"}`}>
                     <div className="flex items-center gap-3">
                         <div className={`rounded-full bg-emerald-400/20 flex items-center justify-center border border-emerald-400/30 transition-all ${isExpanded ? "w-12 h-12" : "w-10 h-10"}`}>
                             <Sparkles className={`${isExpanded ? "w-7 h-7" : "w-6 h-6"} text-emerald-400`} />
@@ -155,30 +155,30 @@ export const IntermediaryChatWidget: React.FC = () => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-slate-900">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-gradient-to-b from-emerald-50/30 to-white/80">
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex flex-col gap-1.5 ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                            <span className={`text-[1.1rem] font-medium px-2 ${msg.role === "user" ? "text-slate-400" : "text-emerald-500"}`}>
+                            <span className={`text-[1.1rem] font-medium px-2 ${msg.role === "user" ? "text-emerald-500" : "text-emerald-600"}`}>
                                 {msg.role === "user" ? "You" : "Ops Co-Pilot"}
                             </span>
                             <div className={`px-4 py-3 rounded-2xl shadow-sm font-outfit w-fit
                 ${isExpanded ? "max-w-[75%]" : msg.role === "user" ? "max-w-[85%]" : "max-w-[90%]"}
-                ${msg.role === "user" ? "bg-emerald-600 text-white rounded-tr-sm self-end text-right" : "bg-slate-800 text-slate-100 border border-slate-700 rounded-tl-sm"}
-                ${msg.isError ? "bg-red-900/40 text-red-200 border-red-500/30" : ""}`}>
+                ${msg.role === "user" ? "bg-emerald-600 text-white rounded-tr-sm self-end text-right" : "bg-white text-gray-800 border border-emerald-100 rounded-tl-sm"}
+                ${msg.isError ? "bg-red-50 text-red-600 border-red-200" : ""}`}>
                                 <FormattedText
                                     text={msg.text}
                                     pathLabels={INTERMEDIARY_PATH_LABELS}
                                     pillClassName={INTERMEDIARY_PILL}
-                                    numberColor="text-emerald-400"
+                                    numberColor="text-emerald-600"
                                     bulletColor="text-emerald-500"
-                                    headingColor="text-emerald-300"
+                                    headingColor="text-emerald-800"
                                 />
                             </div>
                             {msg.role === "model" && msg.suggestions && msg.suggestions.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 mt-1 w-full">
                                     {msg.suggestions.map((s, si) => (
                                         <button key={si} suppressHydrationWarning onClick={() => { setInput(s); inputRef.current?.focus(); }}
-                                            className="text-[1.2rem] text-emerald-400 bg-slate-800 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 rounded-full px-4 py-2 transition-all font-outfit shadow-sm hover:shadow active:scale-95 text-left">
+                                            className="text-[1.2rem] text-emerald-700 bg-white hover:bg-emerald-600 hover:text-white border border-emerald-300 rounded-full px-4 py-2 transition-all font-outfit shadow-sm hover:shadow active:scale-95 text-left">
                                             {s}
                                         </button>
                                     ))}
@@ -191,7 +191,7 @@ export const IntermediaryChatWidget: React.FC = () => {
                         <div className="flex flex-wrap gap-2 pt-1">
                             {SAMPLE_QUESTIONS.map((q, i) => (
                                 <button key={i} suppressHydrationWarning onClick={() => { setInput(q); inputRef.current?.focus(); }}
-                                    className="text-[1.2rem] text-emerald-400 bg-slate-800 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 rounded-full px-4 py-2 transition-all font-outfit shadow-sm hover:shadow active:scale-95">
+                                    className="text-[1.2rem] text-emerald-700 bg-white hover:bg-emerald-600 hover:text-white border border-emerald-300 rounded-full px-4 py-2 transition-all font-outfit shadow-sm hover:shadow active:scale-95">
                                     {q}
                                 </button>
                             ))}
@@ -200,8 +200,8 @@ export const IntermediaryChatWidget: React.FC = () => {
 
                     {isLoading && (
                         <div className="flex items-start gap-1.5">
-                            <div className="bg-slate-800 px-4 py-3 rounded-2xl rounded-tl-sm border border-slate-700 shadow-sm flex gap-1.5 items-center">
-                                {[0, 150, 300].map((d) => <div key={d} className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />)}
+                            <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm border border-emerald-100 shadow-sm flex gap-1.5 items-center">
+                                {[0, 150, 300].map((d) => <div key={d} className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />)}
                             </div>
                         </div>
                     )}
@@ -209,18 +209,18 @@ export const IntermediaryChatWidget: React.FC = () => {
                 </div>
 
                 {/* Input */}
-                <div className={`bg-slate-900 border-t border-slate-800 ${isExpanded ? "p-6" : "p-4"}`}>
+                <div className={`bg-white/80 border-t border-emerald-100 ${isExpanded ? "p-6" : "p-4"}`}>
                     <div className="relative flex items-center gap-2">
                         <input suppressHydrationWarning ref={inputRef} type="text" value={input}
                             onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyPress}
                             placeholder={isListening ? "Listening..." : "Ask about operations..."}
-                            className={`w-full bg-slate-800 border border-slate-700 rounded-full text-white placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/50 focus:outline-none transition-all font-outfit
+                            className={`w-full bg-emerald-50 border-none rounded-full text-emerald-900 placeholder-emerald-400 focus:ring-2 focus:ring-emerald-500/50 focus:outline-none transition-all font-outfit
                 ${isExpanded ? "py-5 pl-7 pr-24 text-[1.8rem]" : "py-3.5 pl-6 pr-20 text-[1.4rem] md:text-[1.5rem]"}
-                ${isListening ? "ring-2 ring-red-400/50 bg-red-900/20" : ""}`}
+                ${isListening ? "ring-2 ring-red-400/50 bg-red-50" : ""}`}
                         />
                         <div className="absolute right-2 flex items-center gap-1">
                             <button suppressHydrationWarning onClick={toggleVoiceInput}
-                                className={`rounded-full transition-all hover:bg-slate-700 ${isExpanded ? "p-3" : "p-2"} ${isListening ? "text-red-500 animate-pulse bg-red-900/30" : "text-slate-400"}`}
+                                className={`rounded-full transition-all hover:bg-emerald-100 ${isExpanded ? "p-3" : "p-2"} ${isListening ? "text-red-500 animate-pulse bg-red-100" : "text-emerald-400"}`}
                                 title="Voice Input">
                                 {isListening ? <MicOff size={isExpanded ? 22 : 18} /> : <Mic size={isExpanded ? 22 : 18} />}
                             </button>
@@ -236,7 +236,7 @@ export const IntermediaryChatWidget: React.FC = () => {
             {/* Toggle Button */}
             <button style={{ zIndex: 10000 }} suppressHydrationWarning
                 onClick={() => { if (isExpanded && isOpen) { setIsOpen(false); setTimeout(() => setIsExpanded(false), 300); } else { setIsOpen(!isOpen); } }}
-                className={`fixed bottom-8 right-8 group flex items-center justify-center w-20 h-20 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${isOpen ? "bg-emerald-800 rotate-90" : "bg-gradient-to-br from-emerald-600 to-emerald-900 rotate-0"}`}>
+                className={`fixed bottom-8 right-8 group flex items-center justify-center w-20 h-20 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${isOpen ? "bg-emerald-800 rotate-90" : "bg-gradient-to-br from-emerald-500 to-emerald-700 rotate-0"}`}>
                 <span className="absolute inset-0 rounded-full bg-emerald-400/20 animate-ping opacity-75 group-hover:opacity-100 duration-1000" />
                 {isOpen ? <X className="text-white w-10 h-10 transition-transform" /> : <MessageCircle className="text-white w-10 h-10 transition-transform" />}
             </button>
