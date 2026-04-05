@@ -32,13 +32,20 @@ export default function ConditionalLayout({
             router.replace('/sign-in');
         }
 
-        // Background monitor: Check every 60 seconds
+        // Background monitor: Check every 3 seconds for expiration
         const interval = setInterval(() => {
             if (!isAuthRoute && !isPublicRoute && !isAuthenticated()) {
-                console.warn("[SESSION] Session expired in background. Redirecting...");
-                router.replace('/sign-in');
+                console.warn("[SESSION] Session expired in background. Redirecting to login...");
+                // Clear all auth state
+                if (typeof window !== 'undefined') {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    document.cookie = "accessToken=; Max-Age=-99999999; path=/";
+                    document.cookie = "refreshToken=; Max-Age=-99999999; path=/";
+                    window.location.replace('/sign-in');
+                }
             }
-        }, 60000);
+        }, 3000);
 
         return () => clearInterval(interval);
     }, [isAuthRoute, isPublicRoute, router, mounted]);
