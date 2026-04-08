@@ -6,8 +6,13 @@ import { ChatWidget } from "@/components/ChatBot/ChatWidget";
 export default function ConditionalChatWidget() {
     const pathname = usePathname();
 
-    // Don't show ChatWidget on driver pickup pages (they're standalone public pages)
-    if (pathname?.startsWith('/driver/pickup/')) {
+    // Intermediary has its own Ops Co-Pilot widget mounted in its layout
+    if (pathname?.startsWith('/intermediary')) {
+        return null;
+    }
+
+    // Admin and driver pages don't need a chatbot
+    if (pathname?.startsWith('/admin') || pathname?.startsWith('/driver/pickup/')) {
         return null;
     }
 

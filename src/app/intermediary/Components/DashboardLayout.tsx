@@ -18,7 +18,15 @@ export default function DashboardLayout({ children }: LayoutProps) {
     const pathname = usePathname();
 
     React.useEffect(() => {
-        setUserState(getUser());
+        const u = getUser();
+        setUserState(u);
+
+        // If stored role is not PARTNER/INTERMEDIARY, force re-login
+        const role = localStorage.getItem('role');
+        if (role && role !== 'PARTNER' && role !== 'INTERMEDIARY') {
+            localStorage.clear();
+            window.location.href = '/intermediary/sign-in';
+        }
     }, []);
 
     const getPageTitle = (path: string) => {
@@ -31,6 +39,8 @@ export default function DashboardLayout({ children }: LayoutProps) {
             '/intermediary/schedule': 'Schedule',
             '/intermediary/reports': 'Reports',
             '/intermediary/dashboard': 'Dashboard',
+            '/intermediary/withdrawals': 'Withdrawal Requests',
+            '/intermediary/transactions': 'Transaction History',
         };
         return titleMap[path] || 'Intermediary Portal';
     };

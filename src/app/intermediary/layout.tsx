@@ -1,3 +1,4 @@
+import { IntermediaryChatWidget } from "@/components/ChatBot/IntermediaryChatWidget";
 import DashboardLayout from "./Components/DashboardLayout";
 import "./intermediary-globals.css";
 
@@ -6,5 +7,10 @@ export default function IntermediaryLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return <DashboardLayout>{children}</DashboardLayout>;
+    return (
+        <DashboardLayout>
+            {children}
+            <IntermediaryChatWidget />
+        </DashboardLayout>
+    );
 }

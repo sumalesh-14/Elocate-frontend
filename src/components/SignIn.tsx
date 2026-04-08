@@ -185,9 +185,22 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
     setIsLoading(true);
     try {
       if (loginMethod === 'otp') {
+        // Call backend to send login OTP
+        const response = await fetch('/api/v1/auth/request-login-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginEmail }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          showToast(data.message || 'Failed to send OTP', 'error');
+          setIsLoading(false);
+          return;
+        }
         setView('otp-verify');
         setOtp(['', '', '', '', '', '']);
-        showToast('OTP sent to your email/mobile', 'info');
+        setIsLoading(false);
+        showToast('OTP sent to your email', 'info');
+        return;
       } else {
         const response = await fetch('/api/v1/auth/sign-in', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -312,6 +325,36 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
     if (otpCode.length !== 6) { showToast('Please enter complete OTP', 'error'); return; }
     setIsLoading(true);
     try {
+      // Login OTP flow — loginMethod is 'otp' and we came from the login view
+      if (loginMethod === 'otp' && loginEmail) {
+        const response = await fetch('/api/v1/auth/verify-login-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginEmail, otp: otpCode }),
+        });
+        const data = await response.json();
+        if (!response.ok) { showToast(data.message || 'OTP verification failed', 'error'); setIsLoading(false); return; }
+        const user = data.user;
+        const token = data.token || data.tokens?.accessToken;
+        const refreshToken = data.refreshToken || data.tokens?.refreshToken;
+        if (token) setToken(token, refreshToken, rememberMe);
+        if (user) {
+          setUser(user, rememberMe);
+          if (user.id) setUserID(user.id);
+          if (user.name || user.fullName) setFullName(user.name || user.fullName);
+          if (user.email) setEmail(user.email);
+          if (user.mobileNumber || user.phoneNumber) setMobileNumber(user.mobileNumber || user.phoneNumber);
+          if (user.role) setRole(user.role);
+        }
+        const displayName = user?.name || user?.fullName || 'User';
+        sessionStorage.setItem('pendingToast', JSON.stringify({
+          message: `Welcome back, ${displayName}!\nYou have successfully logged into ELocate.`,
+          type: 'success'
+        }));
+        onSignIn();
+        return;
+      }
+
+      // Registration OTP flow
       const response = await fetch('/api/v1/auth/verify-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: registrationType === 'citizen' ? citizenData.email : facilityData.email, otp: otpCode }),
@@ -341,7 +384,11 @@ export const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, onSignIn, initi
   };
   const handleResendOtp = async () => {
     try {
-      await fetch('/api/v1/auth/resend-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: registrationType === 'citizen' ? citizenData.email : facilityData.email }) });
+      if (loginMethod === 'otp' && loginEmail) {
+        await fetch('/api/v1/auth/request-login-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: loginEmail }) });
+      } else {
+        await fetch('/api/v1/auth/resend-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: registrationType === 'citizen' ? citizenData.email : facilityData.email }) });
+      }
       showToast('OTP resent successfully!', 'success');
     } catch { showToast('Failed to resend OTP', 'error'); }
   };

@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
     Package,
-    Users,
     Settings,
     Truck,
     Calendar,
     BarChart2,
-    AlertTriangle,
-    ChevronRight,
     Contact,
+    Banknote,
+    Receipt,
+    ChevronRight,
 } from "lucide-react";
 
 interface DashboardSidebarProps {
@@ -37,8 +37,9 @@ const navGroups = [
     {
         title: "Management",
         items: [
-            { name: "Clients", path: "/intermediary/clients", icon: Users },
             { name: "Drivers", path: "/intermediary/drivers", icon: Contact },
+            { name: "Withdrawals", path: "/intermediary/withdrawals", icon: Banknote },
+            { name: "Transactions", path: "/intermediary/transactions", icon: Receipt },
             { name: "Reports", path: "/intermediary/reports", icon: BarChart2 },
             { name: "Settings", path: "/intermediary/settings", icon: Settings },
         ],
@@ -69,7 +70,7 @@ const DashboardSidebar = ({ onNavigate }: DashboardSidebarProps) => {
                             const isActive =
                                 item.path === "/intermediary"
                                     ? pathname === "/intermediary" || pathname === "/intermediary/dashboard"
-                                    : pathname === item.path;
+                                    : pathname.startsWith(item.path);
 
                             return (
                                 <Link

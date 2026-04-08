@@ -128,4 +128,12 @@ export const authApi = {
         const response = await apiClient.post("/api/v1/auth/refresh", { refreshToken: token });
         return response;
     },
+    requestLoginOtp: async (email: string) => {
+        const response = await apiClient.post("/api/v1/auth/request-login-otp", { email });
+        return response;
+    },
+    verifyLoginOtp: async (email: string, otp: string) => {
+        const response = await apiClient.post("/api/v1/auth/verify-login-otp", { email, otp });
+        return response;
+    },
 };
