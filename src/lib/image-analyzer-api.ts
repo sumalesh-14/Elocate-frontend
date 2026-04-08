@@ -381,9 +381,8 @@ export async function analyzeDeviceImage(file: File): Promise<AnalysisResult> {
     formData.append('file', file);
 
     try {
-        const response = await fetch(`${IMAGE_ANALYZER_URL}/api/v1/analyze`, {
+        const response = await fetch(`/api/proxy/analyze`, {
             method: 'POST',
-            headers: { 'X-API-Key': IMAGE_ANALYZER_API_KEY },
             body: formData,
         });
 
