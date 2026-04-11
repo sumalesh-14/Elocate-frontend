@@ -478,3 +478,23 @@ export const userProfileApi = {
     }
 };
 
+
+/**
+ * Contact Issues API
+ */
+export const contactIssuesApi = {
+    getAll: async (params?: { search?: string; status?: string; page?: number; size?: number }) => {
+        const response = await adminApiClient.get("/contact-issues", {
+            params,
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+
+    updateStatus: async (id: string, status: string, adminNotes?: string) => {
+        const response = await adminApiClient.patch(`/contact-issues/${id}/status`, { status, adminNotes }, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+};

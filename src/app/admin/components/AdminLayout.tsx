@@ -15,7 +15,8 @@ import {
   X,
   ChevronRight,
   Users,
-  Recycle
+  Recycle,
+  MessageSquare
 } from 'lucide-react';
 import { DashboardHome } from './DashboardHome';
 import { ResourceManager } from './ResourceManager';
@@ -23,12 +24,13 @@ import { ResourceManagerIntegrated } from './ResourceManagerIntegrated';
 import { PartnerManagement } from './PartnerManagement';
 import { CitizenManagement } from './CitizenManagement';
 import { RecycleRequests } from './RecycleRequests';
+import { ContactIssues } from './ContactIssues';
 
 interface AdminLayoutProps {
   onLogout: () => void;
 }
 
-type Page = 'dashboard' | 'categories' | 'brands' | 'models' | 'facilities' | 'partners' | 'citizens' | 'requests';
+type Page = 'dashboard' | 'categories' | 'brands' | 'models' | 'facilities' | 'partners' | 'citizens' | 'requests' | 'contact-issues';
 
 function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
   const router = useRouter();
@@ -57,6 +59,7 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
       title: 'Operations',
       items: [
         { id: 'requests', label: 'Recycle Requests', icon: Recycle },
+        { id: 'contact-issues', label: 'Contact Issues', icon: MessageSquare },
       ]
     },
     {
@@ -82,6 +85,8 @@ function AdminLayoutContent({ onLogout }: AdminLayoutProps) {
         return <DashboardHome />;
       case 'requests':
         return <RecycleRequests />;
+      case 'contact-issues':
+        return <ContactIssues />;
       case 'categories':
         return <ResourceManagerIntegrated type="categories" />;
       case 'brands':
