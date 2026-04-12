@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /intermediary/
+Disallow: /api/
+
+Sitemap: https://elocate-ewaste.vercel.app/sitemap.xml
