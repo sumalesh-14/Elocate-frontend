@@ -390,8 +390,8 @@ const Education: React.FC = () => {
             </h3>
             <div className="space-y-8">
               {[
-                { id: "Jzw1zv1zz0E", title: "The E-Waste Crisis Explained", desc: "Understanding the gravity of our digital waste problem." },
-                { id: "4g9Zu3pOIYU", title: "Circular Economy in Tech", desc: "How companies are redesigning the lifecycle of electronics." }
+                { id: "_Y2ePj3wr8M", title: "The E-Waste Crisis Explained", desc: "Understanding the gravity of our digital waste problem." },
+                { id: "RdMeqHx4QJk", title: "Circular Economy in Tech", desc: "How companies are redesigning the lifecycle of electronics." }
               ].map((vid, i) => (
                 <div key={i} className="bg-white rounded-[2rem] shadow-xl overflow-hidden group">
                   <div className="relative aspect-video">
@@ -420,7 +420,7 @@ const Education: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {[
-                { title: "Lifecycle Analysis", img: "https://images.unsplash.com/photo-1605600659873-d808a13e4d9a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" },
+                { title: "Lifecycle Analysis", img: "https://images.unsplash.com/photo-1532102235608-dc8fc689c9ab?q=80&w=1170&auto=format&fit=crop&w=600&q=80" },
                 { title: "Material Recovery", img: "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" },
                 { title: "Reduction Tips", img: "https://images.unsplash.com/photo-1546156929-a4c0ac411f47?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" },
                 { title: "E-Waste Policy", img: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" }

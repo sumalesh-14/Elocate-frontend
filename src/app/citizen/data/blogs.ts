@@ -126,7 +126,7 @@ export const blogs: BlogCard[] = [
     id: 9,
     title: "E-Waste and Urban Mining",
     description: "Exploring how valuable materials can be recovered from electronic waste through urban mining practices, turning waste into a valuable resource stream.",
-    image: "https://images.unsplash.com/photo-1511502435191-fc0100a70333?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1764422743505-97c9ea0e43f2?q=80&w=1074&auto=format&fit=crop&&w=600&q=80",
     category: "Innovation",
     readTime: "11 min read",
     author: "Resource Recovery Institute",
