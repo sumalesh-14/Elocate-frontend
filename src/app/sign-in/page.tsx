@@ -15,10 +15,15 @@ function SignInPageInner() {
   const initialView = viewParam === 'role-selection' ? 'role-selection' : 'login';
 
   const handleSignIn = () => {
-    // We intentionally keep the SignIn component mounted here. 
-    // This allows its built-in loading spinner to keep spinning seamlessly 
-    // while the browser handles the heavy lifting of fetching the next page.
     const role = getRole();
+    const returnUrl = sessionStorage.getItem('returnUrl');
+    sessionStorage.removeItem('returnUrl');
+
+    if (returnUrl && returnUrl !== '/sign-in') {
+      window.location.href = returnUrl;
+      return;
+    }
+
     if (role === 'ADMIN') {
       window.location.href = '/admin';
     } else if (role === 'INTERMEDIARY' || role === 'PARTNER') {

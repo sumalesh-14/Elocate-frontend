@@ -165,6 +165,13 @@ export const getRole = (): string | null => {
 export const handleLogout = (): void => {
   if (isLocalStorageAvailable) {
     localStorage.clear();
+    sessionStorage.clear();
+    // Clear auth cookies for all possible paths and domains
+    const cookiesToClear = ['accessToken', 'refreshToken', 'token'];
+    cookiesToClear.forEach(name => {
+      document.cookie = `${name}=; Max-Age=0; path=/`;
+      document.cookie = `${name}=; Max-Age=0; path=/; domain=${window.location.hostname}`;
+    });
     window.location.href = "/sign-in";
   }
 };

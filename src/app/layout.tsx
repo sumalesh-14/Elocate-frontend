@@ -28,10 +28,45 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ELocate",
-  description: "ELocate app - One stop solution to Recycle E-Waste, E-waste Facility Locator",
+  title: "ELocate - E-Waste Recycling & Facility Locator in India",
+  description: "ELocate helps you find certified e-waste recycling centers near you, book pickups, and dispose of electronic waste responsibly. India's e-waste management platform.",
+  keywords: "e-waste recycling, electronic waste disposal, e-waste near me, recycle electronics India, e-waste pickup, certified recyclers, ELocate",
+  authors: [{ name: "ELocate" }],
+  metadataBase: new URL("https://elocate-ewaste.vercel.app"),
+  alternates: {
+    canonical: "/citizen",
+  },
+  openGraph: {
+    title: "ELocate - E-Waste Recycling & Facility Locator in India",
+    description: "Find certified e-waste recycling centers near you. Book pickups and dispose of electronics responsibly.",
+    url: "https://elocate-ewaste.vercel.app/citizen",
+    siteName: "ELocate",
+    type: "website",
+    images: [
+      {
+        url: "/e-waste-recycling.jpeg",
+        width: 1200,
+        height: 630,
+        alt: "ELocate - E-Waste Recycling Platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ELocate - E-Waste Recycling & Facility Locator",
+    description: "Find certified e-waste recycling centers near you in India.",
+    images: ["/e-waste-recycling.jpeg"],
+  },
   icons: {
     icon: '/favicon.ico',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
   },
 };
 

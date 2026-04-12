@@ -1343,26 +1343,35 @@ const RecycleRequestForm: React.FC = () => {
     const [analysisError, setAnalysisError] = useState<string | null>(null);
 
     const STORAGE_KEY = 'elocate_recycle_form_session';
+    const prefillApplied = React.useRef(false);
 
     // Load persisted state or prefilled analysis on mount
     useEffect(() => {
+        if (prefillApplied.current) return;
+        prefillApplied.current = true;
+
         const prefilledAnalysis = localStorage.getItem('prefilled_analysis');
 
         if (prefilledAnalysis) {
             try {
                 const data = JSON.parse(prefilledAnalysis);
                 localStorage.removeItem('prefilled_analysis');
+                localStorage.removeItem(STORAGE_KEY);
 
                 setFormData(prev => ({
                     ...prev,
                     deviceType: data.categoryName || prev.deviceType,
+                    categoryId: data.categoryId || prev.categoryId,
                     brand: data.brandName || prev.brand,
+                    brandId: data.brandId || prev.brandId,
                     model: data.modelName || prev.model,
+                    modelId: data.modelId || prev.modelId,
                     condition: data.condition || prev.condition,
                 }));
 
-                // If we have category, try to find its ID
-                // Note: IDs will be fetched by the categories useEffect automatically
+                if (data.categoryName && data.brandName && data.modelName) {
+                    setCurrentStep(2);
+                }
             } catch (error) {
                 console.error("Failed to parse prefilled analysis:", error);
             }
@@ -1375,7 +1384,6 @@ const RecycleRequestForm: React.FC = () => {
                         setFormData(prev => ({
                             ...prev,
                             ...data,
-                            // Always refresh auth-linked fields from current session
                             contactName: getUserName() || data.contactName || 'User',
                             contactEmail: getEmail() || data.contactEmail || '',
                             contactPhone: getPhoneNumber() || data.contactPhone || '',
@@ -1392,12 +1400,15 @@ const RecycleRequestForm: React.FC = () => {
         }
     }, []);
 
-    // Persist state on change
+    const isMounted = React.useRef(false);
+
+    // Persist state on change — skip first render to avoid overwriting prefill
     useEffect(() => {
-        const sessionToSave = {
-            step: currentStep,
-            data: formData
-        };
+        if (!isMounted.current) {
+            isMounted.current = true;
+            return;
+        }
+        const sessionToSave = { step: currentStep, data: formData };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionToSave));
     }, [currentStep, formData]);
 

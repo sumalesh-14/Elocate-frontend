@@ -20,6 +20,9 @@ interface Props {
         brand: string;
         model: string;
         condition: string;
+        categoryId?: string;
+        brandId?: string;
+        modelId?: string;
     };
 }
 
@@ -48,11 +51,15 @@ export default function AnalysisResultDisplay({ result, onReset, deviceDetails }
     };
 
     const handleRecycleNow = () => {
+        localStorage.removeItem('elocate_recycle_form_session'); // clear stale session
         localStorage.setItem('prefilled_analysis', JSON.stringify({
             categoryName: deviceDetails.category,
             brandName: deviceDetails.brand,
             modelName: deviceDetails.model,
-            condition: deviceDetails.condition
+            condition: deviceDetails.condition,
+            categoryId: deviceDetails.categoryId || '',
+            brandId: deviceDetails.brandId || '',
+            modelId: deviceDetails.modelId || '',
         }));
         router.push('/citizen/book-recycle/new');
     };
@@ -70,13 +77,22 @@ export default function AnalysisResultDisplay({ result, onReset, deviceDetails }
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-100/20 rounded-full blur-3xl -ml-20 -mb-20"></div>
 
                 {/* Top Right Back Button */}
-                <button 
-                    onClick={onReset}
-                    className="absolute top-8 right-8 z-20 flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-md rounded-2xl border border-emerald-100 text-emerald-700 font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-900/5 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all active:scale-95 group"
-                >
-                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    Back
-                </button>
+                <div className="absolute top-8 right-8 z-20 flex items-center gap-3">
+                    <button
+                        onClick={handleRecycleNow}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-xl transition-all active:scale-95 group"
+                    >
+                        <Recycle size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                        Book Recycle
+                    </button>
+                    <button 
+                        onClick={onReset}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-md rounded-2xl border border-emerald-100 text-emerald-700 font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-900/5 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all active:scale-95 group"
+                    >
+                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        Back
+                    </button>
+                </div>
 
                 <div className="relative z-10 flex flex-col gap-10">
                     <div className="flex flex-col md:flex-row md:items-center gap-10">
@@ -416,6 +432,17 @@ export default function AnalysisResultDisplay({ result, onReset, deviceDetails }
                         <p className="text-[11px] font-medium leading-relaxed italic">
                             Disclaimer: This analysis is an AI-powered projection based on generalized device architecture and market pricing as of {new Date().toLocaleDateString()}. Actual material recovery may vary based on exact model variant, regional e-waste guidelines, and facility-specific extraction efficiency.
                         </p>
+                    </motion.div>
+
+                    {/* Book Recycle CTA */}
+                    <motion.div variants={itemVariants}>
+                        <button
+                            onClick={handleRecycleNow}
+                            className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[2rem] font-black text-lg uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-emerald-200 flex items-center justify-center gap-4 group"
+                        >
+                            <Recycle size={24} className="group-hover:rotate-180 transition-transform duration-500" />
+                            Book Recycle Pickup
+                        </button>
                     </motion.div>
                 </div>
             </div>

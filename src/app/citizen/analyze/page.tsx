@@ -509,7 +509,10 @@ export default function AnalyzePage() {
                                 category: isManualInput ? manualCategory : categoryName,
                                 brand: isManualInput ? manualBrand : brandName,
                                 model: isManualInput ? manualModel : modelName,
-                                condition
+                                condition,
+                                categoryId: isManualInput ? '' : categoryId,
+                                brandId: isManualInput ? '' : brandId,
+                                modelId: isManualInput ? '' : modelId,
                             }}
                         />
                     </div>

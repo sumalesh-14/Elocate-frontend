@@ -29,6 +29,7 @@ export default function ConditionalLayout({
 
         // Immediate check on mount/route change
         if (!isAuthRoute && !isPublicRoute && !isAuthenticated()) {
+            sessionStorage.setItem('returnUrl', pathname);
             router.replace('/sign-in');
         }
 
