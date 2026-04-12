@@ -24,6 +24,9 @@ const AnalysisResultDisplay = dynamic<{
         brand: string;
         model: string;
         condition: string;
+        categoryId?: string;
+        brandId?: string;
+        modelId?: string;
     };
 }>(() => import('./AnalysisResultDisplay'), { ssr: false });
 
