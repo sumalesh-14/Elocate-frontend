@@ -148,10 +148,16 @@ export const RecycleRequests: React.FC = () => {
     fetchHistory(req.id);
   };
 
-  const fetchFacilities = async () => {
+  // Modal Filter State
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [maxDistance, setMaxDistance] = useState<string>('All');
+
+  const fetchFacilities = async (search?: string) => {
     try {
       setLoadingFacilities(true);
-      const response = await adminFacilitiesApi.getAll({ size: 100 });
+      const params: any = { size: 20 };
+      if (search) params.search = search;
+      const response = await adminFacilitiesApi.getAll(params);
       // Map backend FacilityResponse to Partner interface
       const mapped = response.data.content.map((f: any) => ({
         id: f.id,
@@ -171,18 +177,23 @@ export const RecycleRequests: React.FC = () => {
 
   useEffect(() => {
     if (showReassignModal) {
-      fetchFacilities();
+      fetchFacilities(partnerSearch || undefined);
     }
   }, [showReassignModal]);
+
+  // Debounced search — re-fetch from API when partnerSearch changes
+  useEffect(() => {
+    if (!showReassignModal) return;
+    const timer = setTimeout(() => {
+      fetchFacilities(partnerSearch || undefined);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [partnerSearch]);
 
   // --- Pagination State ---
   const [page, setPage] = useState(0);
   const [pageSize] = useState(10);
   const [totalElements, setTotalElements] = useState(0);
-
-  // Modal Filter State
-  const [partnerSearch, setPartnerSearch] = useState('');
-  const [maxDistance, setMaxDistance] = useState<string>('All');
 
   // Helper to get icon for device
   const getDeviceIcon = (type: string) => {
@@ -272,10 +283,8 @@ export const RecycleRequests: React.FC = () => {
       distance: getSimulatedDistance(p.location, selectedRequest?.pickupAddress || '')
     }))
     .filter(p => {
-      const matchesName = p.name.toLowerCase().includes(partnerSearch.toLowerCase());
       const distanceVal = maxDistance === 'All' ? Infinity : Number(maxDistance);
-      const matchesDistance = p.distance <= distanceVal;
-      return matchesName && matchesDistance;
+      return p.distance <= distanceVal;
     })
     .sort((a, b) => a.distance - b.distance);
 

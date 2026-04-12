@@ -99,9 +99,10 @@ const CollectionsPage = () => {
                         <tr>
                             <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Request ID</th>
                             <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Customer</th>
-                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Items</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Device</th>
                             <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Location</th>
-                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Date</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Pickup Date</th>
+                            <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Amount</th>
                             <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Status</th>
                             <th style={{ fontSize: "1.05rem", padding: "1rem" }}>Actions</th>
                         </tr>
@@ -109,22 +110,37 @@ const CollectionsPage = () => {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={7} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)", fontSize: "1.1rem" }}>
+                                <td colSpan={8} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)", fontSize: "1.1rem" }}>
                                     Loading collections...
                                 </td>
                             </tr>
                         ) : collections.length > 0 ? (
                             collections.map((item) => (
                                 <tr key={item.id}>
-                                    <td style={{ padding: "1rem" }}><strong style={{ fontSize: "1rem" }}>{item.id.substring(0, 8).toUpperCase()}</strong></td>
-                                    <td style={{ padding: "1rem", fontSize: "1rem" }}>User Data Int.</td>
-                                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", padding: "1rem", fontSize: "1rem" }}>
-                                        {item.deviceModelName || "Unknown"}
+                                    <td style={{ padding: "1rem" }}><strong style={{ fontSize: "1rem" }}>{item.requestNumber || item.id.substring(0, 8).toUpperCase()}</strong></td>
+                                    <td style={{ padding: "1rem", fontSize: "1rem" }}>
+                                        <div>{item.citizenName || item.customerName || "—"}</div>
+                                        {item.citizenEmail && <div style={{ fontSize: "0.8rem", color: "var(--text-light)" }}>{item.citizenEmail}</div>}
                                     </td>
-                                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", padding: "1rem", fontSize: "1rem" }}>
-                                        {item.pickupAddress || item.facilityName}
+                                    <td style={{ padding: "1rem", fontSize: "1rem", maxWidth: "160px", overflow: "hidden" }}>
+                                        <div style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[item.brandName, item.deviceModelName].filter(Boolean).join(" ") || "Unknown"}</div>
+                                        <div style={{ fontSize: "0.8rem", color: "var(--text-light)" }}>
+                                            {[item.categoryName, item.conditionCode].filter(Boolean).join(" · ")}
+                                        </div>
                                     </td>
-                                    <td style={{ padding: "1rem", fontSize: "1rem" }}>{new Date(item.createdAt).toLocaleDateString()}</td>
+                                    <td style={{ maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "1rem", fontSize: "1rem" }}>
+                                        {item.pickupCity || item.pickupAddress || item.facilityName || "—"}
+                                    </td>
+                                    <td style={{ padding: "1rem", fontSize: "1rem" }}>
+                                        {item.pickupDate ? new Date(item.pickupDate).toLocaleDateString() : new Date(item.createdAt).toLocaleDateString()}
+                                    </td>
+                                    <td style={{ padding: "1rem", fontSize: "1rem" }}>
+                                        {item.finalAmount != null
+                                            ? <span style={{ fontWeight: 600 }}>₹{item.finalAmount}</span>
+                                            : item.estimatedAmount != null
+                                                ? <span style={{ color: "var(--text-light)" }}>~₹{item.estimatedAmount}</span>
+                                                : "—"}
+                                    </td>
                                     <td style={{ padding: "1rem" }}>
                                         <span className={`status-badge ${getStatusClass(item.status)}`} style={{ fontSize: "0.95rem", padding: "0.5rem 1rem" }}>
                                             {item.status}
@@ -141,7 +157,7 @@ const CollectionsPage = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={7} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)", fontSize: "1.1rem" }}>
+                                <td colSpan={8} style={{ textAlign: "center", padding: "3rem", color: "var(--text-light)", fontSize: "1.1rem" }}>
                                     No collections found matching your criteria.
                                 </td>
                             </tr>

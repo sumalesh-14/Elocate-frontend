@@ -1,109 +1,182 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getUser } from "../../intermediary/sign-in/auth";
+import { ChevronDown, Search, Loader2 } from "lucide-react";
+import { getUserID } from "../../intermediary/sign-in/auth";
+import { deviceCategoriesApi, deviceModelsApi, recycleRequestApi } from "@/lib/admin-api";
+import { categoryBrandApi } from "@/lib/category-brand-api";
+import { useToast } from "@/context/ToastContext";
 
-// Define interfaces for form data
-interface ScheduleFormData {
-    // Customer Details
-    customerName: string;
-    customerPhone: string;
-    customerEmail: string;
-    address: string;
-    city: string;
-    zipCode: string;
+const SearchableSelect: React.FC<{
+    label: string;
+    options: { id: string; name: string }[];
+    value: string;
+    onChange: (id: string, name: string) => void;
+    isLoading?: boolean;
+    disabled?: boolean;
+    placeholder: string;
+    required?: boolean;
+}> = ({ label, options, value, onChange, isLoading, disabled, placeholder, required }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const ref = useRef<HTMLDivElement>(null);
+    const filtered = options.filter(o => o.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const selected = options.find(o => o.id === value);
 
-    // Device Details
-    deviceType: string;
-    deviceBrand: string;
-    deviceModel: string;
-    deviceCondition: string;
-    quantity: number;
-    estimatedWeight: string,
+    useEffect(() => {
+        const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false); };
+        document.addEventListener("mousedown", h);
+        return () => document.removeEventListener("mousedown", h);
+    }, []);
 
-    // Schedule Details
-    pickupDate: string;
-    pickupTime: string;
-    notes: string;
-}
+    return (
+        <div className="form-group" ref={ref} style={{ position: "relative" }}>
+            <label className="form-label">{label}{required && " *"}</label>
+            <div
+                onClick={() => !disabled && !isLoading && setIsOpen(o => !o)}
+                className="form-input"
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: disabled || isLoading ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, userSelect: "none" }}
+            >
+                <span style={{ color: selected ? "inherit" : "#9ca3af" }}>
+                    {isLoading ? "Loading..." : selected ? selected.name : placeholder}
+                </span>
+                {isLoading
+                    ? <Loader2 size={16} className="animate-spin" />
+                    : <ChevronDown size={16} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />}
+            </div>
+            {isOpen && (
+                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 200, background: "#fff", border: "1px solid #e5e7eb", borderRadius: "0.5rem", boxShadow: "0 10px 25px rgba(0,0,0,0.12)", marginTop: 4, overflow: "hidden" }}>
+                    <div style={{ padding: "8px", borderBottom: "1px solid #f3f4f6", position: "relative" }}>
+                        <Search size={14} style={{ position: "absolute", left: 20, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+                        <input autoFocus type="text" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                            className="form-input" style={{ paddingLeft: "2rem", paddingTop: 6, paddingBottom: 6, fontSize: "0.85rem" }} />
+                    </div>
+                    <div style={{ maxHeight: 200, overflowY: "auto" }}>
+                        {filtered.length > 0 ? filtered.map(opt => (
+                            <div key={opt.id}
+                                onClick={() => { onChange(opt.id, opt.name); setIsOpen(false); setSearchTerm(""); }}
+                                style={{ padding: "10px 16px", cursor: "pointer", fontSize: "0.9rem", background: opt.id === value ? "#f0fdf4" : "transparent", color: opt.id === value ? "#16a34a" : "#374151", fontWeight: opt.id === value ? 600 : 400 }}
+                                onMouseEnter={e => { if (opt.id !== value) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+                                onMouseLeave={e => { if (opt.id !== value) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                            >{opt.name}</div>
+                        )) : <div style={{ padding: 16, textAlign: "center", color: "#9ca3af", fontSize: "0.85rem" }}>No results found</div>}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const SchedulePickupPage = () => {
     const router = useRouter();
-    const user = getUser();
+    const { showToast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Initial Form State
-    const [formData, setFormData] = useState<ScheduleFormData>({
-        customerName: "",
-        customerPhone: "",
-        customerEmail: "",
-        address: "",
-        city: "",
-        zipCode: "",
-        deviceType: "",
-        deviceBrand: "",
-        deviceModel: "",
-        deviceCondition: "working",
-        quantity: 1,
-        estimatedWeight: "",
-        pickupDate: "",
-        pickupTime: "",
-        notes: ""
-    });
+    // Cascading dropdown data
+    const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+    const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
+    const [models, setModels] = useState<{ id: string; name: string }[]>([]);
+    const [loadingCats, setLoadingCats] = useState(false);
+    const [loadingBrands, setLoadingBrands] = useState(false);
+    const [loadingModels, setLoadingModels] = useState(false);
 
-    // Mock Options (matching citizen portal where applicable)
-    const deviceTypes = [
-        { id: "laptop", name: "Laptop" },
-        { id: "smartphone", name: "Smartphone" },
-        { id: "printer", name: "Printer" },
-        { id: "tv", name: "Television" },
-        { id: "headphones", name: "Audio Devices" },
-        { id: "smartwatch", name: "Wearables" },
-        { id: "keyboard", name: "Peripherals" },
-        { id: "other", name: "Other" }
-    ];
+    // Selected device
+    const [categoryId, setCategoryId] = useState("");
+    const [brandId, setBrandId] = useState("");
+    const [modelId, setModelId] = useState("");
 
-    const deviceConditions = [
-        { value: "working", label: "Working" },
-        { value: "minor-issues", label: "Minor Issues" },
-        { value: "broken", label: "Broken" },
-        { value: "parts-only", label: "Parts Only" }
-    ];
+    // Form fields
+    const [customerName, setCustomerName] = useState("");
+    const [customerPhone, setCustomerPhone] = useState("");
+    const [customerEmail, setCustomerEmail] = useState("");
+    const [address, setAddress] = useState("");
+    const [city, setCity] = useState("");
+    const [stateVal, setStateVal] = useState("");
+    const [pincode, setPincode] = useState("");
+    const [condition, setCondition] = useState("GOOD");
+    const [quantity, setQuantity] = useState(1);
+    const [pickupDate, setPickupDate] = useState("");
+    const [pickupTime, setPickupTime] = useState("");
+    const [notes, setNotes] = useState("");
 
-    const timeSlots = [
-        "09:00 AM - 11:00 AM",
-        "11:00 AM - 01:00 PM",
-        "01:00 PM - 03:00 PM",
-        "03:00 PM - 05:00 PM",
-        "05:00 PM - 07:00 PM"
-    ];
+    const today = new Date().toISOString().split("T")[0];
 
-    const handleCcange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+    const timeSlots = ["09:00 AM - 11:00 AM", "11:00 AM - 01:00 PM", "01:00 PM - 03:00 PM", "03:00 PM - 05:00 PM", "05:00 PM - 07:00 PM"];
+    const conditions = [{ value: "EXCELLENT", label: "Working" }, { value: "GOOD", label: "Minor Issues" }, { value: "FAIR", label: "Broken" }, { value: "POOR", label: "Parts Only" }];
+
+    // Load categories
+    useEffect(() => {
+        setLoadingCats(true);
+        deviceCategoriesApi.getAll({ size: 100 })
+            .then(res => {
+                const list = res.data?.content || res.data || [];
+                setCategories(list.map((c: any) => ({ id: c.id, name: c.name })));
+            })
+            .catch(() => showToast("Failed to load categories", "error"))
+            .finally(() => setLoadingCats(false));
+    }, []);
+
+    // Load brands when category changes
+    useEffect(() => {
+        if (!categoryId) { setBrands([]); setBrandId(""); setModels([]); setModelId(""); return; }
+        setLoadingBrands(true);
+        setBrandId(""); setModels([]); setModelId("");
+        categoryBrandApi.getBrandsByCategory(categoryId, 0, 100)
+            .then(res => {
+                const list = res.data?.content || res.data || [];
+                setBrands(list.map((b: any) => ({ id: b.brand?.id || b.id, name: b.brand?.name || b.name })));
+            })
+            .catch(() => showToast("Failed to load brands", "error"))
+            .finally(() => setLoadingBrands(false));
+    }, [categoryId]);
+
+    // Load models when brand changes
+    useEffect(() => {
+        if (!brandId || !categoryId) { setModels([]); setModelId(""); return; }
+        setLoadingModels(true);
+        setModelId("");
+        deviceModelsApi.getAll({ categoryId, brandId, size: 100 })
+            .then(res => {
+                const list = res.data?.content || res.data || [];
+                setModels(list.map((m: any) => ({ id: m.id, name: m.modelName || m.name })));
+            })
+            .catch(() => showToast("Failed to load models", "error"))
+            .finally(() => setLoadingModels(false));
+    }, [brandId, categoryId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!modelId) { showToast("Please select a device model", "error"); return; }
+
+        const userId = getUserID();
+        if (!userId) { showToast("Not authenticated", "error"); router.push("/intermediary/sign-in"); return; }
+
         setIsSubmitting(true);
-
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        console.log("Submitting Pickup Request:", formData);
-
-        // Mock Success
-        alert("Pickup scheduled successfully!");
-        setIsSubmitting(false);
-        router.push("/intermediary/collections");
+        try {
+            const payload = {
+                deviceModelId: modelId,
+                conditionCode: condition,
+                fulfillmentType: "PICKUP",
+                facilityId: null,
+                pickupAddressId: null,
+                notes: notes || `Scheduled by intermediary. Customer: ${customerName}. Qty: ${quantity}. Slot: ${pickupTime}`,
+                address,
+                city,
+                state: stateVal,
+                pincode,
+                latitude: null,
+                longitude: null,
+            };
+            await recycleRequestApi.create(userId, payload);
+            showToast("Pickup scheduled successfully!", "success");
+            router.push("/intermediary/collections");
+        } catch (error: any) {
+            showToast(error?.response?.data?.message || "Failed to schedule pickup", "error");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
-
-    // Calculate min date (today)
-    const today = new Date().toISOString().split("T")[0];
 
     return (
         <>
@@ -119,218 +192,97 @@ const SchedulePickupPage = () => {
                     <div className="form-grid">
                         <div className="form-group">
                             <label className="form-label">Customer Name *</label>
-                            <input
-                                type="text"
-                                name="customerName"
-                                required
-                                value={formData.customerName}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="Enter full name"
-                            />
+                            <input type="text" required value={customerName} onChange={e => setCustomerName(e.target.value)} className="form-input" placeholder="Enter full name" />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Phone Number *</label>
-                            <input
-                                type="tel"
-                                name="customerPhone"
-                                required
-                                value={formData.customerPhone}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="+1 234 567 8900"
-                            />
+                            <input type="tel" required value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="form-input" placeholder="+91 98765 43210" />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Email Address (Optional)</label>
-                            <input
-                                type="email"
-                                name="customerEmail"
-                                value={formData.customerEmail}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="customer@example.com"
-                            />
+                            <label className="form-label">Email Address</label>
+                            <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} className="form-input" placeholder="customer@example.com" />
                         </div>
                     </div>
                     <div className="form-grid" style={{ marginTop: "1rem" }}>
                         <div className="form-group" style={{ gridColumn: "span 2" }}>
                             <label className="form-label">Pickup Address *</label>
-                            <input
-                                type="text"
-                                name="address"
-                                required
-                                value={formData.address}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="Street address, Apt, Suite"
-                            />
+                            <input type="text" required value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder="Street address, Apt, Suite" />
                         </div>
                         <div className="form-group">
                             <label className="form-label">City *</label>
-                            <input
-                                type="text"
-                                name="city"
-                                required
-                                value={formData.city}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="City"
-                            />
+                            <input type="text" required value={city} onChange={e => setCity(e.target.value)} className="form-input" placeholder="City" />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">ZIP Code *</label>
-                            <input
-                                type="text"
-                                name="zipCode"
-                                required
-                                value={formData.zipCode}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="Zip Code"
-                            />
+                            <label className="form-label">State *</label>
+                            <input type="text" required value={stateVal} onChange={e => setStateVal(e.target.value)} className="form-input" placeholder="State" />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Pincode *</label>
+                            <input type="text" required value={pincode} onChange={e => setPincode(e.target.value)} className="form-input" placeholder="560001" />
                         </div>
                     </div>
                 </div>
 
                 {/* Device Details */}
                 <div className="settings-section">
-                    <h2 className="section-title">Device & Waste Details</h2>
+                    <h2 className="section-title">Device Details</h2>
                     <div className="form-grid">
-                        <div className="form-group">
-                            <label className="form-label">Device Type *</label>
-                            <select
-                                name="deviceType"
-                                required
-                                value={formData.deviceType}
-                                onChange={handleCcange}
-                                className="form-input"
-                            >
-                                <option value="">Select Device Type</option>
-                                {deviceTypes.map(type => (
-                                    <option key={type.id} value={type.id}>{type.name}</option>
-                                ))}
-                            </select>
-                        </div>
+                        <SearchableSelect
+                            label="Category" required
+                            options={categories} value={categoryId}
+                            onChange={(id, name) => { setCategoryId(id); }}
+                            isLoading={loadingCats} placeholder="Select Category"
+                        />
+                        <SearchableSelect
+                            label="Brand" required
+                            options={brands} value={brandId}
+                            onChange={(id) => setBrandId(id)}
+                            isLoading={loadingBrands} disabled={!categoryId}
+                            placeholder={!categoryId ? "Select category first" : "Select Brand"}
+                        />
+                        <SearchableSelect
+                            label="Model" required
+                            options={models} value={modelId}
+                            onChange={(id) => setModelId(id)}
+                            isLoading={loadingModels} disabled={!brandId}
+                            placeholder={!brandId ? "Select brand first" : "Select Model"}
+                        />
                         <div className="form-group">
                             <label className="form-label">Condition *</label>
-                            <select
-                                name="deviceCondition"
-                                required
-                                value={formData.deviceCondition}
-                                onChange={handleCcange}
-                                className="form-input"
-                            >
-                                {deviceConditions.map(cond => (
-                                    <option key={cond.value} value={cond.value}>{cond.label}</option>
-                                ))}
+                            <select required value={condition} onChange={e => setCondition(e.target.value)} className="form-input">
+                                {conditions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </select>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Brand</label>
-                            <input
-                                type="text"
-                                name="deviceBrand"
-                                value={formData.deviceBrand}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="e.g. Samsung, Apple"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Model</label>
-                            <input
-                                type="text"
-                                name="deviceModel"
-                                value={formData.deviceModel}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="e.g. Galaxy S21"
-                            />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Quantity</label>
-                            <input
-                                type="number"
-                                name="quantity"
-                                min="1"
-                                value={formData.quantity}
-                                onChange={handleCcange}
-                                className="form-input"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Est. Weight (kg)</label>
-                            <input
-                                type="text"
-                                name="estimatedWeight"
-                                value={formData.estimatedWeight}
-                                onChange={handleCcange}
-                                className="form-input"
-                                placeholder="e.g. 2.5"
-                            />
+                            <input type="number" min="1" value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="form-input" />
                         </div>
                     </div>
                 </div>
 
-                {/* Scheduling */}
+                {/* Schedule */}
                 <div className="settings-section">
                     <h2 className="section-title">Schedule Pickup</h2>
                     <div className="form-grid">
                         <div className="form-group">
                             <label className="form-label">Pickup Date *</label>
-                            <input
-                                type="date"
-                                name="pickupDate"
-                                required
-                                min={today}
-                                value={formData.pickupDate}
-                                onChange={handleCcange}
-                                className="form-input"
-                            />
+                            <input type="date" required min={today} value={pickupDate} onChange={e => setPickupDate(e.target.value)} className="form-input" />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Time Slot *</label>
-                            <select
-                                name="pickupTime"
-                                required
-                                value={formData.pickupTime}
-                                onChange={handleCcange}
-                                className="form-input"
-                            >
+                            <select required value={pickupTime} onChange={e => setPickupTime(e.target.value)} className="form-input">
                                 <option value="">Select Time Slot</option>
-                                {timeSlots.map(slot => (
-                                    <option key={slot} value={slot}>{slot}</option>
-                                ))}
+                                {timeSlots.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
                     </div>
-
                     <div className="form-group" style={{ marginTop: "1.5rem" }}>
                         <label className="form-label">Additional Notes</label>
-                        <textarea
-                            name="notes"
-                            value={formData.notes}
-                            onChange={handleCcange}
-                            className="form-input"
-                            rows={3}
-                            placeholder="Gate code, instructions, etc."
-                        />
+                        <textarea value={notes} onChange={e => setNotes(e.target.value)} className="form-input" rows={3} placeholder="Gate code, special instructions, etc." />
                     </div>
-
                     <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => router.back()}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={isSubmitting}
-                        >
+                        <button type="button" className="btn btn-secondary" onClick={() => router.back()}>Cancel</button>
+                        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                             {isSubmitting ? "Scheduling..." : "Confirm Pickup"}
                         </button>
                     </div>

@@ -1,233 +1,366 @@
 'use client';
 
-import React from 'react';
-import { ArrowUp, ArrowDown, Users, Recycle, Battery, Activity, Clock, AlertTriangle, CheckCircle2, Leaf } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Recycle, Clock, Building2, MessageSquare, CheckCircle2, AlertCircle, IndianRupee, RefreshCw } from 'lucide-react';
+import { reportsApi, adminFacilitiesApi, adminRecycleRequestApi, contactIssuesApi } from '@/lib/admin-api';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+const StatCard: React.FC<{ label: string; value: string | number; sub?: string; icon: React.ElementType; color: string; loading?: boolean }> = ({ label, value, sub, icon: Icon, color, loading }) => (
+    <div className="bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex justify-between items-start mb-4">
+            <div className={`p-3 rounded-xl ${color}`}><Icon size={22} /></div>
+        </div>
+        {loading ? <div className="h-8 w-24 bg-gray-100 rounded animate-pulse mb-1" /> : <div className="text-3xl font-display font-bold text-eco-900">{value}</div>}
+        {sub && <div className="text-xs text-gray-400 mt-1">{sub}</div>}
+        <div className="text-sm text-gray-500 font-medium uppercase tracking-wide mt-1">{label}</div>
+    </div>
+);
+
+const StatusBar: React.FC<{ label: string; count: number; total: number; color: string }> = ({ label, count, total, color }) => {
+    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    return (
+        <div className="space-y-1">
+            <div className="flex justify-between text-sm">
+                <span className="font-medium text-gray-700">{label}</span>
+                <span className="font-bold text-gray-900">{count} <span className="text-gray-400 font-normal">({pct}%)</span></span>
+            </div>
+            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%` }} />
+            </div>
+        </div>
+    );
+};
+
+const FacilityMap: React.FC<{ facilities: any[]; requests: any[] }> = ({ facilities, requests }) => {
+    const mapRef = useRef<mapboxgl.Map | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const markersRef = useRef<mapboxgl.Marker[]>([]);
+    const [mapVisible, setMapVisible] = useState(false);
+
+    useEffect(() => {
+        const el = wrapperRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) { setMapVisible(true); observer.disconnect(); } },
+            { threshold: 0, rootMargin: '200px' }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        if (!mapVisible || !token || !containerRef.current || mapRef.current) return;
+
+        mapboxgl.accessToken = token;
+
+        const first = facilities.find((f: any) => (f.lat || f.latitude) && (f.lon || f.longitude));
+        const center: [number, number] = first
+            ? [+(first.lon ?? first.longitude), +(first.lat ?? first.latitude)]
+            : [78.9629, 20.5937];
+
+        const map = new mapboxgl.Map({
+            container: containerRef.current,
+            style: 'mapbox://styles/mapbox/light-v11',
+            center,
+            zoom: first ? 10 : 4.5,
+        });
+        mapRef.current = map;
+        map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 11, duration: 1500 }),
+                () => {}
+            );
+        }
+
+        map.on('load', () => {
+            markersRef.current.forEach(m => m.remove());
+            markersRef.current = [];
+            facilities.forEach((f: any) => {
+                const lat = +(f.latitude ?? f.lat ?? 0);
+                const lon = +(f.longitude ?? f.lon ?? 0);
+                if (!lat || !lon) return;
+
+                const fReqs = requests.filter((r: any) => r.facilityId === f.id || r.facilityName === f.name);
+                const recycled = fReqs.filter((r: any) => r.status === 'RECYCLED').length;
+                const pending = fReqs.filter((r: any) => ['CREATED', 'APPROVED'].includes(r.status)).length;
+                const revenue = fReqs.reduce((s: number, r: any) => s + (r.finalAmount || r.estimatedAmount || 0), 0);
+                const color = f.verified ? '#10b981' : '#f59e0b';
+
+                const dot = document.createElement('div');
+                dot.style.cssText = `display:flex;flex-direction:column;align-items:center;cursor:pointer;`;
+                dot.innerHTML = `
+                    <div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);flex-shrink:0;"></div>
+                    <div style="margin-top:2px;background:white;border:1px solid #e5e7eb;border-radius:4px;padding:1px 4px;font-size:9px;font-weight:700;color:#1f2937;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,0.1);pointer-events:none;line-height:1.4;">${f.name.length > 16 ? f.name.substring(0, 16) + '…' : f.name}</div>
+                `;
+
+                const popup = new mapboxgl.Popup({ offset: 16, maxWidth: '240px' }).setHTML(`
+                    <div style="font-family:sans-serif;padding:4px">
+                        <div style="font-weight:700;font-size:13px;color:#064e3b;margin-bottom:4px">${f.name}</div>
+                        <div style="font-size:11px;color:#6b7280;margin-bottom:8px">${f.address || ''}</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+                            <div style="background:#f0fdf4;border-radius:8px;padding:6px">
+                                <div style="font-size:16px;font-weight:800;color:#059669">${recycled}</div>
+                                <div style="font-size:9px;color:#6b7280;text-transform:uppercase">Recycled</div>
+                            </div>
+                            <div style="background:#fffbeb;border-radius:8px;padding:6px">
+                                <div style="font-size:16px;font-weight:800;color:#d97706">${pending}</div>
+                                <div style="font-size:9px;color:#6b7280;text-transform:uppercase">Pending</div>
+                            </div>
+                            <div style="background:#f0f9ff;border-radius:8px;padding:6px">
+                                <div style="font-size:13px;font-weight:800;color:#0369a1">₹${revenue}</div>
+                                <div style="font-size:9px;color:#6b7280;text-transform:uppercase">Revenue</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;font-size:10px;padding:3px 8px;border-radius:20px;display:inline-block;background:${f.verified ? '#d1fae5' : '#fef3c7'};color:${f.verified ? '#065f46' : '#92400e'};font-weight:600">
+                            ${f.verified ? '✓ Verified' : '⏳ Pending'}
+                        </div>
+                    </div>
+                `);
+                const marker = new mapboxgl.Marker({ element: dot, anchor: 'top' }).setLngLat([lon, lat]).setPopup(popup).addTo(map);
+                markersRef.current.push(marker);
+            });
+        });
+
+        return () => { map.remove(); mapRef.current = null; };
+    }, [mapVisible, facilities, requests]);
+
+    return (
+        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden" ref={wrapperRef}>
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <h3 className="font-display font-bold text-xl text-eco-900">Facility Network Map</h3>
+                    <p className="text-sm text-gray-400 mt-0.5">Click markers to see recycled / pending / revenue per facility</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-medium">
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Verified</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /> Pending</span>
+                </div>
+            </div>
+            <div style={{ position: 'relative', height: '420px', width: '100%' }}>
+                {!mapVisible && (
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', zIndex: 1 }}>
+                        <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+                            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🗺️</div>
+                            <div style={{ fontSize: '0.9rem' }}>Map loading...</div>
+                        </div>
+                    </div>
+                )}
+                <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
+            </div>
+        </div>
+    );
+};
 
 export const DashboardHome: React.FC = () => {
-  return (
-    <div className="space-y-8">
+    const [overview, setOverview] = useState<any>(null);
+    const [financials, setFinancials] = useState<any>(null);
+    const [facilities, setFacilities] = useState<any[]>([]);
+    const [requests, setRequests] = useState<any[]>([]);
+    const [openIssues, setOpenIssues] = useState<number>(0);
+    const [loading, setLoading] = useState(true);
+    const [mapLoading, setMapLoading] = useState(false);
+    const [mapLoaded, setMapLoaded] = useState(false);
+    const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
-      {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-display font-bold text-eco-950">Dashboard Overview</h2>
-          <p className="text-eco-600 mt-1">Real-time insights into the e-waste management network.</p>
-        </div>
-        <div className="flex gap-3">
-          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-eco-700 hover:bg-eco-50 shadow-sm transition-colors">
-            Download Report
-          </button>
-          <button className="px-4 py-2 bg-eco-900 text-white rounded-lg text-sm font-medium shadow-lg shadow-eco-900/20 hover:bg-eco-800 transition-colors">
-            System Health Check
-          </button>
-        </div>
-      </div>
+    useEffect(() => { setLastRefresh(new Date()); }, []);
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Recycled', value: '2,845', unit: 'tons', change: '+12.5%', isPositive: true, icon: Recycle, color: 'bg-blue-50 text-blue-600' },
-          { label: 'Active Centers', value: '142', unit: 'locations', change: '+4', isPositive: true, icon: Users, color: 'bg-tech-lime/20 text-eco-700' },
-          { label: 'CO2 Offset', value: '8.4', unit: 'k tons', change: '+22.1%', isPositive: true, icon: Leaf, color: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Pending Approvals', value: '18', unit: 'requests', change: '-2', isPositive: false, icon: Clock, color: 'bg-amber-50 text-amber-600' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 rounded-xl ${stat.color}`}>
-                <stat.icon size={22} />
-              </div>
-              <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.isPositive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                {stat.isPositive ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-                {stat.change}
-              </div>
-            </div>
-            <div className="text-3xl font-display font-bold text-eco-900">{stat.value}</div>
-            <div className="text-sm text-gray-500 font-medium uppercase tracking-wide mt-1">{stat.unit}</div>
-            <div className="text-xs text-gray-400 mt-2">{stat.label}</div>
-          </div>
-        ))}
-      </div>
+    const FACILITY_CACHE_KEY = 'admin_facilities_cache';
+    const FACILITY_CACHE_TTL = 5 * 60 * 1000;
 
-      {/* Main Visualization Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    const getCachedFacilities = (): any[] | null => {
+        try {
+            const raw = sessionStorage.getItem(FACILITY_CACHE_KEY);
+            if (!raw) return null;
+            const { data, ts } = JSON.parse(raw);
+            if (Date.now() - ts > FACILITY_CACHE_TTL) { sessionStorage.removeItem(FACILITY_CACHE_KEY); return null; }
+            return data;
+        } catch { return null; }
+    };
 
-        {/* Simple Bar Chart Visualization (CSS) */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="font-display font-bold text-xl text-eco-900">Monthly Collection Trends</h3>
-            <div className="flex gap-2">
-              <span className="flex items-center gap-2 text-xs font-medium text-gray-500"><span className="w-2 h-2 rounded-full bg-eco-900"></span>Consumer</span>
-              <span className="flex items-center gap-2 text-xs font-medium text-gray-500"><span className="w-2 h-2 rounded-full bg-tech-lime"></span>Industrial</span>
-            </div>
-          </div>
+    const setCachedFacilities = (data: any[]) => {
+        try { sessionStorage.setItem(FACILITY_CACHE_KEY, JSON.stringify({ data, ts: Date.now() })); } catch {}
+    };
 
-          <div className="flex-1 flex items-end justify-between gap-4 h-64 w-full">
-            {[45, 70, 55, 85, 60, 95, 75, 50].map((height, i) => (
-              <div key={i} className="flex-1 flex flex-col justify-end gap-1 group relative cursor-pointer">
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-eco-900 text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap z-10">
-                  {height * 10} tons
+    // Load stats, requests, issues — runs on mount
+    const load = async (bustCache = false) => {
+        setLoading(true);
+        try {
+            const [ovRes, finRes, reqRes, issRes] = await Promise.allSettled([
+                reportsApi.getOverview(),
+                reportsApi.getFinancials(),
+                adminRecycleRequestApi.getAll(),
+                contactIssuesApi.getAll({ status: 'OPEN', size: 1 }),
+            ]);
+            if (ovRes.status === 'fulfilled') setOverview(ovRes.value.data);
+            if (finRes.status === 'fulfilled') setFinancials(finRes.value.data);
+            if (reqRes.status === 'fulfilled') setRequests(Array.isArray(reqRes.value.data) ? reqRes.value.data : reqRes.value.data?.content || []);
+            if (issRes.status === 'fulfilled') setOpenIssues(issRes.value.data?.totalElements ?? issRes.value.data?.length ?? 0);
+        } finally {
+            setLoading(false);
+            setLastRefresh(new Date());
+        }
+    };
+
+    // Load facilities for map — only when user clicks
+    const loadMap = async () => {
+        setMapLoading(true);
+        try {
+            const cached = getCachedFacilities();
+            if (cached) {
+                setFacilities(cached);
+            } else {
+                const res = await adminFacilitiesApi.getAll({ size: 500, page: 0 });
+                const facs = res.data?.content || [];
+                setFacilities(facs);
+                setCachedFacilities(facs);
+            }
+            setMapLoaded(true);
+        } finally {
+            setMapLoading(false);
+        }
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const totalRequests = requests.length;
+    const recycled = requests.filter(r => r.status === 'RECYCLED').length;
+    const pending = requests.filter(r => ['CREATED', 'APPROVED'].includes(r.status)).length;
+    const totalFacilities = facilities.length;
+    const pendingApprovals = facilities.filter(f => !f.verified).length;
+    const totalRevenue = financials?.aggregates?.totalPayouts ?? financials?.aggregates?.totalVolume ?? 0;
+    const statusCounts = {
+        CREATED: requests.filter(r => r.status === 'CREATED').length,
+        APPROVED: requests.filter(r => r.status === 'APPROVED').length,
+        VERIFIED: requests.filter(r => r.status === 'VERIFIED').length,
+        RECYCLED: recycled,
+        REJECTED: requests.filter(r => r.status === 'REJECTED').length,
+    };
+
+    return (
+        <div className="space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-3xl font-display font-bold text-eco-950">Dashboard Overview</h2>
+                    <p className="text-eco-600 mt-1 text-sm">{lastRefresh ? `Last updated: ${lastRefresh.toLocaleTimeString()}` : 'Loading...'}</p>
                 </div>
-                <div className="w-full bg-eco-900/10 rounded-t-lg relative overflow-hidden" style={{ height: `${height}%` }}>
-                  <div className="absolute bottom-0 left-0 w-full bg-eco-900 transition-all duration-500 hover:bg-eco-800" style={{ height: '60%' }}></div>
-                  <div className="absolute top-0 left-0 w-full bg-tech-lime transition-all duration-500 hover:bg-lime-400" style={{ height: '40%' }}></div>
+                <button onClick={() => load()} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-eco-900 text-white rounded-lg text-sm font-medium shadow-lg hover:bg-eco-800 transition-colors disabled:opacity-60">
+                    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+                </button>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <StatCard label="Total Requests" value={totalRequests} icon={Recycle} color="bg-blue-50 text-blue-600" loading={loading} />
+                <StatCard label="Recycled" value={recycled} sub="completed" icon={CheckCircle2} color="bg-emerald-50 text-emerald-600" loading={loading} />
+                <StatCard label="Pending" value={pending} sub="needs action" icon={Clock} color="bg-amber-50 text-amber-600" loading={loading} />
+                <StatCard label="Facilities" value={totalFacilities} sub={`${pendingApprovals} pending approval`} icon={Building2} color="bg-violet-50 text-violet-600" loading={loading} />
+                <StatCard label="Revenue" value={`₹${totalRevenue}`} icon={IndianRupee} color="bg-teal-50 text-teal-600" loading={loading} />
+                <StatCard label="Open Issues" value={openIssues} icon={MessageSquare} color="bg-rose-50 text-rose-600" loading={loading} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div className="lg:col-span-2 bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm">
+                    <h3 className="font-display font-bold text-lg text-eco-900 mb-6">Request Status Breakdown</h3>
+                    <div className="space-y-4">
+                        <StatusBar label="Created" count={statusCounts.CREATED} total={totalRequests} color="bg-blue-400" />
+                        <StatusBar label="Approved" count={statusCounts.APPROVED} total={totalRequests} color="bg-violet-400" />
+                        <StatusBar label="Verified" count={statusCounts.VERIFIED} total={totalRequests} color="bg-teal-400" />
+                        <StatusBar label="Recycled" count={statusCounts.RECYCLED} total={totalRequests} color="bg-emerald-500" />
+                        <StatusBar label="Rejected" count={statusCounts.REJECTED} total={totalRequests} color="bg-red-400" />
+                    </div>
+                    {financials?.aggregates && (
+                        <div className="mt-6 pt-6 border-t border-gray-100 space-y-3">
+                            <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wide">Financials</h4>
+                            {[
+                                { label: 'Total Estimated', value: financials.aggregates.totalVolume ?? '—' },
+                                { label: 'Total Paid Out', value: financials.aggregates.totalPayouts ?? '—' },
+                                { label: 'Avg Per Request', value: financials.aggregates.avgPerRequest ?? '—' },
+                            ].map(item => (
+                                <div key={item.label} className="flex justify-between text-sm">
+                                    <span className="text-gray-500">{item.label}</span>
+                                    <span className="font-bold text-gray-800">₹{item.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
-                <div className="text-center text-xs text-gray-400 font-medium">Week {i + 1}</div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Network Pulse / Live Feed */}
-        <div className="bg-eco-950 text-white p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
-          {/* Background Gradient */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-tech-lime rounded-full blur-[100px] opacity-20 -translate-y-1/2 translate-x-1/3"></div>
-
-          <div className="relative z-10 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-display font-bold text-xl">Live Network</h3>
-              <div className="flex items-center gap-2 px-2 py-1 bg-white/10 rounded-full text-xs font-medium text-tech-lime animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-tech-lime"></span>
-                LIVE
-              </div>
-            </div>
-
-            <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-              {[
-                { text: "New center registered in Portland, OR", time: "2m ago", type: "center" },
-                { text: "Large batch (500kg) processed at EcoHub", time: "12m ago", type: "process" },
-                { text: "Verified Partner Application: GreenTech Inc.", time: "45m ago", type: "alert" },
-                { text: "System maintenance scheduled for 2 AM", time: "2h ago", type: "system" },
-              ].map((item, i) => (
-                <div key={i} className="flex gap-4 items-start group">
-                  <div className="mt-1 relative">
-                    <div className="w-2 h-2 rounded-full bg-tech-lime/50 group-hover:bg-tech-lime transition-colors"></div>
-                    {i !== 3 && <div className="absolute top-3 left-1 w-px h-12 bg-white/10"></div>}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-200 leading-snug group-hover:text-white transition-colors">{item.text}</p>
-                    <span className="text-xs text-eco-400/70">{item.time}</span>
-                  </div>
+                <div className="lg:col-span-3 bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-gray-100">
+                        <h3 className="font-display font-bold text-lg text-eco-900">Recent Requests</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50/60">
+                                <tr>{['ID', 'Citizen', 'Device', 'Status', 'Amount'].map(h => (
+                                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                                ))}</tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {loading ? Array.from({ length: 5 }).map((_, i) => (
+                                    <tr key={i}><td colSpan={5} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td></tr>
+                                )) : requests.slice(0, 6).map((r: any) => {
+                                    const sc: Record<string, string> = { RECYCLED: 'bg-emerald-100 text-emerald-700', APPROVED: 'bg-violet-100 text-violet-700', CREATED: 'bg-blue-100 text-blue-700', REJECTED: 'bg-red-100 text-red-700', VERIFIED: 'bg-teal-100 text-teal-700' };
+                                    return (
+                                        <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-4 py-3 font-mono font-bold text-xs text-eco-800">{r.requestNumber || r.id?.substring(0, 8).toUpperCase()}</td>
+                                            <td className="px-4 py-3 text-gray-700 truncate max-w-[100px]">{r.citizenName || '—'}</td>
+                                            <td className="px-4 py-3 text-gray-600 truncate max-w-[120px]">{[r.brandName, r.deviceModelName].filter(Boolean).join(' ') || '—'}</td>
+                                            <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${sc[r.status] || 'bg-gray-100 text-gray-600'}`}>{r.status}</span></td>
+                                            <td className="px-4 py-3 font-bold text-gray-800">{r.finalAmount != null ? `₹${r.finalAmount}` : r.estimatedAmount != null ? `~₹${r.estimatedAmount}` : '—'}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-              ))}
             </div>
 
-            <div className="mt-6 pt-6 border-t border-white/10">
-              <div className="flex items-center justify-between">
-                <div className="text-xs text-eco-400">System Status</div>
-                <div className="text-sm font-bold text-tech-lime">99.9% Operational</div>
-              </div>
-              <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-tech-lime w-[98%]"></div>
-              </div>
-            </div>
-          </div>
+            {/* Map — load on demand */}
+            {!mapLoaded ? (
+                <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <div>
+                            <h3 className="font-display font-bold text-xl text-eco-900">Facility Network Map</h3>
+                            <p className="text-sm text-gray-400 mt-0.5">Click to load facility locations and stats</p>
+                        </div>
+                    </div>
+                    <div style={{ height: '420px' }} className="flex flex-col items-center justify-center gap-4 bg-gray-50">
+                        <div className="text-4xl">🗺️</div>
+                        <p className="text-gray-400 text-sm">Map not loaded — fetches up to 500 facilities</p>
+                        <button onClick={loadMap} disabled={mapLoading}
+                            className="flex items-center gap-2 px-6 py-3 bg-eco-900 text-white rounded-xl font-bold hover:bg-eco-800 transition-colors disabled:opacity-60 shadow-lg">
+                            {mapLoading ? <><RefreshCw size={16} className="animate-spin" /> Loading...</> : 'Load Map'}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <FacilityMap facilities={facilities} requests={requests} />
+            )}
+
+            {pendingApprovals > 0 && (
+                <div className="bg-white rounded-[2rem] border border-amber-100 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-amber-100 flex items-center gap-3">
+                        <AlertCircle size={18} className="text-amber-500" />
+                        <h3 className="font-display font-bold text-lg text-eco-900">{pendingApprovals} Facilities Awaiting Approval</h3>
+                    </div>
+                    <div className="divide-y divide-gray-50">
+                        {facilities.filter(f => !f.verified).slice(0, 5).map((f: any) => (
+                            <div key={f.id} className="px-6 py-4 flex items-center justify-between gap-4">
+                                <div>
+                                    <div className="font-semibold text-gray-800">{f.name}</div>
+                                    <div className="text-xs text-gray-400 mt-0.5">{f.address}</div>
+                                </div>
+                                <span className="text-xs px-3 py-1 bg-amber-50 text-amber-700 rounded-full font-medium border border-amber-100">Pending</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
-
-      </div>
-
-      {/* E-Waste Density Map / Impact Visualizer */}
-      <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm mt-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-display font-bold text-xl text-eco-900">E-Waste Density Impact Map</h3>
-          <div className="flex gap-4">
-            <span className="flex items-center gap-2 text-xs font-medium text-gray-500"><span className="w-3 h-3 rounded-full bg-red-400"></span>High Density</span>
-            <span className="flex items-center gap-2 text-xs font-medium text-gray-500"><span className="w-3 h-3 rounded-full bg-yellow-400"></span>Medium</span>
-            <span className="flex items-center gap-2 text-xs font-medium text-gray-500"><span className="w-3 h-3 rounded-full bg-green-400"></span>Low</span>
-          </div>
-        </div>
-        <div className="relative w-full h-96 bg-gray-50 rounded-xl overflow-hidden shadow-inner flex items-center justify-center border border-gray-100">
-          {/* Mock Map Background */}
-          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#9ca3af 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-
-          <div className="relative w-full max-w-4xl h-full flex items-center justify-center">
-            {/* Stylized region text */}
-            <div className="absolute inset-0 flex items-center justify-center text-gray-300/40 font-display text-4xl font-bold uppercase tracking-[1rem] select-none pointer-events-none">India Operations</div>
-
-            {/* Hotspots */}
-            <div className="absolute top-[30%] left-[25%] flex flex-col items-center group cursor-pointer tooltip" title="Maharashtra: 4.2k tons">
-              <span className="relative flex h-8 w-8">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" style={{ animationDuration: '3s' }}></span>
-                <span className="relative inline-flex rounded-full h-8 w-8 bg-red-500 border-2 border-white shadow-md"></span>
-              </span>
-              <span className="mt-2 text-xs font-bold text-gray-700 bg-white/90 px-2 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">Maharashtra</span>
-            </div>
-
-            <div className="absolute top-[45%] right-[30%] flex flex-col items-center group cursor-pointer tooltip" title="Bengaluru: 2.8k tons">
-              <span className="relative flex h-6 w-6">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" style={{ animationDuration: '2.5s' }}></span>
-                <span className="relative inline-flex rounded-full h-6 w-6 bg-yellow-500 border-2 border-white shadow-md"></span>
-              </span>
-              <span className="mt-2 text-xs font-bold text-gray-700 bg-white/90 px-2 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">Karnataka</span>
-            </div>
-
-            <div className="absolute top-[20%] right-[45%] flex flex-col items-center group cursor-pointer tooltip" title="Delhi NCR: 5.1k tons">
-              <span className="relative flex h-10 w-10">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" style={{ animationDuration: '2s' }}></span>
-                <span className="relative inline-flex rounded-full h-10 w-10 bg-red-600 border-2 border-white flex items-center justify-center text-[10px] text-white font-bold shadow-md">MAX</span>
-              </span>
-              <span className="mt-2 text-xs font-bold text-gray-700 bg-white/90 px-2 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">Delhi NCR</span>
-            </div>
-
-            <div className="absolute bottom-[20%] left-[40%] flex flex-col items-center group cursor-pointer tooltip" title="Kerala: 800 tons">
-              <span className="relative flex h-4 w-4">
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500 border border-white shadow-md"></span>
-              </span>
-              <span className="mt-2 text-xs font-bold text-gray-700 bg-white/90 px-2 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">Kerala</span>
-            </div>
-
-            <div className="absolute top-[60%] right-[20%] flex flex-col items-center group cursor-pointer tooltip" title="Tamil Nadu: 1.5k tons">
-              <span className="relative flex h-5 w-5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50" style={{ animationDuration: '4s' }}></span>
-                <span className="relative inline-flex rounded-full h-5 w-5 bg-green-500 border-2 border-white shadow-md"></span>
-              </span>
-              <span className="mt-2 text-xs font-bold text-gray-700 bg-white/90 px-2 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">Tamil Nadu</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity Table */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden mt-8">
-        <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="font-display font-bold text-xl text-eco-900">Recent Transactions</h3>
-          <button className="text-sm font-medium text-eco-600 hover:text-eco-800">View All</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50/50">
-              <tr>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Entity</th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {[
-                { id: "#TRX-9822", entity: "TechCycle Solutions", date: "Oct 24, 2024", status: "Completed", amount: "1,250 kg" },
-                { id: "#TRX-9821", entity: "Urban Mining Corp", date: "Oct 24, 2024", status: "Processing", amount: "840 kg" },
-                { id: "#TRX-9820", entity: "Green Earth Pickup", date: "Oct 23, 2024", status: "Pending", amount: "210 kg" },
-              ].map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-8 py-4 text-sm font-medium text-eco-900">{row.id}</td>
-                  <td className="px-8 py-4 text-sm text-gray-600">{row.entity}</td>
-                  <td className="px-8 py-4 text-sm text-gray-500">{row.date}</td>
-                  <td className="px-8 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                        ${row.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                        row.status === 'Processing' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="px-8 py-4 text-sm font-bold text-gray-700">{row.amount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };

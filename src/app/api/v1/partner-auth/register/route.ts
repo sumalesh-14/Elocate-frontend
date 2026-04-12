@@ -20,11 +20,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      return NextResponse.json(
-        { error: error || 'Partner registration failed' },
-        { status: response.status }
-      );
+      const errorText = await response.text();
+      let errorBody: any;
+      try {
+        errorBody = JSON.parse(errorText);
+      } catch {
+        errorBody = { message: errorText || 'Partner registration failed' };
+      }
+      return NextResponse.json(errorBody, { status: response.status });
     }
 
     const data = await response.json();

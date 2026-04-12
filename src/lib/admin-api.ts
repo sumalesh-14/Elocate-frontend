@@ -498,3 +498,49 @@ export const contactIssuesApi = {
         return response;
     },
 };
+
+/**
+ * Admin Citizens API
+ */
+export const adminCitizensApi = {
+    getAll: async (params?: { page?: number; size?: number; search?: string; isActive?: boolean }) => {
+        const response = await adminApiClient.get("/admin/citizens", {
+            params,
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+    toggleActive: async (id: string, active: boolean, reason?: string) => {
+        const response = await adminApiClient.patch(`/admin/citizens/${id}/toggle-active`, { active, reason }, {
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+};
+
+/**
+ * Reports API
+ */
+export const reportsApi = {
+    getOverview: async (params?: { startDate?: string; endDate?: string; facilityId?: string }) => {
+        const response = await adminApiClient.get("/reports/overview", {
+            params,
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+    getFinancials: async (params?: { facilityId?: string }) => {
+        const response = await adminApiClient.get("/reports/financials", {
+            params,
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+    getDrivers: async (params?: { facilityId?: string }) => {
+        const response = await adminApiClient.get("/reports/drivers", {
+            params,
+            headers: getAuthHeaders(),
+        });
+        return response;
+    },
+};
