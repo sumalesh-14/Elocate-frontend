@@ -98,7 +98,7 @@ export default function ConditionalLayout({
                     <main className="flex-grow pt-[80px] md:pt-0">
                         {children}
                     </main>
-                    {mounted && (
+                    {mounted && !pathname?.startsWith('/citizen/book-recycle') && (
                         <div className={pathname?.startsWith('/citizen/book-recycle') ? "relative z-[30]" : ""}>
                             <Footer />
                         </div>
